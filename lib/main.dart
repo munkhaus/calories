@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dit Sunde Jeg',
+      title: 'Kalorie Tracker',
       theme: AppTheme.lightTheme,
       home: const AppWrapper(),
       debugShowCheckedModeBanner: false,

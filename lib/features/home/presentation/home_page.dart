@@ -4,13 +4,48 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
+import '../../activity/application/activity_notifier.dart';
+import '../../activity/presentation/widgets/todays_activities_widget.dart';
 
 /// Main home page of the app after onboarding
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  late ActivityNotifier _activityNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _activityNotifier = ActivityNotifier();
+    // Initialize activity data with BMR calculation
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(onboardingProvider);
+      final userProfile = state.userProfile;
+      
+      if (userProfile.isCompleteForCalculations) {
+        // Use BMR calculation for total calories
+        _activityNotifier.initializeWithBmr(userProfile.bmr);
+      } else {
+        // Fallback to activity-only calories
+        _activityNotifier.loadTodaysActivities();
+        _activityNotifier.loadTodaysCaloriesBurned();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _activityNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
 
@@ -45,6 +80,14 @@ class HomePage extends ConsumerWidget {
             
             KSizes.spacingVerticalL,
             
+            // Today's activities section
+            TodaysActivitiesWidget(
+              notifier: _activityNotifier,
+              onDeleteActivity: _onDeleteActivity,
+            ),
+            
+            KSizes.spacingVerticalL,
+            
             // Coming soon features
             _buildComingSoonFeatures(context),
             
@@ -53,6 +96,24 @@ class HomePage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  void _onDeleteActivity(dynamic activity) async {
+    final success = await _activityNotifier.deleteActivity(activity.logEntryId);
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success 
+                ? 'Aktivitet slettet' 
+                : 'Kunne ikke slette aktivitet'),
+              backgroundColor: success ? AppColors.success : AppColors.error,
+            ),
+          );
+        }
+      });
+    }
   }
 
   Widget _buildWelcomeHeader(BuildContext context, dynamic state) {
@@ -132,13 +193,21 @@ class HomePage extends ConsumerWidget {
                 ),
                 KSizes.spacingHorizontalM,
                 Expanded(
-                  child: _buildStatCard(
-                    context,
-                    'Nuværende vægt',
-                    '${state.userProfile.currentWeightKg.toStringAsFixed(1)}',
-                    'kg',
-                    MdiIcons.scaleBalance,
-                    AppColors.primary,
+                  child: AnimatedBuilder(
+                    animation: _activityNotifier,
+                    builder: (context, child) {
+                      final activityState = _activityNotifier.state;
+                      final caloriesBurned = activityState.todaysCaloriesBurned;
+                      
+                      return _buildStatCard(
+                        context,
+                        'Kalorier forbrændt',
+                        '$caloriesBurned',
+                        'kcal',
+                        MdiIcons.fireCircle,
+                        AppColors.secondary,
+                      );
+                    },
                   ),
                 ),
               ],
@@ -149,6 +218,17 @@ class HomePage extends ConsumerWidget {
                 Expanded(
                   child: _buildStatCard(
                     context,
+                    'Nuværende vægt',
+                    '${state.userProfile.currentWeightKg.toStringAsFixed(1)}',
+                    'kg',
+                    MdiIcons.scaleBalance,
+                    AppColors.primary,
+                  ),
+                ),
+                KSizes.spacingHorizontalM,
+                Expanded(
+                  child: _buildStatCard(
+                    context,
                     'Målvægt',
                     '${state.userProfile.targetWeightKg.toStringAsFixed(1)}',
                     'kg',
@@ -156,7 +236,11 @@ class HomePage extends ConsumerWidget {
                     AppColors.success,
                   ),
                 ),
-                KSizes.spacingHorizontalM,
+              ],
+            ),
+            KSizes.spacingVerticalM,
+            Row(
+              children: [
                 Expanded(
                   child: _buildStatCard(
                     context,
@@ -165,6 +249,17 @@ class HomePage extends ConsumerWidget {
                     state.userProfile.bmiCategory,
                     MdiIcons.humanMale,
                     AppColors.secondary,
+                  ),
+                ),
+                KSizes.spacingHorizontalM,
+                Expanded(
+                  child: _buildStatCard(
+                    context,
+                    'BMR (døgnforbrug)',
+                    '${state.userProfile.bmr.toStringAsFixed(0)}',
+                    'kcal/dag',
+                    MdiIcons.heart,
+                    AppColors.primary,
                   ),
                 ),
               ],

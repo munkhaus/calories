@@ -5,9 +5,10 @@ import '../constants/k_sizes.dart';
 import '../theme/app_theme.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/logging/presentation/logging_page.dart';
-import '../../features/planning/presentation/planning_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
+import '../../features/planning/presentation/planning_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
+import '../../features/activity/presentation/activity_page.dart'; // Re-enabled
 
 /// Main app navigation with bottom navigation bar
 class AppNavigation extends ConsumerStatefulWidget {
@@ -18,13 +19,14 @@ class AppNavigation extends ConsumerStatefulWidget {
 }
 
 class _AppNavigationState extends ConsumerState<AppNavigation> {
-  int _selectedIndex = 0;
+  int _currentIndex = 0;
 
   final List<Widget> _pages = [
     const DashboardPage(),
     const LoggingPage(),
-    const PlanningPage(),
+    const ActivityPage(), // Re-enabled for testing
     const ProgressPage(),
+    const PlanningPage(),
     const ProfilePage(),
   ];
 
@@ -34,26 +36,30 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
       label: 'Hjem',
     ),
     NavigationItem(
-      icon: MdiIcons.plus,
-      label: 'Log mad',
+      icon: MdiIcons.foodAppleOutline,
+      label: 'Mad',
     ),
     NavigationItem(
-      icon: MdiIcons.calendar,
-      label: 'Planlæg',
-    ),
+      icon: MdiIcons.runFast,
+      label: 'Aktivitet',
+    ), // Re-enabled for testing
     NavigationItem(
       icon: MdiIcons.chartLine,
       label: 'Fremgang',
     ),
     NavigationItem(
-      icon: MdiIcons.account,
+      icon: MdiIcons.calendarOutline,
+      label: 'Planlægning',
+    ),
+    NavigationItem(
+      icon: Icons.person_outlined,
       label: 'Profil',
     ),
   ];
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      _currentIndex = index;
     });
   }
 
@@ -61,12 +67,12 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(
-        index: _selectedIndex,
+        index: _currentIndex,
         children: _pages,
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        currentIndex: _selectedIndex,
+        currentIndex: _currentIndex,
         onTap: _onItemTapped,
         selectedItemColor: AppColors.primary,
         unselectedItemColor: AppColors.textSecondary,
@@ -77,11 +83,11 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
           label: item.label,
         )).toList(),
       ),
-      floatingActionButton: _selectedIndex == 0 ? FloatingActionButton(
+      floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
         onPressed: () {
           // Navigate to logging page
           setState(() {
-            _selectedIndex = 1;
+            _currentIndex = 1;
           });
         },
         backgroundColor: AppColors.primary,
