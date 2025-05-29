@@ -5,6 +5,7 @@ import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
 import '../../domain/user_profile_model.dart';
+import 'onboarding_base_layout.dart';
 
 /// Goals step widget for onboarding
 class GoalsStepWidget extends ConsumerWidget {
@@ -15,64 +16,35 @@ class GoalsStepWidget extends ConsumerWidget {
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppDesign.backgroundGradient,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            KSizes.spacingVerticalM,
-            
-            // Goal Type Selection
-            _buildModernSection(
-              context,
-              child: _buildGoalTypeSection(context, state, notifier),
-            ),
-            
-            KSizes.spacingVerticalL,
-            
-            // Activity Level Selection
-            _buildModernSection(
-              context,
-              child: _buildActivityLevelSection(context, state, notifier),
-            ),
-            
-            // Weekly Goal Adjustment
-            if (state.userProfile.goalType != null && 
-                state.userProfile.goalType != GoalType.weightMaintenance) ...[
-              KSizes.spacingVerticalL,
-              _buildModernSection(
-                context,
-                child: _buildWeeklyGoalSection(context, state, notifier),
-              ),
-            ],
-            
-            // Calorie Preview Card
-            if (state.userProfile.goalType != null && state.userProfile.activityLevel != null) ...[
-              KSizes.spacingVerticalL,
-              _buildModernSection(
-                context,
-                child: _buildCaloriePreviewCard(context, state),
-              ),
-            ],
-            
-            KSizes.spacingVerticalXL,
-          ],
+    return OnboardingBaseLayout(
+      children: [
+        // Goal selection section
+        OnboardingSection(
+          child: _buildGoalTypeSection(context, state, notifier),
         ),
-      ),
-    );
-  }
-
-  Widget _buildModernSection(BuildContext context, {required Widget child}) {
-    return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: child,
-      ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Activity level section
+        OnboardingSection(
+          child: _buildActivityLevelSection(context, state, notifier),
+        ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Weekly goal section (only show for weight loss/gain goals)
+        if (state.userProfile.goalType == GoalType.weightLoss || 
+            state.userProfile.goalType == GoalType.weightGain) ...[
+          OnboardingSection(
+            child: _buildWeeklyGoalSection(context, state, notifier),
+          ),
+          
+          KSizes.spacingVerticalL,
+        ],
+        
+        // Calorie preview
+        _buildCaloriePreviewCard(context, state),
+      ],
     );
   }
 
@@ -80,84 +52,56 @@ class GoalsStepWidget extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.target,
-              size: KSizes.iconM,
-              color: AppColors.primary,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              'Hvad er dit mål?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        OnboardingSectionHeader(
+          icon: MdiIcons.target,
+          title: 'Hvad er dit mål?',
+          subtitle: 'Vælg dit primære sundhedsmål',
         ),
-        KSizes.spacingVerticalS,
-        Text(
-          'Vælg hvad du gerne vil opnå med appen',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        
         KSizes.spacingVerticalM,
         
-        // Goal Type Options
-        _buildGoalTypeOption(
+        // Goal options
+        _buildGoalOption(
           context,
           GoalType.weightLoss,
           'Vægttab',
-          'Forbrænde fedt og tabe vægt',
+          'Jeg vil tabe mig og blive sundere',
           MdiIcons.trendingDown,
           AppColors.warning,
           state.userProfile.goalType == GoalType.weightLoss,
           () => notifier.updateGoalType(GoalType.weightLoss),
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalS,
         
-        _buildGoalTypeOption(
+        _buildGoalOption(
           context,
           GoalType.weightMaintenance,
-          'Vægtvedligeholdelse',
-          'Holde nuværende vægt og blive sundere',
-          MdiIcons.equal,
+          'Vedligehold vægt',
+          'Jeg vil holde min nuværende vægt',
+          MdiIcons.minus,
           AppColors.info,
           state.userProfile.goalType == GoalType.weightMaintenance,
           () => notifier.updateGoalType(GoalType.weightMaintenance),
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalS,
         
-        _buildGoalTypeOption(
+        _buildGoalOption(
           context,
           GoalType.weightGain,
           'Vægtøgning',
-          'Øge vægt på en sund måde',
+          'Jeg vil tage på og opbygge muskler',
           MdiIcons.trendingUp,
           AppColors.success,
           state.userProfile.goalType == GoalType.weightGain,
           () => notifier.updateGoalType(GoalType.weightGain),
         ),
-        
-        KSizes.spacingVerticalM,
-        
-        _buildGoalTypeOption(
-          context,
-          GoalType.muscleGain,
-          'Muskelopbygning',
-          'Bygge muskelmasse og styrke',
-          MdiIcons.armFlex,
-          AppColors.secondary,
-          state.userProfile.goalType == GoalType.muscleGain,
-          () => notifier.updateGoalType(GoalType.muscleGain),
-        ),
       ],
     );
   }
 
-  Widget _buildGoalTypeOption(
+  Widget _buildGoalOption(
     BuildContext context,
     GoalType goalType,
     String title,
@@ -230,84 +174,74 @@ class GoalsStepWidget extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.run,
-              size: KSizes.iconM,
-              color: AppColors.primary,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              'Hvor aktiv er du?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        OnboardingSectionHeader(
+          icon: MdiIcons.run,
+          title: 'Hvor aktiv er du?',
+          subtitle: 'Dit aktivitetsniveau hjælper os med at beregne dine kaloriebehov',
         ),
-        KSizes.spacingVerticalS,
-        Text(
-          'Dette hjælper os med at beregne dine kaloriebehov',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        
         KSizes.spacingVerticalM,
         
-        // Activity Level Options
-        _buildActivityLevelOption(
+        // Activity level options
+        _buildActivityOption(
           context,
           ActivityLevel.sedentary,
-          'Stillestående',
-          'Kontorarbejde, ingen regelmæssig motion',
-          MdiIcons.laptopAccount,
+          'Stillesiddende',
+          'Kontorarbejde, lidt motion',
+          MdiIcons.seatReclineNormal,
+          AppColors.info,
           state.userProfile.activityLevel == ActivityLevel.sedentary,
           () => notifier.updateActivityLevel(ActivityLevel.sedentary),
         ),
         
         KSizes.spacingVerticalS,
         
-        _buildActivityLevelOption(
+        _buildActivityOption(
           context,
           ActivityLevel.lightlyActive,
           'Let aktiv',
-          'Let træning 1-3 dage om ugen',
+          '1-3 dage træning om ugen',
           MdiIcons.walk,
+          AppColors.primary,
           state.userProfile.activityLevel == ActivityLevel.lightlyActive,
           () => notifier.updateActivityLevel(ActivityLevel.lightlyActive),
         ),
         
         KSizes.spacingVerticalS,
         
-        _buildActivityLevelOption(
+        _buildActivityOption(
           context,
           ActivityLevel.moderatelyActive,
           'Moderat aktiv',
-          'Moderat træning 3-5 dage om ugen',
-          MdiIcons.bike,
+          '3-5 dage træning om ugen',
+          MdiIcons.run,
+          AppColors.secondary,
           state.userProfile.activityLevel == ActivityLevel.moderatelyActive,
           () => notifier.updateActivityLevel(ActivityLevel.moderatelyActive),
         ),
         
         KSizes.spacingVerticalS,
         
-        _buildActivityLevelOption(
+        _buildActivityOption(
           context,
           ActivityLevel.veryActive,
           'Meget aktiv',
-          'Hård træning 6-7 dage om ugen',
-          MdiIcons.run,
+          '6-7 dage træning om ugen',
+          MdiIcons.bike,
+          AppColors.warning,
           state.userProfile.activityLevel == ActivityLevel.veryActive,
           () => notifier.updateActivityLevel(ActivityLevel.veryActive),
         ),
         
         KSizes.spacingVerticalS,
         
-        _buildActivityLevelOption(
+        _buildActivityOption(
           context,
           ActivityLevel.extraActive,
           'Ekstra aktiv',
-          'Meget hård træning, fysisk job',
-          MdiIcons.weightLifter,
+          'Daglig træning + fysisk job',
+          MdiIcons.dumbbell,
+          AppColors.success,
           state.userProfile.activityLevel == ActivityLevel.extraActive,
           () => notifier.updateActivityLevel(ActivityLevel.extraActive),
         ),
@@ -315,33 +249,41 @@ class GoalsStepWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildActivityLevelOption(
+  Widget _buildActivityOption(
     BuildContext context,
     ActivityLevel activityLevel,
     String title,
     String description,
     IconData icon,
+    Color color,
     bool isSelected,
     VoidCallback onTap,
   ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(KSizes.margin3x),
+        padding: const EdgeInsets.all(KSizes.margin4x),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surfaceVariant,
+          color: isSelected ? color.withOpacity(0.1) : AppColors.surfaceVariant,
           borderRadius: BorderRadius.circular(KSizes.radiusM),
           border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
+            color: isSelected ? color : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: KSizes.iconM,
+            Container(
+              padding: const EdgeInsets.all(KSizes.margin2x),
+              decoration: BoxDecoration(
+                color: isSelected ? color.withOpacity(0.2) : AppColors.surface,
+                borderRadius: BorderRadius.circular(KSizes.radiusS),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? color : AppColors.textSecondary,
+                size: KSizes.iconM,
+              ),
             ),
             KSizes.spacingHorizontalM,
             Expanded(
@@ -350,15 +292,15 @@ class GoalsStepWidget extends ConsumerWidget {
                 children: [
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                      fontWeight: isSelected ? KSizes.fontWeightMedium : KSizes.fontWeightRegular,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: isSelected ? color : AppColors.textPrimary,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
                   ),
                   Text(
                     description,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: isSelected ? AppColors.primary.withOpacity(0.8) : AppColors.textSecondary,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: isSelected ? color.withOpacity(0.8) : AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -367,8 +309,8 @@ class GoalsStepWidget extends ConsumerWidget {
             if (isSelected)
               Icon(
                 Icons.check_circle,
-                color: AppColors.primary,
-                size: KSizes.iconS,
+                color: color,
+                size: KSizes.iconM,
               ),
           ],
         ),
@@ -384,97 +326,34 @@ class GoalsStepWidget extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.calendar,
-              size: KSizes.iconM,
-              color: AppColors.primary,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
-        KSizes.spacingVerticalS,
-        Text(
-          'Et realistisk ugentligt mål er mellem 0.2-1.0 kg',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        KSizes.spacingVerticalM,
-        
-        // Weekly Goal Display
-        Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(color: color.withOpacity(0.3)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${state.userProfile.weeklyGoalKg.toStringAsFixed(1)}',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: color,
-                  fontWeight: KSizes.fontWeightBold,
-                ),
-              ),
-              Text(
-                ' kg/uge',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: color,
-                ),
-              ),
-            ],
-          ),
+        OnboardingSectionHeader(
+          icon: MdiIcons.calendar,
+          title: title,
+          subtitle: 'Et realistisk ugentligt mål er mellem 0.2-1.0 kg',
+          iconColor: color,
         ),
         
         KSizes.spacingVerticalM,
         
-        // Weekly Goal Slider
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: color,
-            inactiveTrackColor: color.withOpacity(0.3),
-            thumbColor: color,
-            overlayColor: color.withOpacity(0.2),
-            trackHeight: 6,
-          ),
-          child: Slider(
-            value: state.userProfile.weeklyGoalKg.clamp(0.2, 1.0),
-            min: 0.2,
-            max: 1.0,
-            divisions: 8,
-            onChanged: notifier.updateWeeklyGoal,
-          ),
+        // Weekly Goal Display using standardized component
+        OnboardingMetricDisplay(
+          value: state.userProfile.weeklyGoalKg.toStringAsFixed(1),
+          unit: 'kg/uge',
+          color: color,
         ),
         
-        // Weekly Goal Range Labels
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KSizes.margin2x),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '0.2 kg',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              Text(
-                '1.0 kg',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
+        KSizes.spacingVerticalM,
+        
+        // Weekly Goal Slider using standardized component
+        OnboardingSlider(
+          value: state.userProfile.weeklyGoalKg,
+          min: 0.2,
+          max: 1.0,
+          divisions: 8,
+          onChanged: notifier.updateWeeklyGoal,
+          color: color,
+          minLabel: '0.2 kg',
+          maxLabel: '1.0 kg',
         ),
       ],
     );
@@ -486,7 +365,8 @@ class GoalsStepWidget extends ConsumerWidget {
     final targetFat = state.userProfile.targetFatG;
     final targetCarbs = state.userProfile.targetCarbsG;
 
-    return Card(
+    return Container(
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
         padding: const EdgeInsets.all(KSizes.margin4x),
         child: Column(
@@ -512,9 +392,11 @@ class GoalsStepWidget extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Daglig kaloriemål:',
-                  style: Theme.of(context).textTheme.bodyLarge,
+                Flexible(
+                  child: Text(
+                    'Daglig kaloriemål:',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
                 ),
                 Text(
                   '$targetCalories kcal',
@@ -528,33 +410,31 @@ class GoalsStepWidget extends ConsumerWidget {
             
             KSizes.spacingVerticalS,
             
-            // Macronutrients
+            // Macronutrients with better spacing
             Row(
               children: [
                 Expanded(
                   child: _buildMacroItem(
                     context,
-                    'Protein',
+                    'P',
                     '${targetProtein.round()}g',
                     AppColors.error,
                   ),
                 ),
-                SizedBox(width: KSizes.margin1x),
                 Expanded(
                   child: _buildMacroItem(
                     context,
-                    'Fedt',
+                    'F',
                     '${targetFat.round()}g',
                     AppColors.warning,
                   ),
                 ),
-                SizedBox(width: KSizes.margin1x),
                 Expanded(
                   child: _buildMacroItem(
                     context,
-                    'Kulhyd.',
+                    'K',
                     '${targetCarbs.round()}g',
-                    AppColors.success,
+                    AppColors.info,
                   ),
                 ),
               ],
@@ -580,17 +460,19 @@ class GoalsStepWidget extends ConsumerWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: TextStyle(
+            fontSize: KSizes.fontSizeXS,
             color: AppColors.textSecondary,
+            fontWeight: KSizes.fontWeightMedium,
           ),
           textAlign: TextAlign.center,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        const SizedBox(height: 2),
         Text(
           value,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: TextStyle(
+            fontSize: KSizes.fontSizeS,
             fontWeight: KSizes.fontWeightBold,
             color: color,
           ),

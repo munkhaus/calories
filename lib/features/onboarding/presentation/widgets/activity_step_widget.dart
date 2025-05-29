@@ -5,6 +5,7 @@ import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
 import '../../domain/user_profile_model.dart';
+import 'onboarding_base_layout.dart';
 
 /// Activity step widget for setting activity level
 class ActivityStepWidget extends ConsumerWidget {
@@ -15,85 +16,71 @@ class ActivityStepWidget extends ConsumerWidget {
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: KSizes.margin4x),
-          
-          Text(
-            'Dit aktivitetsniveau',
-            style: TextStyle(
-              fontSize: KSizes.fontSizeXL,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textPrimary,
-            ),
+    return OnboardingBaseLayout(
+      children: [
+        OnboardingSectionHeader(
+          icon: MdiIcons.run,
+          title: 'Dit aktivitetsniveau',
+          subtitle: 'Hvor aktiv er du i din hverdag?',
+        ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Activity level options
+        OnboardingSection(
+          child: Column(
+            children: [
+              _ActivityOption(
+                icon: MdiIcons.seatReclineNormal,
+                title: 'Stillesiddende',
+                description: 'Kontorarbejde, lidt motion',
+                isSelected: state.userProfile.activityLevel == ActivityLevel.sedentary,
+                onTap: () => notifier.updateActivityLevel(ActivityLevel.sedentary),
+              ),
+              
+              KSizes.spacingVerticalM,
+              
+              _ActivityOption(
+                icon: MdiIcons.walk,
+                title: 'Let aktiv',
+                description: '1-3 dage træning om ugen',
+                isSelected: state.userProfile.activityLevel == ActivityLevel.lightlyActive,
+                onTap: () => notifier.updateActivityLevel(ActivityLevel.lightlyActive),
+              ),
+              
+              KSizes.spacingVerticalM,
+              
+              _ActivityOption(
+                icon: MdiIcons.run,
+                title: 'Moderat aktiv',
+                description: '3-5 dage træning om ugen',
+                isSelected: state.userProfile.activityLevel == ActivityLevel.moderatelyActive,
+                onTap: () => notifier.updateActivityLevel(ActivityLevel.moderatelyActive),
+              ),
+              
+              KSizes.spacingVerticalM,
+              
+              _ActivityOption(
+                icon: MdiIcons.bike,
+                title: 'Meget aktiv',
+                description: '6-7 dage træning om ugen',
+                isSelected: state.userProfile.activityLevel == ActivityLevel.veryActive,
+                onTap: () => notifier.updateActivityLevel(ActivityLevel.veryActive),
+              ),
+              
+              KSizes.spacingVerticalM,
+              
+              _ActivityOption(
+                icon: MdiIcons.dumbbell,
+                title: 'Ekstra aktiv',
+                description: 'Daglig træning + fysisk job',
+                isSelected: state.userProfile.activityLevel == ActivityLevel.extraActive,
+                onTap: () => notifier.updateActivityLevel(ActivityLevel.extraActive),
+              ),
+            ],
           ),
-          
-          const SizedBox(height: KSizes.margin2x),
-          
-          Text(
-            'Hvor aktiv er du i din hverdag?',
-            style: TextStyle(
-              fontSize: KSizes.fontSizeM,
-              color: AppColors.textSecondary,
-            ),
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Activity level options
-          _ActivityOption(
-            icon: MdiIcons.seatReclineNormal,
-            title: 'Stillesiddende',
-            description: 'Kontorarbejde, lidt motion',
-            isSelected: state.userProfile.activityLevel == ActivityLevel.sedentary,
-            onTap: () => notifier.updateActivityLevel(ActivityLevel.sedentary),
-          ),
-          
-          const SizedBox(height: KSizes.margin3x),
-          
-          _ActivityOption(
-            icon: MdiIcons.walk,
-            title: 'Let aktiv',
-            description: '1-3 dage træning om ugen',
-            isSelected: state.userProfile.activityLevel == ActivityLevel.lightlyActive,
-            onTap: () => notifier.updateActivityLevel(ActivityLevel.lightlyActive),
-          ),
-          
-          const SizedBox(height: KSizes.margin3x),
-          
-          _ActivityOption(
-            icon: MdiIcons.run,
-            title: 'Moderat aktiv',
-            description: '3-5 dage træning om ugen',
-            isSelected: state.userProfile.activityLevel == ActivityLevel.moderatelyActive,
-            onTap: () => notifier.updateActivityLevel(ActivityLevel.moderatelyActive),
-          ),
-          
-          const SizedBox(height: KSizes.margin3x),
-          
-          _ActivityOption(
-            icon: MdiIcons.bike,
-            title: 'Meget aktiv',
-            description: '6-7 dage træning om ugen',
-            isSelected: state.userProfile.activityLevel == ActivityLevel.veryActive,
-            onTap: () => notifier.updateActivityLevel(ActivityLevel.veryActive),
-          ),
-          
-          const SizedBox(height: KSizes.margin3x),
-          
-          _ActivityOption(
-            icon: MdiIcons.dumbbell,
-            title: 'Ekstra aktiv',
-            description: 'Daglig træning + fysisk job',
-            isSelected: state.userProfile.activityLevel == ActivityLevel.extraActive,
-            onTap: () => notifier.updateActivityLevel(ActivityLevel.extraActive),
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -120,20 +107,12 @@ class _ActivityOption extends StatelessWidget {
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(KSizes.margin4x),
-        decoration: BoxDecoration(
+        decoration: AppDesign.sectionDecoration.copyWith(
           color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.white,
-          borderRadius: BorderRadius.circular(KSizes.radiusL),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.border,
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Row(
           children: [
@@ -151,7 +130,7 @@ class _ActivityOption extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(width: KSizes.margin3x),
+            KSizes.spacingHorizontalM,
             
             Expanded(
               child: Column(

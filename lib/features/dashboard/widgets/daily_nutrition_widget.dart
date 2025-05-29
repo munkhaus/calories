@@ -4,7 +4,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 
-/// Widget showing daily nutrition/macro breakdown
+/// Widget showing daily nutrition in a user-friendly way
 class DailyNutritionWidget extends ConsumerWidget {
   const DailyNutritionWidget({super.key});
 
@@ -39,7 +39,7 @@ class DailyNutritionWidget extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
+            // Header - more user-friendly
             Row(
               children: [
                 Container(
@@ -51,7 +51,7 @@ class DailyNutritionWidget extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(KSizes.radiusM),
                   ),
                   child: Icon(
-                    MdiIcons.nutrition,
+                    MdiIcons.foodVariant,
                     color: Colors.white,
                     size: 16,
                   ),
@@ -59,7 +59,7 @@ class DailyNutritionWidget extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Dagens ernæring',
+                    'Hvordan spiser du?',
                     style: TextStyle(
                       fontSize: KSizes.fontSizeL,
                       fontWeight: KSizes.fontWeightSemiBold,
@@ -77,7 +77,7 @@ class DailyNutritionWidget extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(KSizes.radiusS),
                   ),
                   child: Text(
-                    'På sporet',
+                    'Godt på vej',
                     style: TextStyle(
                       fontSize: KSizes.fontSizeXS,
                       fontWeight: FontWeight.w600,
@@ -90,42 +90,73 @@ class DailyNutritionWidget extends ConsumerWidget {
             
             const SizedBox(height: KSizes.margin3x),
             
-            // Macro cards
+            // Simplified nutrition cards - focus on progress and simple language
             Row(
               children: [
                 Expanded(
-                  child: _MacroCard(
+                  child: _SimplifiedNutritionCard(
                     title: 'Protein',
-                    consumed: 45,
-                    target: 150,
-                    unit: 'g',
+                    subtitle: 'Opbygger muskler',
+                    progress: 0.30, // 45/150
+                    progressText: 'God start',
                     color: AppColors.error,
-                    icon: MdiIcons.food,
+                    icon: MdiIcons.dumbbell,
                   ),
                 ),
                 const SizedBox(width: KSizes.margin2x),
                 Expanded(
-                  child: _MacroCard(
-                    title: 'Kulhydrat',
-                    consumed: 120,
-                    target: 200,
-                    unit: 'g',
+                  child: _SimplifiedNutritionCard(
+                    title: 'Energi',
+                    subtitle: 'Fra kulhydrater',
+                    progress: 0.60, // 120/200
+                    progressText: 'På sporet',
                     color: AppColors.warning,
-                    icon: MdiIcons.foodVariant,
+                    icon: MdiIcons.flash,
                   ),
                 ),
                 const SizedBox(width: KSizes.margin2x),
                 Expanded(
-                  child: _MacroCard(
-                    title: 'Fedt',
-                    consumed: 25,
-                    target: 67,
-                    unit: 'g',
+                  child: _SimplifiedNutritionCard(
+                    title: 'Sundt fedt',
+                    subtitle: 'Vigtige næringsstoffer',
+                    progress: 0.37, // 25/67
+                    progressText: 'Fin balance',
                     color: AppColors.success,
-                    icon: MdiIcons.foodApple,
+                    icon: MdiIcons.heart,
                   ),
                 ),
               ],
+            ),
+            
+            const SizedBox(height: KSizes.margin2x),
+            
+            // Simple encouragement message instead of technical data
+            Container(
+              padding: const EdgeInsets.all(KSizes.margin2x),
+              decoration: BoxDecoration(
+                color: AppColors.info.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    MdiIcons.lightbulb,
+                    color: AppColors.info,
+                    size: KSizes.iconS,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Du spiser varieret og sundt i dag! 👍',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.info,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -134,133 +165,103 @@ class DailyNutritionWidget extends ConsumerWidget {
   }
 }
 
-class _MacroCard extends StatelessWidget {
+class _SimplifiedNutritionCard extends StatelessWidget {
   final String title;
-  final int consumed;
-  final int target;
-  final String unit;
+  final String subtitle;
+  final double progress;
+  final String progressText;
   final Color color;
   final IconData icon;
 
-  const _MacroCard({
+  const _SimplifiedNutritionCard({
     required this.title,
-    required this.consumed,
-    required this.target,
-    required this.unit,
+    required this.subtitle,
+    required this.progress,
+    required this.progressText,
     required this.color,
     required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    final progress = (consumed / target).clamp(0.0, 1.0);
-    final remaining = (target - consumed).clamp(0, double.infinity);
-
     return Container(
       padding: const EdgeInsets.all(KSizes.margin2x),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
           color: color.withOpacity(0.2),
           width: 1,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Icon and title
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 16,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 10,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+          Icon(
+            icon,
+            color: color,
+            size: KSizes.iconM,
           ),
           
           const SizedBox(height: 6),
           
-          // Progress circle
-          SizedBox(
-            width: 35,
-            height: 35,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 35,
-                  height: 35,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 3,
-                    backgroundColor: color.withOpacity(0.1),
-                    valueColor: AlwaysStoppedAnimation<Color>(color),
-                  ),
-                ),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: TextStyle(
-                    fontSize: 7,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 6),
-          
-          // Current value
           Text(
-            '$consumed$unit',
+            title,
             style: TextStyle(
-              fontSize: KSizes.fontSizeM,
-              fontWeight: FontWeight.w700,
+              fontSize: KSizes.fontSizeS,
+              fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           
-          // Target info - simplified
           Text(
-            'af $target$unit',
+            subtitle,
             style: TextStyle(
               fontSize: 9,
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w400,
             ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Progress indicator - simplified
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(3),
+            ),
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: progress,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 4),
+          
+          // Progress text instead of numbers
+          Text(
+            progressText,
+            style: TextStyle(
+              fontSize: 8,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

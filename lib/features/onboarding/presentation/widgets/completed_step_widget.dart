@@ -30,9 +30,12 @@ class CompletedStepWidget extends ConsumerWidget {
                   const SizedBox(height: KSizes.margin4x),
                   
                   // Hero Section
-                  _buildHeroSection(context, state),
+                  _buildReadyToStartCard(context),
                   
                   const SizedBox(height: KSizes.margin6x),
+                  
+                  // Start Journey Button
+                  _buildStartJourneyButton(context),
                 ],
               ),
             ),
@@ -60,207 +63,144 @@ class CompletedStepWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeroSection(BuildContext context, dynamic state) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Success Animation Container - slightly smaller
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              colors: [
-                AppColors.success,
-                AppColors.success.withOpacity(0.8),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.success.withOpacity(0.3),
-                blurRadius: KSizes.blurRadiusL,
-                offset: const Offset(0, 8),
-              ),
-              BoxShadow(
-                color: AppColors.success.withOpacity(0.1),
-                blurRadius: KSizes.blurRadiusXL,
-                offset: const Offset(0, 16),
-              ),
-            ],
-          ),
-          child: Icon(
-            MdiIcons.checkBold,
-            size: KSizes.iconL,
-            color: Colors.white,
-          ),
-        ),
-        
-        const SizedBox(height: KSizes.margin4x),
-        
-        // Success Message
-        Text(
-          'Fantastisk! 🎉',
-          style: TextStyle(
-            fontSize: KSizes.fontSizeXXL,
-            fontWeight: KSizes.fontWeightBold,
-            color: AppColors.textPrimary,
-            letterSpacing: -0.5,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        
-        const SizedBox(height: KSizes.margin2x),
-        
-        Text(
-          'Din profil er nu komplet!',
-          style: TextStyle(
-            fontSize: KSizes.fontSizeL,
-            color: AppColors.textSecondary,
-            fontWeight: KSizes.fontWeightMedium,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        
-        const SizedBox(height: KSizes.margin4x),
-        
-        // Profile Summary Card
-        _buildProfileSummaryCard(context, state),
-      ],
-    );
-  }
-
-  Widget _buildProfileSummaryCard(BuildContext context, dynamic state) {
-    final userProfile = state.userProfile;
-    
+  Widget _buildReadyToStartCard(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin3x),
-      decoration: AppDesign.cardDecoration.copyWith(
-        gradient: LinearGradient(
-          colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.02),
+      decoration: AppDesign.sectionDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(KSizes.margin4x),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.success, AppColors.primary],
+                ),
+                borderRadius: BorderRadius.circular(KSizes.radiusXL),
+              ),
+              child: Icon(
+                MdiIcons.rocketLaunch,
+                color: Colors.white,
+                size: KSizes.iconXL,
+              ),
+            ),
+            
+            KSizes.spacingVerticalM,
+            
+            Text(
+              'Fantastisk! 🎉',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: AppColors.success,
+                fontWeight: KSizes.fontWeightBold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            KSizes.spacingVerticalS,
+            
+            Text(
+              'Din personlige sundhedsplan er nu klar!\nLad os starte din rejse mod en sundere livsstil.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            KSizes.spacingVerticalL,
+            
+            Container(
+              padding: const EdgeInsets.all(KSizes.margin3x),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                border: Border.all(
+                  color: AppColors.success.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    MdiIcons.checkCircle,
+                    color: AppColors.success,
+                    size: KSizes.iconS,
+                  ),
+                  KSizes.spacingHorizontalS,
+                  Expanded(
+                    child: Text(
+                      'Tryk på "Start rejsen" for at gå til dit dashboard',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: KSizes.fontWeightMedium,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
       ),
-      child: Column(
-        children: [
-          // Card Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  MdiIcons.accountCircle,
-                  color: AppColors.primary,
-                  size: KSizes.iconM,
-                ),
-              ),
-              KSizes.spacingHorizontalM,
-              Text(
-                'Din profil',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: KSizes.margin3x),
-          
-          // Profile Stats Grid
-          _buildProfileStatsGrid(userProfile),
-        ],
-      ),
     );
   }
 
-  Widget _buildProfileStatsGrid(dynamic userProfile) {
-    final stats = [
-      _ProfileStat(
-        icon: MdiIcons.account,
-        label: 'Navn',
-        value: userProfile.name.isNotEmpty ? userProfile.name : 'Ikke angivet',
-      ),
-      _ProfileStat(
-        icon: MdiIcons.fire,
-        label: 'Daglige kalorier',
-        value: userProfile.targetCalories > 0 
-            ? '${userProfile.targetCalories} kcal' 
-            : 'Ikke beregnet',
-      ),
-      _ProfileStat(
-        icon: MdiIcons.target,
-        label: 'Mål',
-        value: userProfile.goalType != null 
-            ? _getGoalTypeText(userProfile.goalType)
-            : 'Ikke valgt',
-      ),
-    ];
-
-    return Column(
-      children: stats.map((stat) => _buildStatItem(stat)).toList(),
-    );
-  }
-
-  Widget _buildStatItem(_ProfileStat stat) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: KSizes.margin1x),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(KSizes.radiusM),
+  Widget _buildStartJourneyButton(BuildContext context) {
+    return Positioned(
+      left: KSizes.margin4x,
+      right: KSizes.margin4x,
+      bottom: KSizes.margin6x,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [AppColors.success, AppColors.primary],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(KSizes.radiusXL),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.success.withOpacity(0.3),
+              blurRadius: KSizes.blurRadiusL,
+              offset: const Offset(0, 8),
             ),
-            child: Icon(
-              stat.icon,
-              color: AppColors.primary,
-              size: KSizes.iconS,
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(KSizes.radiusXL),
+            onTap: () {
+              // Navigate to dashboard - the AppWrapper will handle this automatically
+              // when onboarding is completed
+              Navigator.of(context).pushReplacementNamed('/dashboard');
+            },
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    MdiIcons.rocketLaunch,
+                    color: Colors.white,
+                    size: KSizes.iconM,
+                  ),
+                  KSizes.spacingHorizontalS,
+                  Text(
+                    'Start rejsen',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeL,
+                      fontWeight: KSizes.fontWeightBold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          
-          KSizes.spacingHorizontalM,
-          
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  stat.label,
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeS,
-                    color: AppColors.textSecondary,
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  stat.value,
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    color: AppColors.textPrimary,
-                    fontWeight: KSizes.fontWeightSemiBold,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

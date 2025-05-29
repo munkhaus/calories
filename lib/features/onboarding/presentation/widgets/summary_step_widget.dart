@@ -529,7 +529,7 @@ class SummaryStepWidget extends ConsumerWidget {
             ),
             KSizes.spacingVerticalS,
             Text(
-              'Du er nu klar til at begynde din sundhedsrejse med Dit Sunde Jeg. Tryk på "Fuldfør" for at komme i gang!',
+              'Du er nu klar til at begynde din sundhedsrejse! Tryk på "Færdig" for at afslutte opsætningen.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),

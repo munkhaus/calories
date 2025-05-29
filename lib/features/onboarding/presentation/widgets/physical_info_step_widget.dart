@@ -6,6 +6,7 @@ import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
 import '../../domain/user_profile_model.dart';
+import 'onboarding_base_layout.dart';
 
 /// Physical info step widget for onboarding
 class PhysicalInfoStepWidget extends ConsumerStatefulWidget {
@@ -89,62 +90,35 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       _targetWeightController.text = state.userProfile.targetWeightKg.toStringAsFixed(1);
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppDesign.backgroundGradient,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            KSizes.spacingVerticalM,
-            
-            // Height section
-            _buildModernSection(
-              context,
-              child: _buildHeightSection(context, state, notifier),
-            ),
-            
-            KSizes.spacingVerticalL,
-            
-            // Current weight section  
-            _buildModernSection(
-              context,
-              child: _buildCurrentWeightSection(context, state, notifier),
-            ),
-            
-            KSizes.spacingVerticalL,
-            
-            // Target weight section
-            _buildModernSection(
-              context,
-              child: _buildTargetWeightSection(context, state, notifier),
-            ),
-            
-            // BMI display
-            if (state.userProfile.heightCm > 0 && state.userProfile.currentWeightKg > 0) ...[
-              KSizes.spacingVerticalL,
-              _buildModernSection(
-                context,
-                child: _buildBMISection(context, state),
-              ),
-            ],
-            
-            KSizes.spacingVerticalXL,
-          ],
+    return OnboardingBaseLayout(
+      children: [
+        // Height section
+        OnboardingSection(
+          child: _buildHeightSection(context, state, notifier),
         ),
-      ),
-    );
-  }
-
-  Widget _buildModernSection(BuildContext context, {required Widget child}) {
-    return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: child,
-      ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Current weight section  
+        OnboardingSection(
+          child: _buildCurrentWeightSection(context, state, notifier),
+        ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Target weight section
+        OnboardingSection(
+          child: _buildTargetWeightSection(context, state, notifier),
+        ),
+        
+        // BMI display
+        if (state.userProfile.heightCm > 0 && state.userProfile.currentWeightKg > 0) ...[
+          KSizes.spacingVerticalL,
+          OnboardingSection(
+            child: _buildBMISection(context, state),
+          ),
+        ],
+      ],
     );
   }
 
@@ -152,37 +126,16 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.humanMaleHeight,
-              size: KSizes.iconM,
-              color: AppColors.primary,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              'Hvor høj er du?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        OnboardingSectionHeader(
+          icon: MdiIcons.humanMaleHeight,
+          title: 'Hvor høj er du?',
+          subtitle: 'Din højde hjælper os med at beregne dine kaloriebehov',
         ),
-        KSizes.spacingVerticalS,
-        Text(
-          'Din højde hjælper os med at beregne dine kaloriebehov',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        
         KSizes.spacingVerticalM,
         
-        // Single Input Field
-        Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-          ),
+        // Single Input Field using standardized container
+        OnboardingInputContainer(
           child: TextField(
             controller: _heightController,
             focusNode: _heightFocus,
@@ -226,44 +179,15 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         
         KSizes.spacingVerticalM,
         
-        // Height Slider
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: AppColors.primary,
-            inactiveTrackColor: AppColors.primary.withOpacity(0.3),
-            thumbColor: AppColors.primary,
-            overlayColor: AppColors.primary.withOpacity(0.2),
-            trackHeight: 6,
-          ),
-          child: Slider(
-            value: state.userProfile.heightCm.clamp(120.0, 220.0),
-            min: 120,
-            max: 220,
-            divisions: 100,
-            onChanged: notifier.updateHeight,
-          ),
-        ),
-        
-        // Height Range Labels
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KSizes.margin2x),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '120 cm',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              Text(
-                '220 cm',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
+        // Height Slider using standardized component
+        OnboardingSlider(
+          value: state.userProfile.heightCm,
+          min: 120,
+          max: 220,
+          divisions: 100,
+          onChanged: notifier.updateHeight,
+          minLabel: '120 cm',
+          maxLabel: '220 cm',
         ),
       ],
     );

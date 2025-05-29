@@ -49,16 +49,36 @@ class RecentMealsWidget extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            AppColors.primary.withOpacity(0.02),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white,
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-            child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
@@ -98,22 +118,22 @@ class RecentMealsWidget extends ConsumerWidget {
                 ),
               ],
             ),
-          ),
-          
-          const SizedBox(height: KSizes.margin4x),
-          
-          // Meals list - Separate cards with proper spacing
-          ...meals.asMap().entries.map((entry) {
-            final index = entry.key;
-            final meal = entry.value;
-            return Column(
-              children: [
-                _MealCard(meal: meal),
-                if (index < meals.length - 1) const SizedBox(height: KSizes.margin3x),
-              ],
-            );
-          }).toList(),
-        ],
+            
+            const SizedBox(height: KSizes.margin4x),
+            
+            // Meals list - Individual meal cards within the main container
+            ...meals.asMap().entries.map((entry) {
+              final index = entry.key;
+              final meal = entry.value;
+              return Column(
+                children: [
+                  _MealCard(meal: meal),
+                  if (index < meals.length - 1) const SizedBox(height: KSizes.margin3x),
+                ],
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -127,23 +147,14 @@ class _MealCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-      padding: const EdgeInsets.all(KSizes.margin4x),
+      padding: const EdgeInsets.all(KSizes.margin3x),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.white.withOpacity(0.8),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
+        color: AppColors.surface.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Column(
         children: [
@@ -152,8 +163,8 @@ class _MealCard extends StatelessWidget {
             children: [
               // Icon
               Container(
-                width: 56,
-                height: 56,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: meal.color,
                   borderRadius: BorderRadius.circular(KSizes.radiusL),
@@ -161,7 +172,7 @@ class _MealCard extends StatelessWidget {
                 child: Icon(
                   meal.icon,
                   color: Colors.white,
-                  size: KSizes.iconL,
+                  size: KSizes.iconM,
                 ),
               ),
               
@@ -213,7 +224,7 @@ class _MealCard extends StatelessWidget {
                   Text(
                     '${meal.calories}',
                     style: TextStyle(
-                      fontSize: KSizes.fontSizeXXL,
+                      fontSize: KSizes.fontSizeXL,
                       fontWeight: KSizes.fontWeightBold,
                       color: meal.color,
                     ),

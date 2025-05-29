@@ -394,35 +394,49 @@ class DashboardPage extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.info,
-            AppColors.info.withOpacity(0.8),
+            Colors.white,
+            AppColors.info.withOpacity(0.02),
           ],
         ),
         borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.info.withOpacity(0.3),
-            blurRadius: KSizes.blurRadiusM,
-            offset: KSizes.shadowOffsetM,
+            color: AppColors.info.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white,
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin3x),
+        padding: const EdgeInsets.all(KSizes.margin2x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Icon(
-              MdiIcons.water,
-              color: Colors.white,
-              size: KSizes.iconM,
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
+                ),
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+              ),
+              child: Icon(
+                MdiIcons.water,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
             Text(
               'Vand',
               style: TextStyle(
                 fontSize: KSizes.fontSizeS,
-                fontWeight: KSizes.fontWeightSemiBold,
-                color: Colors.white,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.textPrimary,
               ),
             ),
             Column(
@@ -430,24 +444,25 @@ class DashboardPage extends ConsumerWidget {
                 Text(
                   '$currentGlasses / $targetGlasses',
                   style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
+                    fontSize: KSizes.fontSizeL,
                     fontWeight: KSizes.fontWeightBold,
-                    color: Colors.white,
+                    color: AppColors.info,
                   ),
                 ),
                 Text(
                   'glas',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeXS,
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppColors.textSecondary,
+                    fontWeight: KSizes.fontWeightMedium,
                   ),
                 ),
               ],
             ),
             Container(
-              height: 4,
+              height: 6,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.info.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(KSizes.radiusS),
               ),
               child: FractionallySizedBox(
@@ -455,7 +470,9 @@ class DashboardPage extends ConsumerWidget {
                 widthFactor: progress,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    gradient: LinearGradient(
+                      colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
+                    ),
                     borderRadius: BorderRadius.circular(KSizes.radiusS),
                   ),
                 ),
@@ -479,35 +496,49 @@ class DashboardPage extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.warning,
-            AppColors.warning.withOpacity(0.8),
+            Colors.white,
+            AppColors.warning.withOpacity(0.02),
           ],
         ),
         borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.warning.withOpacity(0.3),
-            blurRadius: KSizes.blurRadiusM,
-            offset: KSizes.shadowOffsetM,
+            color: AppColors.warning.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white,
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin3x),
+        padding: const EdgeInsets.all(KSizes.margin2x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Icon(
-              MdiIcons.fire,
-              color: Colors.white,
-              size: KSizes.iconM,
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                ),
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+              ),
+              child: Icon(
+                MdiIcons.fire,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
             Text(
               'Streak',
               style: TextStyle(
                 fontSize: KSizes.fontSizeS,
-                fontWeight: KSizes.fontWeightSemiBold,
-                color: Colors.white,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.textPrimary,
               ),
             ),
             Column(
@@ -515,35 +546,40 @@ class DashboardPage extends ConsumerWidget {
                 Text(
                   '$currentStreak',
                   style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
+                    fontSize: KSizes.fontSizeL,
                     fontWeight: KSizes.fontWeightBold,
-                    color: Colors.white,
+                    color: AppColors.warning,
                   ),
                 ),
                 Text(
                   'dage',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeXS,
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppColors.textSecondary,
+                    fontWeight: KSizes.fontWeightMedium,
                   ),
                 ),
               ],
             ),
             Container(
               padding: const EdgeInsets.symmetric(
-                horizontal: KSizes.margin2x,
-                vertical: KSizes.margin1x,
+                horizontal: KSizes.margin1x,
+                vertical: 2,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(KSizes.radiusXS),
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(KSizes.radiusS),
+                border: Border.all(
+                  color: AppColors.warning.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               child: Text(
                 'Bedste: $bestStreak',
                 style: TextStyle(
-                  fontSize: KSizes.fontSizeXS,
-                  color: Colors.white,
-                  fontWeight: KSizes.fontWeightMedium,
+                  fontSize: 9,
+                  color: AppColors.warning,
+                  fontWeight: KSizes.fontWeightSemiBold,
                 ),
               ),
             ),

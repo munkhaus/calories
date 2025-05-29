@@ -6,6 +6,7 @@ import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
 import '../../domain/user_profile_model.dart';
+import 'onboarding_base_layout.dart';
 
 /// Personal info step widget for onboarding
 class PersonalInfoStepWidget extends ConsumerStatefulWidget {
@@ -123,53 +124,27 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
       if (_yearController.text != year) _yearController.text = year;
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppDesign.backgroundGradient,
-      ),
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            KSizes.spacingVerticalM,
-            
-            // Name section
-            _buildModernSection(
-              context,
-              child: _buildNameSection(context, state, notifier),
-            ),
-            
-            KSizes.spacingVerticalL,
-            
-            // Date of birth section
-            _buildModernSection(
-              context,
-              child: _buildDateOfBirthSection(context, state, notifier),
-            ),
-            
-            KSizes.spacingVerticalL,
-            
-            // Gender section
-            _buildModernSection(
-              context,
-              child: _buildGenderSection(context, state, notifier),
-            ),
-            
-            KSizes.spacingVerticalXL,
-          ],
+    return OnboardingBaseLayout(
+      children: [
+        // Name section
+        OnboardingSection(
+          child: _buildNameSection(context, state, notifier),
         ),
-      ),
-    );
-  }
-
-  Widget _buildModernSection(BuildContext context, {required Widget child}) {
-    return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: child,
-      ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Date of birth section
+        OnboardingSection(
+          child: _buildDateOfBirthSection(context, state, notifier),
+        ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Gender section
+        OnboardingSection(
+          child: _buildGenderSection(context, state, notifier),
+        ),
+      ],
     );
   }
 
