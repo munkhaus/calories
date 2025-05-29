@@ -5,6 +5,7 @@ import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/domain/user_profile_model.dart';
+import '../../food_logging/application/food_logging_notifier.dart';
 
 /// Widget showing daily calorie intake vs goal with circular progress
 class CalorieOverviewWidget extends ConsumerWidget {
@@ -14,15 +15,15 @@ class CalorieOverviewWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
+    final consumedCalories = ref.watch(totalCaloriesProvider);
 
     // Calculate target calories based on user profile
     final targetCalories = _calculateTargetCalories(userProfile);
     
-    // TODO: Get actual consumed calories from food log
-    const consumedCalories = 847; // Placeholder data
-    
-    final progress = targetCalories > 0 ? (consumedCalories / targetCalories).clamp(0.0, 1.0) : 0.0;
-    final remainingCalories = (targetCalories - consumedCalories).clamp(0, double.infinity);
+    final progress = targetCalories > 0 ? (consumedCalories / targetCalories) : 0.0;
+    final displayProgress = progress.clamp(0.0, 1.0);
+    final remainingCalories = targetCalories - consumedCalories;
+    final hasExceededGoal = remainingCalories < 0;
 
     return Container(
       decoration: AppDesign.sectionDecoration,
@@ -146,13 +147,13 @@ class CalorieOverviewWidget extends ConsumerWidget {
                         width: 120,
                         height: 120,
                         child: CircularProgressIndicator(
-                          value: progress,
+                          value: displayProgress,
                           strokeWidth: 12,
                           backgroundColor: Colors.transparent,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            progress >= 1.0 
+                            displayProgress >= 1.0 
                                 ? AppColors.error 
-                                : progress >= 0.8 
+                                : displayProgress >= 0.8 
                                     ? AppColors.warning 
                                     : AppColors.primary,
                           ),
@@ -229,9 +230,12 @@ class CalorieOverviewWidget extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _StatCard(
-                    label: 'Tilbage',
-                    value: '${remainingCalories.toInt()}',
-                    color: remainingCalories > 0 ? AppColors.warning : AppColors.error,
+                    label: hasExceededGoal ? 'Overskud' : 'Tilbage',
+                    value: hasExceededGoal 
+                        ? '+${(-remainingCalories).toInt()}'
+                        : '${remainingCalories.toInt()}',
+                    color: hasExceededGoal ? AppColors.error : 
+                           remainingCalories > 500 ? AppColors.warning : AppColors.success,
                   ),
                 ),
               ],

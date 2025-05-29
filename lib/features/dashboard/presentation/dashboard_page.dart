@@ -8,6 +8,8 @@ import '../widgets/calorie_overview_widget.dart';
 import '../widgets/daily_nutrition_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
+import '../../food_logging/application/food_logging_notifier.dart';
+import '../../food_logging/domain/user_food_log_model.dart';
 
 /// Main dashboard page showing daily overview
 class DashboardPage extends ConsumerWidget {
@@ -135,6 +137,12 @@ class DashboardPage extends ConsumerWidget {
                     
                     // Quick actions section
                     _buildQuickActions(context, ref),
+                    
+                    // Debug section (for testing)
+                    if (const bool.fromEnvironment('dart.vm.product') == false) ...[
+                      KSizes.spacingVerticalM,
+                      _buildDebugSection(context, ref),
+                    ],
                     
                     // Bottom padding for FAB
                     const SizedBox(height: 100),
@@ -631,6 +639,109 @@ class DashboardPage extends ConsumerWidget {
         );
       },
     );
+  }
+
+  Widget _buildDebugSection(BuildContext context, WidgetRef ref) {
+    return Container(
+      decoration: AppDesign.sectionDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Debug Menu (kun i udvikling)',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: KSizes.margin3x),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _addTestMeal(ref, MealType.morgenmad, context),
+                    child: Text('Test Morgenmad'),
+                  ),
+                ),
+                const SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _addTestMeal(ref, MealType.frokost, context),
+                    child: Text('Test Frokost'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: KSizes.margin2x),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => _clearAllMeals(ref, context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                    ),
+                    child: Text('Ryd alle måltider'),
+                  ),
+                ),
+                const SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => ref.read(foodLoggingProvider.notifier).refresh(),
+                    child: Text('Genindlæs'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addTestMeal(WidgetRef ref, MealType mealType, BuildContext context) async {
+    final testMeal = UserFoodLogModel(
+      userId: 1,
+      foodItemId: DateTime.now().millisecondsSinceEpoch,
+      foodName: 'Test ${mealType.mealTypeDisplayName}',
+      mealType: mealType,
+      quantity: 100,
+      servingUnit: 'g',
+      calories: 250,
+      protein: 20.0,
+      fat: 10.0,
+      carbs: 30.0,
+      loggedAt: DateTime.now().toIso8601String(),
+      foodItemSourceType: FoodItemSourceType.foodItem,
+    );
+
+    await ref.read(foodLoggingProvider.notifier).logFood(testMeal);
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Test måltid tilføjet: ${testMeal.foodName}'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    }
+  }
+
+  Future<void> _clearAllMeals(WidgetRef ref, BuildContext context) async {
+    // Since we're using mock data, we'll just refresh
+    await ref.read(foodLoggingProvider.notifier).refresh();
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Alle måltider ryddet (mock data genindlæst)'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+    }
   }
 }
 

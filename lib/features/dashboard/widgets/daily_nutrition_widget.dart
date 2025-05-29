@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../food_logging/application/food_logging_notifier.dart';
+import '../../onboarding/application/onboarding_notifier.dart';
+import '../../onboarding/domain/user_profile_model.dart';
 
 /// Widget showing daily nutrition in a user-friendly way
 class DailyNutritionWidget extends ConsumerWidget {
@@ -10,6 +13,17 @@ class DailyNutritionWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final nutrition = ref.watch(dailyNutritionProvider);
+    final userProfile = ref.watch(onboardingProvider).userProfile;
+    
+    // Calculate targets based on user profile
+    final targets = _calculateNutritionTargets(userProfile);
+    
+    // Calculate progress for each macronutrient
+    final proteinProgress = targets['protein']! > 0 ? (nutrition['protein']! / targets['protein']!).clamp(0.0, 1.0) : 0.0;
+    final carbsProgress = targets['carbs']! > 0 ? (nutrition['carbs']! / targets['carbs']!).clamp(0.0, 1.0) : 0.0;
+    final fatProgress = targets['fat']! > 0 ? (nutrition['fat']! / targets['fat']!).clamp(0.0, 1.0) : 0.0;
+    
     return Container(
       decoration: AppDesign.sectionDecoration,
       child: Padding(
@@ -78,8 +92,8 @@ class DailyNutritionWidget extends ConsumerWidget {
                   child: _SimplifiedNutritionCard(
                     title: 'Protein',
                     subtitle: 'Opbygger muskler',
-                    progress: 0.30, // 45/150
-                    progressText: 'God start',
+                    progress: proteinProgress,
+                    progressText: '${nutrition['protein']}g / ${targets['protein']}g',
                     color: AppColors.error,
                     icon: MdiIcons.dumbbell,
                   ),
@@ -89,8 +103,8 @@ class DailyNutritionWidget extends ConsumerWidget {
                   child: _SimplifiedNutritionCard(
                     title: 'Energi',
                     subtitle: 'Fra kulhydrater',
-                    progress: 0.60, // 120/200
-                    progressText: 'På sporet',
+                    progress: carbsProgress,
+                    progressText: '${nutrition['carbs']}g / ${targets['carbs']}g',
                     color: AppColors.warning,
                     icon: MdiIcons.flash,
                   ),
@@ -100,8 +114,8 @@ class DailyNutritionWidget extends ConsumerWidget {
                   child: _SimplifiedNutritionCard(
                     title: 'Sundt fedt',
                     subtitle: 'Vigtige næringsstoffer',
-                    progress: 0.37, // 25/67
-                    progressText: 'Fin balance',
+                    progress: fatProgress,
+                    progressText: '${nutrition['fat']}g / ${targets['fat']}g',
                     color: AppColors.success,
                     icon: MdiIcons.heart,
                   ),
@@ -143,6 +157,29 @@ class DailyNutritionWidget extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Map<String, double> _calculateNutritionTargets(UserProfileModel userProfile) {
+    // Calculate nutrition targets based on user profile
+    // Basic calculations: protein 1.6g/kg body weight, carbs 45-65% of calories, fat 20-35% of calories
+    
+    final weight = userProfile.currentWeightKg;
+    final targetCalories = userProfile.tdee; // Use the TDEE from user profile
+    
+    final proteinTarget = weight * 1.6; // 1.6g per kg body weight
+    final carbsTarget = (targetCalories * 0.55) / 4; // 55% of calories, 4 cal/g
+    final fatTarget = (targetCalories * 0.25) / 9; // 25% of calories, 9 cal/g
+    
+    return {
+      'protein': proteinTarget,
+      'carbs': carbsTarget,
+      'fat': fatTarget,
+    };
+  }
+
+  double _calculateTargetCalories(UserProfileModel userProfile) {
+    // Use the TDEE calculation from user profile model
+    return userProfile.tdee;
   }
 }
 
