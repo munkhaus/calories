@@ -169,6 +169,13 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
                 fontWeight: KSizes.fontWeightMedium,
                 fontSize: 20,
               ),
+              errorText: _heightController.text.isNotEmpty && state.userProfile.heightCm <= 0 
+                  ? 'Indtast højde mellem 120-220 cm' 
+                  : null,
+              errorStyle: TextStyle(
+                color: AppColors.error,
+                fontSize: KSizes.fontSizeXS,
+              ),
             ),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: AppColors.primary,
@@ -197,37 +204,18 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.scale,
-              size: KSizes.iconM,
-              color: AppColors.secondary,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              'Hvad vejer du nu?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        OnboardingSectionHeader(
+          icon: MdiIcons.scale,
+          title: 'Hvad vejer du nu?',
+          subtitle: 'Din nuværende vægt bruges som udgangspunkt for dine mål',
+          iconColor: AppColors.secondary,
         ),
-        KSizes.spacingVerticalS,
-        Text(
-          'Din nuværende vægt bruges som udgangspunkt for dine mål',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        
         KSizes.spacingVerticalM,
         
-        // Single Input Field
-        Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            color: AppColors.secondary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
-          ),
+        // Single Input Field using standardized container
+        OnboardingInputContainer(
+          color: AppColors.secondary,
           child: TextField(
             controller: _currentWeightController,
             focusNode: _currentWeightFocus,
@@ -271,44 +259,16 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         
         KSizes.spacingVerticalM,
         
-        // Current Weight Slider
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: AppColors.secondary,
-            inactiveTrackColor: AppColors.secondary.withOpacity(0.3),
-            thumbColor: AppColors.secondary,
-            overlayColor: AppColors.secondary.withOpacity(0.2),
-            trackHeight: 6,
-          ),
-          child: Slider(
-            value: state.userProfile.currentWeightKg.clamp(30.0, 200.0),
-            min: 30,
-            max: 200,
-            divisions: 340,
-            onChanged: notifier.updateCurrentWeight,
-          ),
-        ),
-        
-        // Weight Range Labels
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KSizes.margin2x),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '30 kg',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              Text(
-                '200 kg',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
+        // Current Weight Slider using standardized component
+        OnboardingSlider(
+          value: state.userProfile.currentWeightKg,
+          min: 30,
+          max: 200,
+          divisions: 340,
+          onChanged: notifier.updateCurrentWeight,
+          color: AppColors.secondary,
+          minLabel: '30 kg',
+          maxLabel: '200 kg',
         ),
       ],
     );
@@ -318,37 +278,18 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(
-              MdiIcons.target,
-              size: KSizes.iconM,
-              color: AppColors.success,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              'Hvad er din målvægt?',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        OnboardingSectionHeader(
+          icon: MdiIcons.target,
+          title: 'Hvad er din målvægt?',
+          subtitle: 'Den vægt du gerne vil opnå',
+          iconColor: AppColors.success,
         ),
-        KSizes.spacingVerticalS,
-        Text(
-          'Den vægt du gerne vil opnå',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
+        
         KSizes.spacingVerticalM,
         
-        // Single Input Field
-        Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            color: AppColors.success.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(color: AppColors.success.withOpacity(0.3)),
-          ),
+        // Single Input Field using standardized container
+        OnboardingInputContainer(
+          color: AppColors.success,
           child: TextField(
             controller: _targetWeightController,
             focusNode: _targetWeightFocus,
@@ -392,44 +333,16 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         
         KSizes.spacingVerticalM,
         
-        // Target Weight Slider
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: AppColors.success,
-            inactiveTrackColor: AppColors.success.withOpacity(0.3),
-            thumbColor: AppColors.success,
-            overlayColor: AppColors.success.withOpacity(0.2),
-            trackHeight: 6,
-          ),
-          child: Slider(
-            value: state.userProfile.targetWeightKg.clamp(30.0, 200.0),
-            min: 30,
-            max: 200,
-            divisions: 340,
-            onChanged: notifier.updateTargetWeight,
-          ),
-        ),
-        
-        // Weight Range Labels
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KSizes.margin2x),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '30 kg',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-              Text(
-                '200 kg',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
+        // Target Weight Slider using standardized component
+        OnboardingSlider(
+          value: state.userProfile.targetWeightKg,
+          min: 30,
+          max: 200,
+          divisions: 340,
+          onChanged: notifier.updateTargetWeight,
+          color: AppColors.success,
+          minLabel: '30 kg',
+          maxLabel: '200 kg',
         ),
         
         // Weight Difference Display
@@ -531,65 +444,63 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       bmiIcon = MdiIcons.alert;
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.calculator,
-                  size: KSizes.iconM,
-                  color: AppColors.primary,
-                ),
-                KSizes.spacingHorizontalS,
-                Text(
-                  'Dit BMI',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
-            KSizes.spacingVerticalM,
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bmi.toStringAsFixed(1),
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: bmiColor,
-                          fontWeight: KSizes.fontWeightBold,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(
-                            bmiIcon,
-                            size: KSizes.iconS,
-                            color: bmiColor,
-                          ),
-                          KSizes.spacingHorizontalXS,
-                          Text(
-                            category,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: bmiColor,
-                              fontWeight: KSizes.fontWeightMedium,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OnboardingSectionHeader(
+          icon: MdiIcons.calculator,
+          title: 'Dit BMI',
+          subtitle: 'Beregnet ud fra din højde og vægt',
         ),
-      ),
+        
+        KSizes.spacingVerticalM,
+        
+        Container(
+          padding: const EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            color: bmiColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+            border: Border.all(color: bmiColor.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: bmiColor,
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  bmiIcon,
+                  color: Colors.white,
+                  size: KSizes.iconM,
+                ),
+              ),
+              KSizes.spacingHorizontalM,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'BMI: ${bmi.toStringAsFixed(1)}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: bmiColor,
+                        fontWeight: KSizes.fontWeightBold,
+                      ),
+                    ),
+                    Text(
+                      category,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

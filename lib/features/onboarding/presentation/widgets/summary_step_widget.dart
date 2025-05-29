@@ -527,14 +527,7 @@ class SummaryStepWidget extends ConsumerWidget {
                 color: AppColors.primary,
               ),
             ),
-            KSizes.spacingVerticalS,
-            Text(
-              'Du er nu klar til at begynde din sundhedsrejse! Tryk på "Færdig" for at afslutte opsætningen.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            KSizes.spacingVerticalL,
           ],
         ),
       ),

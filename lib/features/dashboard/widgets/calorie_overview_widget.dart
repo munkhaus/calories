@@ -25,29 +25,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final remainingCalories = (targetCalories - consumedCalories).clamp(0, double.infinity);
 
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.02),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
         padding: const EdgeInsets.all(KSizes.margin3x),
         child: Column(
@@ -61,7 +39,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: EdgeInsets.all(KSizes.margin1x),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [AppColors.primary, AppColors.secondary],
@@ -71,7 +49,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                         child: Icon(
                           MdiIcons.fire,
                           color: Colors.white,
-                          size: 16,
+                          size: KSizes.iconS,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -207,7 +185,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                           Text(
                             '${consumedCalories.toInt()}',
                             style: TextStyle(
-                              fontSize: 24,
+                              fontSize: KSizes.fontSizeXL,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
                             ),
@@ -355,31 +333,31 @@ class _StatCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), // Reduced padding
+        padding: EdgeInsets.symmetric(horizontal: KSizes.margin2x, vertical: KSizes.margin2x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Icon with colored background
             Container(
-              width: 20, // Reduced from 24
-              height: 20, // Reduced from 24
+              width: KSizes.iconM,
+              height: KSizes.iconM,
               decoration: BoxDecoration(
                 color: color,
-                borderRadius: BorderRadius.circular(4), // Reduced from 6
+                borderRadius: BorderRadius.circular(KSizes.radiusXS),
               ),
               child: Icon(
                 _getIconForLabel(label),
                 color: Colors.white,
-                size: 12, // Reduced from 14
+                size: KSizes.iconS,
               ),
             ),
-            const SizedBox(height: 4), // Reduced spacing
+            SizedBox(height: KSizes.margin1x),
             // Value
             Flexible(
               child: Text(
                 value,
                 style: TextStyle(
-                  fontSize: 11, // Reduced font size
+                  fontSize: KSizes.fontSizeS,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
@@ -393,7 +371,7 @@ class _StatCard extends StatelessWidget {
               child: Text(
                 label,
                 style: TextStyle(
-                  fontSize: 9, // Reduced label font
+                  fontSize: KSizes.fontSizeXS,
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w500,
                 ),

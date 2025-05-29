@@ -47,9 +47,7 @@ class OnboardingState with _$OnboardingState {
       case OnboardingStep.physicalInfo:
         return userProfile.heightCm > 0 &&
             userProfile.currentWeightKg > 0 &&
-            userProfile.targetWeightKg > 0 &&
-            userProfile.goalType != null &&
-            userProfile.activityLevel != null;
+            userProfile.targetWeightKg > 0;
       case OnboardingStep.goals:
         return userProfile.goalType != null && userProfile.activityLevel != null;
       case OnboardingStep.summary:

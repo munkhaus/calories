@@ -11,29 +11,7 @@ class DailyNutritionWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.02),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
         padding: const EdgeInsets.all(KSizes.margin4x),
         child: Column(
@@ -43,17 +21,20 @@ class DailyNutritionWidget extends ConsumerWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: EdgeInsets.all(KSizes.margin1x),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.success, AppColors.primary],
+                      colors: [
+                        AppColors.secondary.withOpacity(0.2),
+                        AppColors.primary.withOpacity(0.2),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(KSizes.radiusM),
                   ),
                   child: Icon(
-                    MdiIcons.foodVariant,
-                    color: Colors.white,
-                    size: 16,
+                    MdiIcons.chartDonut,
+                    color: AppColors.secondary,
+                    size: KSizes.iconS,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -221,7 +202,7 @@ class _SimplifiedNutritionCard extends StatelessWidget {
           Text(
             subtitle,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: KSizes.fontSizeXS,
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w400,
             ),
@@ -234,10 +215,10 @@ class _SimplifiedNutritionCard extends StatelessWidget {
           
           // Progress indicator - simplified
           Container(
-            height: 6,
+            height: KSizes.margin1x,
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(KSizes.radiusXS),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -245,19 +226,19 @@ class _SimplifiedNutritionCard extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(KSizes.radiusXS),
                 ),
               ),
             ),
           ),
           
-          const SizedBox(height: 4),
+          SizedBox(height: KSizes.margin1x),
           
           // Progress text instead of numbers
           Text(
             progressText,
             style: TextStyle(
-              fontSize: 8,
+              fontSize: KSizes.fontSizeXS,
               color: color,
               fontWeight: FontWeight.w600,
             ),

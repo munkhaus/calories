@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/user_profile_model.dart';
 import '../infrastructure/onboarding_storage_service.dart';
 import 'onboarding_state.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 /// Onboarding state notifier
 class OnboardingNotifier extends StateNotifier<OnboardingState> {
@@ -165,8 +164,16 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   /// Update current weight in kg
   void updateCurrentWeight(double currentWeightKg) {
+    // Auto-initialize target weight if not set yet
+    final targetWeight = state.userProfile.targetWeightKg <= 0 
+        ? currentWeightKg 
+        : state.userProfile.targetWeightKg;
+    
     state = state.copyWith(
-      userProfile: state.userProfile.copyWith(currentWeightKg: currentWeightKg),
+      userProfile: state.userProfile.copyWith(
+        currentWeightKg: currentWeightKg,
+        targetWeightKg: targetWeight,
+      ),
     );
     _calculateTargets();
     _autoSaveProgress();

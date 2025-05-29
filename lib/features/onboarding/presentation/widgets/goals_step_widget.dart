@@ -410,32 +410,45 @@ class GoalsStepWidget extends ConsumerWidget {
             
             KSizes.spacingVerticalS,
             
-            // Macronutrients with better spacing
-            Row(
+            // Macronutrients with clear, spacious layout
+            KSizes.spacingVerticalS,
+            
+            // Macronutrient header
+            Text(
+              'Daglige makronæringsstoffer:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: KSizes.fontWeightMedium,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            
+            KSizes.spacingVerticalXS,
+            
+            // Macronutrient cards in a column for better readability
+            Column(
               children: [
-                Expanded(
-                  child: _buildMacroItem(
-                    context,
-                    'P',
-                    '${targetProtein.round()}g',
-                    AppColors.error,
-                  ),
+                _buildMacroRow(
+                  context,
+                  'Protein (byggesten)',
+                  '${targetProtein.round()}g',
+                  AppColors.error,
+                  MdiIcons.dumbbell,
                 ),
-                Expanded(
-                  child: _buildMacroItem(
-                    context,
-                    'F',
-                    '${targetFat.round()}g',
-                    AppColors.warning,
-                  ),
+                SizedBox(height: KSizes.margin1x),
+                _buildMacroRow(
+                  context,
+                  'Fedt (energi)',
+                  '${targetFat.round()}g',
+                  AppColors.warning,
+                  MdiIcons.flash,
                 ),
-                Expanded(
-                  child: _buildMacroItem(
-                    context,
-                    'K',
-                    '${targetCarbs.round()}g',
-                    AppColors.info,
-                  ),
+                SizedBox(height: KSizes.margin1x),
+                _buildMacroRow(
+                  context,
+                  'Kulhydrater (brændstof)',
+                  '${targetCarbs.round()}g',
+                  AppColors.info,
+                  MdiIcons.fire,
                 ),
               ],
             ),
@@ -454,31 +467,35 @@ class GoalsStepWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildMacroItem(BuildContext context, String label, String value, Color color) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildMacroRow(BuildContext context, String label, String value, Color color, IconData icon) {
+    return Row(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: KSizes.fontSizeXS,
-            color: AppColors.textSecondary,
-            fontWeight: KSizes.fontWeightMedium,
-          ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        Icon(
+          icon,
+          size: KSizes.iconM,
+          color: color,
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: KSizes.fontSizeS,
-            fontWeight: KSizes.fontWeightBold,
-            color: color,
+        KSizes.spacingHorizontalM,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: KSizes.fontWeightMedium,
+                ),
+              ),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: KSizes.fontWeightBold,
+                  color: color,
+                ),
+              ),
+            ],
           ),
-          textAlign: TextAlign.center,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

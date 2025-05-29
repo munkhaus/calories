@@ -249,7 +249,7 @@ class _MealCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _MacroCard(
-                  label: 'P',
+                  label: 'Protein',
                   value: '${meal.protein}g',
                   color: const Color(0xFFE8B4B8), // Light red/pink
                 ),
@@ -257,7 +257,7 @@ class _MealCard extends StatelessWidget {
               const SizedBox(width: KSizes.margin2x),
               Expanded(
                 child: _MacroCard(
-                  label: 'K',
+                  label: 'Kulhydrater',
                   value: '${meal.carbs}g',
                   color: const Color(0xFFF5E6A3), // Light yellow
                 ),
@@ -265,7 +265,7 @@ class _MealCard extends StatelessWidget {
               const SizedBox(width: KSizes.margin2x),
               Expanded(
                 child: _MacroCard(
-                  label: 'F',
+                  label: 'Fedt',
                   value: '${meal.fat}g',
                   color: const Color(0xFFB8D4E3), // Light blue
                 ),

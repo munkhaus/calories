@@ -21,16 +21,7 @@ class DashboardPage extends ConsumerWidget {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppColors.primary.withOpacity(0.05),
-              AppColors.background,
-              AppColors.secondary.withOpacity(0.03),
-            ],
-            stops: const [0.0, 0.3, 1.0],
-          ),
+          gradient: AppDesign.backgroundGradient,
         ),
         child: SafeArea(
           child: CustomScrollView(
@@ -229,29 +220,7 @@ class DashboardPage extends ConsumerWidget {
 
   Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
     return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.01),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
         padding: const EdgeInsets.all(KSizes.margin4x),
         child: Column(
@@ -389,36 +358,14 @@ class DashboardPage extends ConsumerWidget {
 
     return Container(
       height: KSizes.cardHeightL,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.info.withOpacity(0.02),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.info.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
         padding: const EdgeInsets.all(KSizes.margin2x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Container(
-              padding: const EdgeInsets.all(4),
+              padding: EdgeInsets.all(KSizes.margin1x),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
@@ -428,7 +375,7 @@ class DashboardPage extends ConsumerWidget {
               child: Icon(
                 MdiIcons.water,
                 color: Colors.white,
-                size: 16,
+                size: KSizes.iconS,
               ),
             ),
             Text(
@@ -491,36 +438,14 @@ class DashboardPage extends ConsumerWidget {
 
     return Container(
       height: KSizes.cardHeightL,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.warning.withOpacity(0.02),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.warning.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
         padding: const EdgeInsets.all(KSizes.margin2x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Container(
-              padding: const EdgeInsets.all(4),
+              padding: EdgeInsets.all(KSizes.margin1x),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
@@ -530,7 +455,7 @@ class DashboardPage extends ConsumerWidget {
               child: Icon(
                 MdiIcons.fire,
                 color: Colors.white,
-                size: 16,
+                size: KSizes.iconS,
               ),
             ),
             Text(
@@ -577,7 +502,7 @@ class DashboardPage extends ConsumerWidget {
               child: Text(
                 'Bedste: $bestStreak',
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: KSizes.fontSizeXS,
                   color: AppColors.warning,
                   fontWeight: KSizes.fontWeightSemiBold,
                 ),
