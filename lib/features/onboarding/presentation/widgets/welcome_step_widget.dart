@@ -12,169 +12,195 @@ class WelcomeStepWidget extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppDesign.backgroundGradient,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const SizedBox(height: 16),
-          
-          // Hero section
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [
-                  AppColors.primary.withOpacity(0.1),
-                  AppColors.primary.withOpacity(0.05),
-                  Colors.transparent,
-                ],
-              ),
-              shape: BoxShape.circle,
-            ),
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.secondary,
-                  ],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Icon(
-                MdiIcons.heart,
-                size: 32,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Welcome text
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white,
-                  AppColors.primary.withOpacity(0.02),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(KSizes.radiusL),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.08),
-                  blurRadius: 15,
-                  offset: const Offset(0, 6),
-                ),
-                BoxShadow(
-                  color: Colors.white,
-                  blurRadius: 6,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Velkommen til din\nsunde rejse! 🎯',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    height: 1.2,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                const SizedBox(height: 8),
-                
-                Text(
-                  'Lad os komme i gang med at opsætte din personlige kalorietræker.',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                    height: 1.4,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 20),
-          
-          // Feature highlights
-          _buildFeatureCards(),
-          
-          const SizedBox(height: 16),
-          
-          // Call to action
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.success.withOpacity(0.1),
-                  AppColors.primary.withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(KSizes.radiusM),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.2),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: AppColors.success,
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
-                  child: Icon(
-                    MdiIcons.checkCircle,
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Det tager kun 2-3 minutter',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+          // Main content area with scroll
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(KSizes.margin4x),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: KSizes.margin4x),
+                  
+                  // Hero section with proper container
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin6x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.08),
+                          blurRadius: KSizes.blurRadiusXL,
+                          offset: const Offset(0, 8),
+                        ),
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.8),
+                          blurRadius: 8,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        // Heart icon with proper container
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary,
+                                AppColors.secondary,
+                              ],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.3),
+                                blurRadius: KSizes.blurRadiusL,
+                                offset: KSizes.shadowOffsetM,
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            MdiIcons.heart,
+                            size: KSizes.iconXL,
+                            color: Colors.white,
+                          ),
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin4x),
+                        
+                        // Welcome text
+                        Text(
+                          'Velkommen til din\nsunde rejse! 🎯',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeXXL,
+                            fontWeight: KSizes.fontWeightBold,
+                            color: AppColors.textPrimary,
+                            height: 1.2,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin2x),
+                        
+                        Text(
+                          'Lad os komme i gang med at opsætte din personlige kalorietræker.',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeL,
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  
+                  const SizedBox(height: KSizes.margin6x),
+                  
+                  // Feature highlights in container
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.08),
+                          blurRadius: KSizes.blurRadiusL,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _buildFeatureCards(),
+                  ),
+                  
+                  const SizedBox(height: KSizes.margin4x),
+                  
+                  // Call to action in container
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.success.withOpacity(0.1),
+                          AppColors.primary.withOpacity(0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(KSizes.radiusL),
+                      border: Border.all(
+                        color: AppColors.primary.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(KSizes.margin2x),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            borderRadius: BorderRadius.circular(KSizes.radiusM),
+                          ),
+                          child: Icon(
+                            MdiIcons.checkCircle,
+                            color: Colors.white,
+                            size: KSizes.iconM,
+                          ),
+                        ),
+                        const SizedBox(width: KSizes.margin3x),
+                        Expanded(
+                          child: Text(
+                            'Det tager kun 2-3 minutter',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeL,
+                              fontWeight: KSizes.fontWeightSemiBold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: KSizes.margin6x),
+                ],
+              ),
             ),
           ),
           
-          const SizedBox(height: 24),
-          
-          // Start button
-          CustomButton(
-            text: 'Kom i gang',
-            variant: ButtonVariant.primary,
-            onPressed: () => ref.read(onboardingProvider.notifier).nextStep(),
+          // Bottom button area - fixed at bottom
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.border,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: CustomButton(
+                text: 'Kom i gang',
+                variant: ButtonVariant.primary,
+                onPressed: () => ref.read(onboardingProvider.notifier).nextStep(),
+                icon: MdiIcons.arrowRight,
+              ),
+            ),
           ),
-          
-          const SizedBox(height: 20),
         ],
       ),
     );
@@ -185,92 +211,108 @@ class WelcomeStepWidget extends ConsumerWidget {
       _FeatureData(
         icon: MdiIcons.target,
         title: 'Personlige mål',
-        description: 'Sæt realistiske mål',
+        description: 'Sæt realistiske mål baseret på dine behov',
         color: AppColors.primary,
       ),
       _FeatureData(
         icon: MdiIcons.chartLine,
         title: 'Smart tracking',
-        description: 'Nem logging',
+        description: 'Nem og hurtig logging af mad og aktivitet',
         color: AppColors.info,
       ),
       _FeatureData(
         icon: MdiIcons.trophy,
-        title: 'Resultater',
-        description: 'Se din fremgang',
+        title: 'Se resultater',
+        description: 'Følg din fremgang mod dine mål',
         color: AppColors.success,
       ),
     ];
 
     return Column(
-      children: features.map((feature) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white,
-                feature.color.withOpacity(0.02),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(KSizes.radiusL),
-            boxShadow: [
-              BoxShadow(
-                color: feature.color.withOpacity(0.08),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
-              ),
-            ],
+      children: [
+        Text(
+          'Hvad kan du forvente?',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeL,
+            fontWeight: KSizes.fontWeightSemiBold,
+            color: AppColors.textPrimary,
           ),
-          child: Row(
+        ),
+        const SizedBox(height: KSizes.margin4x),
+        ...features.asMap().entries.map((entry) {
+          final index = entry.key;
+          final feature = entry.value;
+          return Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(KSizes.margin3x),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
-                      feature.color,
-                      feature.color.withOpacity(0.8),
+                      feature.color.withOpacity(0.08),
+                      feature.color.withOpacity(0.02),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                  border: Border.all(
+                    color: feature.color.withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
-                child: Icon(
-                  feature.icon,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      feature.title,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            feature.color,
+                            feature.color.withOpacity(0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(KSizes.radiusL),
+                      ),
+                      child: Icon(
+                        feature.icon,
+                        color: Colors.white,
+                        size: KSizes.iconM,
                       ),
                     ),
-                    Text(
-                      feature.description,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                    const SizedBox(width: KSizes.margin3x),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            feature.title,
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeL,
+                              fontWeight: KSizes.fontWeightSemiBold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            feature.description,
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeM,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
+              if (index < features.length - 1) const SizedBox(height: KSizes.margin2x),
             ],
-          ),
-        ),
-      )).toList(),
+          );
+        }).toList(),
+      ],
     );
   }
 }

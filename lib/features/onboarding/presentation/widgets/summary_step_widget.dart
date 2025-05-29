@@ -416,7 +416,17 @@ class SummaryStepWidget extends ConsumerWidget {
             
             KSizes.spacingVerticalM,
             
-            // Macronutrients
+            // Ernæringsfordeling
+            Text(
+              'Ernæringsfordeling',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: KSizes.fontWeightMedium,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            
+            KSizes.spacingVerticalS,
+            
             Row(
               children: [
                 Expanded(

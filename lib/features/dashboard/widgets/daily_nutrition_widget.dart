@@ -59,10 +59,10 @@ class DailyNutritionWidget extends ConsumerWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Dagens makroer',
+                    'Dagens ernæring',
                     style: TextStyle(
                       fontSize: KSizes.fontSizeL,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: KSizes.fontWeightSemiBold,
                       color: AppColors.textPrimary,
                     ),
                   ),

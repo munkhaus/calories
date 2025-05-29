@@ -49,24 +49,16 @@ class RecentMealsWidget extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: Colors.transparent,
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
@@ -90,7 +82,7 @@ class RecentMealsWidget extends ConsumerWidget {
                       'Dagens måltider',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeL,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -101,21 +93,27 @@ class RecentMealsWidget extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
                     color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: KSizes.fontWeightSemiBold,
                   ),
                 ),
               ],
             ),
-            
-            const SizedBox(height: KSizes.margin4x),
-            
-            // Meals list - Fixed height for exactly 3 rows
-            ...meals.map((meal) => Padding(
-              padding: const EdgeInsets.only(bottom: KSizes.margin3x),
-              child: _MealCard(meal: meal),
-            )).toList(),
-          ],
-        ),
+          ),
+          
+          const SizedBox(height: KSizes.margin4x),
+          
+          // Meals list - Separate cards with proper spacing
+          ...meals.asMap().entries.map((entry) {
+            final index = entry.key;
+            final meal = entry.value;
+            return Column(
+              children: [
+                _MealCard(meal: meal),
+                if (index < meals.length - 1) const SizedBox(height: KSizes.margin3x),
+              ],
+            );
+          }).toList(),
+        ],
       ),
     );
   }
@@ -129,14 +127,23 @@ class _MealCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(KSizes.margin3x),
+      margin: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        border: Border.all(
-          color: AppColors.surface.withOpacity(0.5),
-          width: 1,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.8),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -145,8 +152,8 @@ class _MealCard extends StatelessWidget {
             children: [
               // Icon
               Container(
-                width: 60,
-                height: 60,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   color: meal.color,
                   borderRadius: BorderRadius.circular(KSizes.radiusL),
@@ -154,7 +161,7 @@ class _MealCard extends StatelessWidget {
                 child: Icon(
                   meal.icon,
                   color: Colors.white,
-                  size: 28,
+                  size: KSizes.iconL,
                 ),
               ),
               
@@ -172,7 +179,7 @@ class _MealCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: KSizes.fontSizeS,
                             color: meal.color,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: KSizes.fontWeightSemiBold,
                           ),
                         ),
                         const SizedBox(width: KSizes.margin2x),
@@ -181,7 +188,7 @@ class _MealCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: KSizes.fontSizeS,
                             color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: KSizes.fontWeightMedium,
                           ),
                         ),
                       ],
@@ -191,7 +198,7 @@ class _MealCard extends StatelessWidget {
                       meal.name,
                       style: TextStyle(
                         fontSize: KSizes.fontSizeL,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
                       ),
                     ),
@@ -206,9 +213,9 @@ class _MealCard extends StatelessWidget {
                   Text(
                     '${meal.calories}',
                     style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
+                      fontSize: KSizes.fontSizeXXL,
+                      fontWeight: KSizes.fontWeightBold,
+                      color: meal.color,
                     ),
                   ),
                   Text(
@@ -216,7 +223,7 @@ class _MealCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: KSizes.fontSizeS,
                       color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
                   ),
                 ],
@@ -274,7 +281,10 @@ class _MacroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      padding: const EdgeInsets.symmetric(
+        vertical: KSizes.margin2x,
+        horizontal: KSizes.margin3x,
+      ),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
@@ -284,8 +294,8 @@ class _MacroCard extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: KSizes.fontSizeS,
-              fontWeight: FontWeight.w600,
+              fontSize: KSizes.fontSizeM,
+              fontWeight: KSizes.fontWeightBold,
               color: AppColors.textSecondary,
             ),
           ),
@@ -294,7 +304,7 @@ class _MacroCard extends StatelessWidget {
             value,
             style: TextStyle(
               fontSize: KSizes.fontSizeM,
-              fontWeight: FontWeight.w700,
+              fontWeight: KSizes.fontWeightBold,
               color: AppColors.textPrimary,
             ),
           ),

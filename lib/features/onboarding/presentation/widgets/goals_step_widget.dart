@@ -539,6 +539,7 @@ class GoalsStepWidget extends ConsumerWidget {
                     AppColors.error,
                   ),
                 ),
+                SizedBox(width: KSizes.margin1x),
                 Expanded(
                   child: _buildMacroItem(
                     context,
@@ -547,10 +548,11 @@ class GoalsStepWidget extends ConsumerWidget {
                     AppColors.warning,
                   ),
                 ),
+                SizedBox(width: KSizes.margin1x),
                 Expanded(
                   child: _buildMacroItem(
                     context,
-                    'Kulhydrater',
+                    'Kulhyd.',
                     '${targetCarbs.round()}g',
                     AppColors.success,
                   ),
@@ -574,19 +576,27 @@ class GoalsStepWidget extends ConsumerWidget {
 
   Widget _buildMacroItem(BuildContext context, String label, String value, Color color) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
+        const SizedBox(height: 2),
         Text(
           value,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontWeight: KSizes.fontWeightBold,
             color: color,
           ),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

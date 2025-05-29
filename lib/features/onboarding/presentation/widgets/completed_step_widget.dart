@@ -14,34 +14,48 @@ class CompletedStepWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
-    final screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
       decoration: BoxDecoration(
         gradient: AppDesign.backgroundGradient,
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-          child: Column(
-            children: [
-              // Top spacing
-              SizedBox(height: screenHeight * 0.1),
-              
-              // Hero Section - Centrally positioned
-              Expanded(
-                flex: 3,
-                child: _buildHeroSection(context, state),
+      child: Column(
+        children: [
+          // Main content area with scroll
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(KSizes.margin4x),
+              child: Column(
+                children: [
+                  const SizedBox(height: KSizes.margin4x),
+                  
+                  // Hero Section
+                  _buildHeroSection(context, state),
+                  
+                  const SizedBox(height: KSizes.margin6x),
+                ],
               ),
-              
-              // Action Section - Fixed at bottom
-              _buildActionSection(context, ref),
-              
-              // Bottom spacing
-              const SizedBox(height: KSizes.margin6x),
-            ],
+            ),
           ),
-        ),
+          
+          // Bottom button area - fixed at bottom
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.border,
+                  width: 1,
+                ),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: _buildActionSection(context, ref),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -50,10 +64,10 @@ class CompletedStepWidget extends ConsumerWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Success Animation Container
+        // Success Animation Container - slightly smaller
         Container(
-          width: 120,
-          height: 120,
+          width: 100,
+          height: 100,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -67,50 +81,50 @@ class CompletedStepWidget extends ConsumerWidget {
             boxShadow: [
               BoxShadow(
                 color: AppColors.success.withOpacity(0.3),
-                blurRadius: 24,
+                blurRadius: KSizes.blurRadiusL,
                 offset: const Offset(0, 8),
               ),
               BoxShadow(
                 color: AppColors.success.withOpacity(0.1),
-                blurRadius: 48,
+                blurRadius: KSizes.blurRadiusXL,
                 offset: const Offset(0, 16),
               ),
             ],
           ),
           child: Icon(
             MdiIcons.checkBold,
-            size: 60,
+            size: KSizes.iconL,
             color: Colors.white,
           ),
         ),
         
-        const SizedBox(height: KSizes.margin6x),
+        const SizedBox(height: KSizes.margin4x),
         
         // Success Message
         Text(
           'Fantastisk! 🎉',
           style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
+            fontSize: KSizes.fontSizeXXL,
+            fontWeight: KSizes.fontWeightBold,
             color: AppColors.textPrimary,
             letterSpacing: -0.5,
           ),
           textAlign: TextAlign.center,
         ),
         
-        const SizedBox(height: KSizes.margin3x),
+        const SizedBox(height: KSizes.margin2x),
         
         Text(
           'Din profil er nu komplet!',
           style: TextStyle(
-            fontSize: 18,
+            fontSize: KSizes.fontSizeL,
             color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+            fontWeight: KSizes.fontWeightMedium,
           ),
           textAlign: TextAlign.center,
         ),
         
-        const SizedBox(height: KSizes.margin6x),
+        const SizedBox(height: KSizes.margin4x),
         
         // Profile Summary Card
         _buildProfileSummaryCard(context, state),
@@ -123,7 +137,7 @@ class CompletedStepWidget extends ConsumerWidget {
     
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
+      padding: const EdgeInsets.all(KSizes.margin3x),
       decoration: AppDesign.cardDecoration.copyWith(
         gradient: LinearGradient(
           colors: [
@@ -157,14 +171,14 @@ class CompletedStepWidget extends ConsumerWidget {
                 'Din profil',
                 style: TextStyle(
                   fontSize: KSizes.fontSizeL,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: KSizes.fontWeightSemiBold,
                   color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
           
-          const SizedBox(height: KSizes.margin4x),
+          const SizedBox(height: KSizes.margin3x),
           
           // Profile Stats Grid
           _buildProfileStatsGrid(userProfile),
@@ -203,12 +217,12 @@ class CompletedStepWidget extends ConsumerWidget {
 
   Widget _buildStatItem(_ProfileStat stat) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: KSizes.margin2x),
+      padding: const EdgeInsets.symmetric(vertical: KSizes.margin1x),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(KSizes.radiusM),
@@ -231,7 +245,7 @@ class CompletedStepWidget extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: KSizes.fontSizeS,
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: KSizes.fontWeightMedium,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -240,7 +254,7 @@ class CompletedStepWidget extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: KSizes.fontWeightSemiBold,
                   ),
                 ),
               ],
@@ -257,7 +271,7 @@ class CompletedStepWidget extends ConsumerWidget {
         // Main CTA Button
         Container(
           width: double.infinity,
-          height: 56,
+          height: KSizes.buttonHeight,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -271,8 +285,8 @@ class CompletedStepWidget extends ConsumerWidget {
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                blurRadius: KSizes.blurRadiusL,
+                offset: KSizes.shadowOffsetL,
               ),
             ],
           ),
@@ -295,7 +309,7 @@ class CompletedStepWidget extends ConsumerWidget {
                       'Kom i gang!',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeL,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: KSizes.fontWeightBold,
                         color: Colors.white,
                         letterSpacing: 0.5,
                       ),
@@ -307,11 +321,11 @@ class CompletedStepWidget extends ConsumerWidget {
           ),
         ),
         
-        const SizedBox(height: KSizes.margin4x),
+        const SizedBox(height: KSizes.margin3x),
         
         // Secondary Action
         TextButton.icon(
-          onPressed: () => _showEditProfileDialog(context, ref),
+          onPressed: () => _editProfile(context, ref),
           icon: Icon(
             MdiIcons.pencil,
             size: KSizes.iconS,
@@ -322,7 +336,7 @@ class CompletedStepWidget extends ConsumerWidget {
             style: TextStyle(
               fontSize: KSizes.fontSizeM,
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: KSizes.fontWeightMedium,
             ),
           ),
         ),
@@ -338,69 +352,9 @@ class CompletedStepWidget extends ConsumerWidget {
     );
   }
 
-  /// Show edit profile confirmation dialog
-  void _showEditProfileDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusL),
-        ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(KSizes.margin2x),
-              decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-              ),
-              child: Icon(
-                MdiIcons.pencil,
-                color: AppColors.primary,
-                size: KSizes.iconM,
-              ),
-            ),
-            KSizes.spacingHorizontalM,
-            Expanded(
-              child: Text(
-                'Rediger profil',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeXL,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          'Vil du gå tilbage til onboarding for at redigere dine oplysninger?',
-          style: TextStyle(
-            fontSize: KSizes.fontSizeM,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Annuller',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              ref.read(onboardingProvider.notifier).restartOnboardingFlow();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Rediger'),
-          ),
-        ],
-      ),
-    );
+  /// Edit profile by restarting onboarding flow
+  void _editProfile(BuildContext context, WidgetRef ref) {
+    ref.read(onboardingProvider.notifier).restartOnboardingFlow();
   }
 
   String _getGoalTypeText(dynamic goalType) {

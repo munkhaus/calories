@@ -55,7 +55,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(KSizes.margin4x),
+          padding: const EdgeInsets.symmetric(
+            horizontal: KSizes.margin4x,
+            vertical: KSizes.margin2x,
+          ),
           child: Column(
             children: [
               // Progress indicator
@@ -64,7 +67,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
                 totalSteps: 5,
               ),
               
-              const SizedBox(height: KSizes.margin4x),
+              const SizedBox(height: KSizes.margin6x),
               
               // Main content
               Expanded(
@@ -124,43 +127,62 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
         state.currentStep == OnboardingStep.completed) {
       return const SizedBox.shrink();
     }
-    
-    return Row(
-      children: [
-        // Back button
-        if (_getStepIndex(state.currentStep) > 0)
-          Expanded(
-            child: CustomButton(
-              text: 'Tilbage',
-              variant: ButtonVariant.outline,
-              onPressed: () {
-                ref.read(onboardingProvider.notifier).previousStep();
-              },
+
+    return Container(
+      padding: const EdgeInsets.only(top: KSizes.margin6x),
+      child: Row(
+        children: [
+          // Special case: When editing from summary, only show "Gå til opsummering" button
+          if (state.isEditingFromSummary) ...[
+            Expanded(
+              child: CustomButton(
+                text: 'Gå til opsummering',
+                variant: ButtonVariant.primary,
+                isLoading: state.isLoading,
+                onPressed: state.canProceedToNext
+                    ? () {
+                        ref.read(onboardingProvider.notifier).goToStep(4); // Go to summary step
+                      }
+                    : null,
+              ),
             ),
-          ),
-        
-        if (_getStepIndex(state.currentStep) > 0) const SizedBox(width: KSizes.margin4x),
-        
-        // Next/Complete button
-        Expanded(
-          flex: 2,
-          child: CustomButton(
-            text: state.currentStep == OnboardingStep.summary ? 'Færdig' : 'Næste',
-            variant: ButtonVariant.primary,
-            isLoading: state.isLoading,
-            onPressed: state.canProceedToNext
-                ? () async {
-                    if (state.currentStep == OnboardingStep.summary) {
-                      await ref.read(onboardingProvider.notifier).completeOnboarding();
-                      // The AppWrapper will detect completion and navigate automatically
-                    } else {
-                      ref.read(onboardingProvider.notifier).nextStep();
-                    }
-                  }
-                : null,
-          ),
-        ),
-      ],
+          ] else ...[
+            // Normal navigation: Back button (if not first step)
+            if (_getStepIndex(state.currentStep) > 0) ...[
+              Expanded(
+                child: CustomButton(
+                  text: 'Tilbage',
+                  variant: ButtonVariant.outline,
+                  onPressed: () {
+                    ref.read(onboardingProvider.notifier).previousStep();
+                  },
+                ),
+              ),
+              const SizedBox(width: KSizes.margin3x),
+            ],
+            
+            // Next/Complete button
+            Expanded(
+              flex: _getStepIndex(state.currentStep) > 0 ? 2 : 1,
+              child: CustomButton(
+                text: state.currentStep == OnboardingStep.summary ? 'Færdig' : 'Næste',
+                variant: ButtonVariant.primary,
+                isLoading: state.isLoading,
+                onPressed: state.canProceedToNext
+                    ? () async {
+                        if (state.currentStep == OnboardingStep.summary) {
+                          await ref.read(onboardingProvider.notifier).completeOnboarding();
+                          // The AppWrapper will detect completion and navigate automatically
+                        } else {
+                          ref.read(onboardingProvider.notifier).nextStep();
+                        }
+                      }
+                    : null,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 } 
