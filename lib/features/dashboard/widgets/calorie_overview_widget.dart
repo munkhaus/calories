@@ -46,32 +46,9 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final hasExceededGoal = remainingCalories < 0;
 
     return Container(
-      margin: EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            AppColors.primary.withOpacity(0.02),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-          BoxShadow(
-            color: Colors.white,
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      decoration: AppDesign.sectionDecoration,
       child: Padding(
-        padding: EdgeInsets.all(KSizes.margin6x),
+        padding: EdgeInsets.all(KSizes.margin4x),
         child: Column(
           children: [
             // Header with icon
