@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Onboarding Feature - Flutter Calories App</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+                
+                <li class="section">Features</li>
+                <li><a href="onboarding.html" class="active">👤 Onboarding</a></li>
+                <li><a href="nutrition-tracking.html">🍎 Nutrition</a></li>
+                <li><a href="user-profile.html">⚙️ Profile</a></li>
+                
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Setup</a></li>
+                <li><a href="coding-standards.html">📝 Standards</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>📝 Onboarding Feature</h1>
+                <p>Komplet dokumentation af onboarding flowet og implementering.</p>
+            </header>
+
+            <div class="wiki-content">
+                <!-- Feature Overview -->
+                <div class="overview">
+                    <h2>🎯 Onboarding Formål</h2>
+                    <p>Indsamle brugerdata for personalized kalorie- og ernæringsberegninger</p>
+                </div>
+
+                <!-- Key Features in compact cards -->
+                <div class="card-grid">
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <span class="feature-icon">👤</span>
+                            <h3>Personlige Data</h3>
+                        </div>
+                        <p>Navn, alder, køn</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <span class="feature-icon">📏</span>
+                            <h3>Fysiske Mål</h3>
+                        </div>
+                        <p>Højde, vægt, målvægt</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <span class="feature-icon">🎯</span>
+                            <h3>Mål & Aktivitet</h3>
+                        </div>
+                        <p>Aktivitetsniveau, mål</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <div class="feature-header">
+                            <span class="feature-icon">💾</span>
+                            <h3>Auto-Save</h3>
+                        </div>
+                        <p>Gemmer automatisk undervejs</p>
+                    </div>
+                </div>
+
+                <!-- Compact Step Flow -->
+                <h2>📋 Onboarding Flow</h2>
+                <div class="step-flow">
+                    <div class="step-item">
+                        <span class="step-number">1</span>
+                        <span class="step-title">Velkommen</span>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item">
+                        <span class="step-number">2</span>
+                        <span class="step-title">Personlig Info</span>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item">
+                        <span class="step-number">3</span>
+                        <span class="step-title">Fysiske Mål</span>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item">
+                        <span class="step-number">4</span>
+                        <span class="step-title">Aktivitet & Mål</span>
+                    </div>
+                    <div class="step-arrow">→</div>
+                    <div class="step-item">
+                        <span class="step-number">5</span>
+                        <span class="step-title">Opsummering</span>
+                    </div>
+                </div>
+
+                <h2>Step-by-Step Flow</h2>
+
+                <h3>1. 🏠 Welcome Step</h3>
+                <div class="code-block">
+                    <pre><code>OnboardingStep.welcome
+├── App branding & logo
+├── Feature highlights
+├── "Kom i gang" button
+└── No validation required</code></pre>
+                </div>
+
+                <h3>2. 👤 Personal Info Step</h3>
+                <div class="code-block">
+                    <pre><code>OnboardingStep.personalInfo
+├── Name input (required)
+├── Date of birth (DD/MM/YYYY format)
+│   ├── Three separate input fields
+│   ├── Real-time age calculation
+│   └── Date validation
+├── Gender selection (male/female)
+└── Validation: name.isNotEmpty && dateOfBirth != null && gender != null</code></pre>
+                </div>
+
+                <h3>3. 📏 Physical Info Step</h3>
+                <div class="code-block">
+                    <pre><code>OnboardingStep.physicalInfo
+├── Height slider (120-220 cm)
+├── Current weight slider (30-200 kg)
+├── Target weight slider (30-200 kg)
+├── Real-time BMI calculation
+└── Validation: heightCm > 0 && currentWeightKg > 0</code></pre>
+                </div>
+
+                <h3>4. 🎯 Goals Step</h3>
+                <div class="code-block">
+                    <pre><code>OnboardingStep.goals
+├── Goal type selection
+│   ├── Weight loss
+│   ├── Weight maintenance  
+│   ├── Weight gain
+│   └── Muscle gain
+├── Activity level selection
+│   ├── Sedentary
+│   ├── Lightly active
+│   ├── Moderately active
+│   ├── Very active
+│   └── Extra active
+├── Weekly goal adjustment
+└── Validation: goalType != null && activityLevel != null</code></pre>
+                </div>
+
+                <h3>5. 📋 Summary Step</h3>
+                <div class="code-block">
+                    <pre><code>OnboardingStep.summary
+├── Complete profile overview
+├── Calculated BMR/TDEE values
+├── Target calories display
+├── Macronutrient breakdown
+├── Edit buttons for each section
+└── "Fuldfør" button</code></pre>
+                </div>
+
+                <h3>6. ✅ Completion Step</h3>
+                <div class="code-block">
+                    <pre><code>OnboardingStep.completed
+├── Success animation
+├── Welcome message
+├── Profile saved confirmation
+└── Navigation to main app</code></pre>
+                </div>
+
+                <h2>Auto-Save Funktionalitet</h2>
+                
+                <p>Onboarding implementerer intelligent auto-save for at forhindre data tab:</p>
+
+                <div class="code-block">
+                    <pre><code>// Auto-save triggered på alle input changes
+void updateName(String name) {
+  state = state.copyWith(
+    userProfile: state.userProfile.copyWith(name: name),
+  );
+  _autoSaveProgress(); // ✅ Auto-save
+}
+
+void updateDateOfBirth(DateTime dateOfBirth) {
+  state = state.copyWith(
+    userProfile: state.userProfile.copyWith(dateOfBirth: dateOfBirth),
+  );
+  _calculateTargets(); // Recalculate BMR/TDEE
+  _autoSaveProgress(); // ✅ Auto-save
+}</code></pre>
+                </div>
+
+                <h2>Data Calculations</h2>
+
+                <h3>🧮 BMR (Basal Metabolic Rate)</h3>
+                <p>Bruger Mifflin-St Jeor equation for præcise beregninger:</p>
+
+                <div class="code-block">
+                    <pre><code>// For mænd
+BMR = (10 × weight_kg) + (6.25 × height_cm) - (5 × age) + 5
+
+// For kvinder  
+BMR = (10 × weight_kg) + (6.25 × height_cm) - (5 × age) - 161</code></pre>
+                </div>
+
+                <h3>🔥 TDEE (Total Daily Energy Expenditure)</h3>
+                <div class="code-block">
+                    <pre><code>TDEE = BMR × Activity Multiplier
+
+Activity Levels:
+├── Sedentary: BMR × 1.2
+├── Lightly Active: BMR × 1.375
+├── Moderately Active: BMR × 1.55
+├── Very Active: BMR × 1.725
+└── Extra Active: BMR × 1.9</code></pre>
+                </div>
+
+                <h3>🍎 Target Calories</h3>
+                <div class="code-block">
+                    <pre><code>// Goal adjustments (1 kg = 7700 kcal)
+Weight Loss: TDEE - (weeklyGoalKg × 7700 ÷ 7)
+Weight Gain: TDEE + (weeklyGoalKg × 7700 ÷ 7)
+Maintenance: TDEE (no adjustment)
+
+// Safety constraints: 1200-4000 kcal</code></pre>
+                </div>
+
+                <h3>🥗 Macronutrient Targets</h3>
+                <div class="code-block">
+                    <pre><code>Macronutrient Distribution:
+├── Protein: 25% of calories (÷ 4 kcal/g)
+├── Fat: 30% of calories (÷ 9 kcal/g)
+└── Carbs: 45% of calories (÷ 4 kcal/g)</code></pre>
+                </div>
+
+                <h2>State Management</h2>
+
+                <h3>📊 OnboardingState Structure</h3>
+                <div class="code-block">
+                    <pre><code>@freezed
+class OnboardingState with _$OnboardingState {
+  const factory OnboardingState({
+    @Default(OnboardingStep.welcome) OnboardingStep currentStep,
+    @Default(UserProfileModel()) UserProfileModel userProfile,
+    @Default(false) bool isLoading,
+    @Default(false) bool hasError,
+    String? errorMessage,
+    @Default(false) bool isEditingFromSummary,
+  }) = _OnboardingState;
+
+  // Computed properties
+  bool get canProceedToNext => /* validation logic */;
+  double get progress => currentStep.index / (OnboardingStep.values.length - 2);
+}</code></pre>
+                </div>
+
+                <h3>🔄 Step Navigation</h3>
+                <div class="code-block">
+                    <pre><code>// Forward navigation with validation
+void nextStep() {
+  if (!state.canProceedToNext) return;
+
+  final nextStep = switch (state.currentStep) {
+    OnboardingStep.welcome => OnboardingStep.personalInfo,
+    OnboardingStep.personalInfo => OnboardingStep.physicalInfo,
+    OnboardingStep.physicalInfo => OnboardingStep.goals,
+    OnboardingStep.goals => OnboardingStep.summary,
+    OnboardingStep.summary => OnboardingStep.completed,
+    OnboardingStep.completed => OnboardingStep.completed,
+  };
+
+  state = state.copyWith(currentStep: nextStep);
+}</code></pre>
+                </div>
+
+                <h2>UI Components</h2>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🎨 Input Components</h3>
+                        <ul>
+                            <li><strong>Custom Date Input:</strong> DD/MM/YYYY format</li>
+                            <li><strong>Interactive Sliders:</strong> Height, weight values</li>
+                            <li><strong>Selection Cards:</strong> Gender, goal type</li>
+                            <li><strong>Progress Indicator:</strong> Step visualization</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="wiki-card">
+                        <h3>🖼️ Visual Feedback</h3>
+                        <ul>
+                            <li><strong>Real-time Validation:</strong> Color-coded inputs</li>
+                            <li><strong>Age Display:</strong> Auto-calculated from DOB</li>
+                            <li><strong>BMI Indicator:</strong> Health category display</li>
+                            <li><strong>Step Transitions:</strong> Smooth animations</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>Data Persistence</h2>
+
+                <h3>💾 Storage Strategy</h3>
+                <div class="code-block">
+                    <pre><code>Storage Layers:
+├── Partial Progress: SharedPreferences
+│   ├── Key: 'user_profile_partial'
+│   ├── Auto-save on every change
+│   └── Loaded on app restart
+│
+└── Final Profile: SharedPreferences  
+    ├── Key: 'user_profile'
+    ├── Saved on completion
+    └── Cleared partial progress</code></pre>
+                </div>
+
+                <h3>🔄 Load & Save Logic</h3>
+                <div class="code-block">
+                    <pre><code>// Auto-load on app start
+OnboardingNotifier() : super(const OnboardingState()) {
+  _loadSavedProgress();
+}
+
+// Save partial progress
+Future<void> _autoSaveProgress() async {
+  try {
+    await OnboardingStorageService.savePartialProgress(state.userProfile);
+  } catch (e) {
+    print('Auto-save failed: $e');
+  }
+}</code></pre>
+                </div>
+
+                <h2>Validation Rules</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Step</th>
+                            <th>Field</th>
+                            <th>Validation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="3">Personal Info</td>
+                            <td>Name</td>
+                            <td>Non-empty string</td>
+                        </tr>
+                        <tr>
+                            <td>Date of Birth</td>
+                            <td>Valid date, not future, age > 0</td>
+                        </tr>
+                        <tr>
+                            <td>Gender</td>
+                            <td>Selected option (male/female)</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="3">Physical Info</td>
+                            <td>Height</td>
+                            <td>120-220 cm</td>
+                        </tr>
+                        <tr>
+                            <td>Current Weight</td>
+                            <td>30-200 kg</td>
+                        </tr>
+                        <tr>
+                            <td>Target Weight</td>
+                            <td>30-200 kg</td>
+                        </tr>
+                        <tr>
+                            <td rowspan="2">Goals</td>
+                            <td>Goal Type</td>
+                            <td>Selected option</td>
+                        </tr>
+                        <tr>
+                            <td>Activity Level</td>
+                            <td>Selected option</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Error Handling</h2>
+
+                <div class="info-box warning">
+                    <strong>🛡️ Error Scenarios:</strong>
+                    <ul>
+                        <li><strong>Network Issues:</strong> Auto-save continues locally</li>
+                        <li><strong>Invalid Input:</strong> Real-time validation feedback</li>
+                        <li><strong>Storage Errors:</strong> Graceful degradation</li>
+                        <li><strong>App Restart:</strong> Auto-restore partial progress</li>
+                    </ul>
+                </div>
+
+                <h2>Testing Considerations</h2>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🧪 Unit Tests</h3>
+                        <ul>
+                            <li>BMR/TDEE calculations</li>
+                            <li>Age calculation logic</li>
+                            <li>Validation rules</li>
+                            <li>State transitions</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="wiki-card">
+                        <h3>🖱️ Widget Tests</h3>
+                        <ul>
+                            <li>Step navigation flow</li>
+                            <li>Input field validation</li>
+                            <li>Auto-save functionality</li>
+                            <li>Progress restoration</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>Performance Optimizations</h2>
+
+                <div class="code-block">
+                    <pre><code>// Debounced auto-save to prevent excessive storage calls
+Timer? _saveTimer;
+
+Future<void> _autoSaveProgress() async {
+  _saveTimer?.cancel();
+  _saveTimer = Timer(const Duration(milliseconds: 500), () async {
+    await OnboardingStorageService.savePartialProgress(state.userProfile);
+  });
+}</code></pre>
+                </div>
+
+                <div class="grid grid-2">
+                    <div>
+                        <h4>🔗 Relaterede Sider</h4>
+                        <ul>
+                            <li><a href="state-management.html">State Management</a></li>
+                            <li><a href="user-profile.html">User Profile Model</a></li>
+                            <li><a href="data-storage.html">Data Storage</a></li>
+                            <li><a href="testing.html">Testing Strategies</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4>📁 Kode Filer</h4>
+                        <ul>
+                            <li><code>onboarding_page.dart</code></li>
+                            <li><code>onboarding_notifier.dart</code></li>
+                            <li><code>onboarding_state.dart</code></li>
+                            <li><code>user_profile_model.dart</code></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Technical Implementation -->
+                <h2>⚙️ Teknisk Implementation</h2>
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🔄 State Management</h3>
+                        <p>Riverpod StateNotifier med auto-save ved alle ændringer</p>
+                        <small><code>OnboardingNotifier → _autoSaveProgress()</code></small>
+                    </div>
+                    <div class="wiki-card">
+                        <h3>💾 Data Storage</h3>
+                        <p>SharedPreferences for lokal persistence</p>
+                        <small><code>OnboardingStorageService</code></small>
+                    </div>
+                    <div class="wiki-card">
+                        <h3>🧮 Beregninger</h3>
+                        <p>BMR/TDEE med Mifflin-St Jeor formel</p>
+                        <small><code>NutritionCalculator</code></small>
+                    </div>
+                    <div class="wiki-card">
+                        <h3>⌨️ UX Features</h3>
+                        <p>Field navigation, visual feedback, validering</p>
+                        <small><code>TextInputAction.next</code></small>
+                    </div>
+                </div>
+
+                <!-- Quick Reference -->
+                <h2>📚 Quick Reference</h2>
+                <div class="info-box info">
+                    <strong>🔍 Fil Locations:</strong><br>
+                    • Main: <code>onboarding_page.dart</code><br>
+                    • State: <code>onboarding_notifier.dart</code><br>
+                    • Storage: <code>onboarding_storage_service.dart</code><br>
+                    • Widgets: <code>presentation/widgets/</code>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html> 

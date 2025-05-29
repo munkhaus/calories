@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkitektur - Flutter Calories App</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html" class="active">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+                
+                <li class="section">Features</li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="nutrition-tracking.html">🍎 Nutrition</a></li>
+                <li><a href="user-profile.html">⚙️ Profile</a></li>
+                
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Setup</a></li>
+                <li><a href="coding-standards.html">📝 Standards</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>🏗️ App Arkitektur</h1>
+                <p>Forstå den tekniske arkitektur og designprincipper bag Flutter Calories appen.</p>
+            </header>
+
+            <div class="wiki-content">
+                <div class="info-box info">
+                    <strong>🎯 Arkitektur Filosofi:</strong> Appen bygger på Clean Architecture principper med klar separation mellem lag, høj testbarhed og skalerbarhed.
+                </div>
+
+                <h2>Overordnet Arkitektur</h2>
+                
+                <p>Flutter Calories appen følger <strong>Clean Architecture</strong> mønsteret, som sikrer:</p>
+                <ul>
+                    <li>Klar separation mellem forretningslogik og UI</li>
+                    <li>Høj testbarhed og vedligeholdbarhed</li>
+                    <li>Uafhængighed af eksterne frameworks</li>
+                    <li>Skalerbarhed og fleksibilitet</li>
+                </ul>
+
+                <div class="grid grid-3">
+                    <div class="wiki-card">
+                        <h3>🎯 Domain Layer</h3>
+                        <p>Indeholder business logic og definerer kontrakter</p>
+                        <ul>
+                            <li>Entities (Models)</li>
+                            <li>Use Cases</li>
+                            <li>Repository Interfaces</li>
+                            <li>Business Rules</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>💼 Application Layer</h3>
+                        <p>Koordinerer mellem UI og domain layer</p>
+                        <ul>
+                            <li>State Management (Riverpod)</li>
+                            <li>Use Case Orchestration</li>
+                            <li>UI State Classes</li>
+                            <li>Event Handling</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>🖥️ Presentation Layer</h3>
+                        <p>UI komponenter og brugerinteraktion</p>
+                        <ul>
+                            <li>Pages & Widgets</li>
+                            <li>UI Components</li>
+                            <li>Navigation</li>
+                            <li>User Input Handling</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>Mappestruktur</h2>
+                
+                <div class="code-block">
+                    <pre><code>lib/
+├── core/                          # Delte utilities og konstanter
+│   ├── constants/
+│   │   └── k_sizes.dart          # Layout konstanter
+│   ├── theme/
+│   │   └── app_theme.dart        # App styling
+│   └── utils/
+│       └── ...                   # Utility funktioner
+│
+├── shared/                       # Delte komponenter på tværs af features
+│   └── widgets/
+│       ├── custom_button.dart
+│       └── progress_indicator_widget.dart
+│
+└── features/                     # Feature-baseret organisering
+    └── onboarding/               # Eksempel feature
+        ├── domain/               # Business logic
+        │   ├── user_profile_model.dart
+        │   └── i_onboarding_service.dart
+        ├── application/          # State management
+        │   ├── onboarding_notifier.dart
+        │   └── onboarding_state.dart
+        ├── infrastructure/       # Implementationer
+        │   ├── onboarding_storage_service.dart
+        │   └── dtos/
+        │       └── user_profile_dto.dart
+        └── presentation/         # UI komponenter
+            ├── onboarding_page.dart
+            └── widgets/
+                ├── welcome_step_widget.dart
+                └── ...
+</code></pre>
+                </div>
+
+                <h2>State Management</h2>
+                
+                <p>Appen bruger <strong>Riverpod</strong> til state management med følgende mønstre:</p>
+
+                <div class="wiki-card">
+                    <h3>🔄 StateNotifier Pattern</h3>
+                    <div class="code-block">
+                        <pre><code>class OnboardingNotifier extends StateNotifier&lt;OnboardingState&gt; {
+  OnboardingNotifier() : super(const OnboardingState());
+
+  Future&lt;void&gt; updateName(String name) async {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(name: name),
+    );
+    await _autoSaveProgress();
+  }
+}</code></pre>
+                    </div>
+                </div>
+
+                <h2>Data Flow</h2>
+                
+                <div class="info-box success">
+                    <strong>📊 Data Flow Retning:</strong>
+                    <br>UI → StateNotifier → Domain Service → Infrastructure → External APIs/Storage
+                </div>
+
+                <ol>
+                    <li><strong>User Input:</strong> Brugeren interagerer med UI komponenter</li>
+                    <li><strong>State Update:</strong> UI kalder StateNotifier metoder</li>
+                    <li><strong>Business Logic:</strong> StateNotifier anvender domain services</li>
+                    <li><strong>Data Persistence:</strong> Infrastructure lag håndterer lagring</li>
+                    <li><strong>UI Update:</strong> State ændringer trigger UI opdateringer</li>
+                </ol>
+
+                <h2>Dependency Injection</h2>
+                
+                <p>Dependency injection håndteres gennem Riverpod providers:</p>
+
+                <div class="code-block">
+                    <pre><code>// Provider definition
+final onboardingServiceProvider = Provider&lt;IOnboardingService&gt;(
+  (ref) =&gt; OnboardingStorageService(),
+);
+
+// StateNotifier with dependency
+final onboardingProvider = StateNotifierProvider&lt;OnboardingNotifier, OnboardingState&gt;(
+  (ref) =&gt; OnboardingNotifier(
+    service: ref.read(onboardingServiceProvider),
+  ),
+);</code></pre>
+                </div>
+
+                <h2>Error Handling</h2>
+                
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🚨 Error States</h3>
+                        <p>Alle async operationer har eksplicit error handling:</p>
+                        <ul>
+                            <li>Loading states</li>
+                            <li>Error states med beskeder</li>
+                            <li>Retry funktionalitet</li>
+                            <li>Graceful degradation</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="wiki-card">
+                        <h3>🛡️ Result Pattern</h3>
+                        <p>Brug af Result type til fejlhåndtering:</p>
+                        <div class="code-block">
+                            <pre><code>Future&lt;Result&lt;UserProfile, Error&gt;&gt; saveProfile(
+  UserProfile profile
+) async {
+  try {
+    await storage.save(profile);
+    return Success(profile);
+  } catch (e) {
+    return Failure(StorageError(e));
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Testing Strategi</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Test Type</th>
+                            <th>Formål</th>
+                            <th>Værktøjer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Unit Tests</td>
+                            <td>Business logic og utilities</td>
+                            <td>test, mockito</td>
+                        </tr>
+                        <tr>
+                            <td>Widget Tests</td>
+                            <td>UI komponenter</td>
+                            <td>flutter_test</td>
+                        </tr>
+                        <tr>
+                            <td>Integration Tests</td>
+                            <td>Feature flows</td>
+                            <td>integration_test</td>
+                        </tr>
+                        <tr>
+                            <td>Golden Tests</td>
+                            <td>Visual regression</td>
+                            <td>golden_toolkit</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Performance Overvejelser</h2>
+                
+                <div class="info-box warning">
+                    <strong>⚡ Performance Tips:</strong>
+                    <ul>
+                        <li>Brug const constructors hvor muligt</li>
+                        <li>Implementer proper dispose patterns</li>
+                        <li>Optimer builder patterns i StateConsumer</li>
+                        <li>Lazy loading af tunge operationer</li>
+                    </ul>
+                </div>
+
+                <h2>Skalerbarhed</h2>
+                
+                <p>Arkitekturen er designet til at skalere med appens vækst:</p>
+                
+                <ul>
+                    <li><strong>Feature Modules:</strong> Nye features kan tilføjes som separate moduler</li>
+                    <li><strong>Shared Components:</strong> Fælles UI komponenter genbruges på tværs</li>
+                    <li><strong>Plugin Architecture:</strong> Eksterne integrationer som separate plugins</li>
+                    <li><strong>Micro-frontend Pattern:</strong> Store features kan udskilles til separate apps</li>
+                </ul>
+
+                <div class="grid grid-2">
+                    <div>
+                        <h4>🔗 Relaterede Sider</h4>
+                        <ul>
+                            <li><a href="state-management.html">State Management Guide</a></li>
+                            <li><a href="coding-standards.html">Kodestandard</a></li>
+                            <li><a href="testing.html">Testing Strategi</a></li>
+                            <li><a href="data-storage.html">Data Storage</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4>📖 Eksterne Resurser</h4>
+                        <ul>
+                            <li><a href="https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html" target="_blank">Clean Architecture (Uncle Bob)</a></li>
+                            <li><a href="https://riverpod.dev/" target="_blank">Riverpod Documentation</a></li>
+                            <li><a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt" target="_blank">Flutter State Management</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html> 

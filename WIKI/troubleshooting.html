@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting - Flutter Calories App</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                
+                <li class="section">Implementerede Features</li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                
+                <li class="section">Udvikling</li>
+                <li><a href="troubleshooting.html" class="active">🔧 Troubleshooting</a></li>
+                
+                <li class="section">Planlagte Features</li>
+                <li><span class="disabled">🍎 Nutrition Tracking</span></li>
+                <li><span class="disabled">📊 Dashboard</span></li>
+                <li><span class="disabled">📈 Fremgang</span></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-content">
+            <header class="page-header">
+                <h1>🔧 Troubleshooting</h1>
+                <p>Løsninger på faktiske problemer vi har stødt på under udviklingen</p>
+            </header>
+
+            <div class="info-box warning">
+                <strong>⚠️ Bemærk:</strong> Denne side dokumenterer reelle problemer og løsninger fra projektets udvikling.
+            </div>
+
+            <!-- Critical Issues -->
+            <section class="content-section">
+                <h2>🚨 Kritiske Problemer</h2>
+                
+                <div class="issue-card error">
+                    <h3>NoSuchMethodError: 'age' getter ikke tilgængelig</h3>
+                    <div class="issue-details">
+                        <p><strong>Problem:</strong></p>
+                        <code>Class '_$UserProfileModelImpl' has no instance getter 'age'</code>
+                        
+                        <p><strong>Årsag:</strong></p>
+                        <p>Freezed-genereret kode kunne ikke tilgå age getter selvom den var defineret i modellen.</p>
+                        
+                        <p><strong>Løsning:</strong></p>
+                        <ul>
+                            <li>Fjernede debug prints der brugte <code>state.userProfile.age</code></li>
+                            <li>Ændrede <code>_calculateTargetCalories</code> til at beregne alder lokalt fra dateOfBirth</li>
+                            <li>Undgik brug af age getter helt</li>
+                        </ul>
+                        
+                        <div class="code-example">
+                            <pre><code>// I stedet for: state.userProfile.age
+// Beregn alder lokalt:
+final now = DateTime.now();
+int age = now.year - profile.dateOfBirth!.year;
+if (now.month < profile.dateOfBirth!.month ||
+    (now.month == profile.dateOfBirth!.month && now.day < profile.dateOfBirth!.day)) {
+  age--;
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Persistence Issues -->
+            <section class="content-section">
+                <h2>💾 Data Persistering</h2>
+                
+                <div class="issue-card warning">
+                    <h3>Data forsvinder efter "Fuldfør" onboarding</h3>
+                    <div class="issue-details">
+                        <p><strong>Problem:</strong></p>
+                        <p>Brugerdata var væk når appen startede efter onboarding var færdig.</p>
+                        
+                        <p><strong>Årsag:</strong></p>
+                        <p><code>_loadSavedProgress()</code> loadede kun fra partial progress, ikke permanent storage.</p>
+                        
+                        <p><strong>Løsning:</strong></p>
+                        <ul>
+                            <li>Opdaterede <code>_loadSavedProgress()</code> til først at tjekke for fuldført profil</li>
+                            <li>Tilføjede prioritering: permanent storage → partial progress</li>
+                            <li>Implementerede restart-knap der ikke sletter data</li>
+                        </ul>
+                        
+                        <div class="code-example">
+                            <pre><code>// Tjek først for fuldført onboarding
+final isCompleted = await OnboardingStorageService.isOnboardingCompleted();
+if (isCompleted) {
+  final completedProfile = await OnboardingStorageService.loadUserProfile();
+  if (completedProfile != null) {
+    state = state.copyWith(
+      userProfile: completedProfile,
+      currentStep: OnboardingStep.completed,
+    );
+    return;
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- UX Issues -->
+            <section class="content-section">
+                <h2>👆 Brugeroplevelse</h2>
+                
+                <div class="issue-card info">
+                    <h3>Field navigation fungerede ikke</h3>
+                    <div class="issue-details">
+                        <p><strong>Problem:</strong></p>
+                        <p>Felter skiftede ikke automatisk efter input, selvom TextInputAction.next var sat.</p>
+                        
+                        <p><strong>Løsning:</strong></p>
+                        <ul>
+                            <li>Tilføjede <code>onSubmitted</code> handlers til alle input felter</li>
+                            <li>Implementerede auto-focus på første felt når siden loader</li>
+                            <li>Tilføjede visuel feedback (grønne checkmarks) ved fuldførte felter</li>
+                        </ul>
+                        
+                        <div class="code-example">
+                            <pre><code>TextField(
+  textInputAction: TextInputAction.next,
+  onSubmitted: (_) {
+    FocusScope.of(context).nextFocus();
+  },
+  focusNode: _focusNode,
+  // ... resten af input konfiguration
+)</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="issue-card info">
+                    <h3>Welcome knap text var forkert</h3>
+                    <div class="issue-details">
+                        <p><strong>Problem:</strong></p>
+                        <p>Knappen viste "Næste" i stedet for "Kom i gang" på velkomstsiden.</p>
+                        
+                        <p><strong>Løsning:</strong></p>
+                        <p>Ændrede knap tekst til "Kom i gang" med raket-ikon for bedre UX.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Layout Issues -->
+            <section class="content-section">
+                <h2>📱 Layout Problemer</h2>
+                
+                <div class="issue-card warning">
+                    <h3>RenderFlex overflow på welcome screen</h3>
+                    <div class="issue-details">
+                        <p><strong>Problem:</strong></p>
+                        <code>A RenderFlex overflowed by 99 pixels on the bottom</code>
+                        
+                        <p><strong>Diagnose:</strong></p>
+                        <p>Column widget på welcome screen havde for meget indhold til den tilgængelige højde.</p>
+                        
+                        <p><strong>Løsning:</strong></p>
+                        <ul>
+                            <li>Wrap hovedindholdet i SingleChildScrollView</li>
+                            <li>Brug Expanded widgets hvor passende</li>
+                            <li>Reducer spacing mellem elementer ved behov</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Debugging Tips -->
+            <section class="content-section">
+                <h2>🐛 Debug Tips</h2>
+                
+                <div class="grid grid-2">
+                    <div class="feature-card">
+                        <h3>🔍 Data Persistering</h3>
+                        <p>Tjek SharedPreferences debug output i terminalen:</p>
+                        <code>💾 Saving partial progress...</code>
+                        <code>✅ Loaded partial progress successfully</code>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3>📱 Device Testing</h3>
+                        <p>Test på både iOS og Android:</p>
+                        <code>flutter run -d [device-id]</code>
+                        <p>Brug Android device for stabil debugging</p>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3>🔄 Hot Reload Issues</h3>
+                        <p>Ved Freezed/generation problemer:</p>
+                        <code>flutter packages pub run build_runner build --delete-conflicting-outputs</code>
+                    </div>
+
+                    <div class="feature-card">
+                        <h3>⚠️ Linter Errors</h3>
+                        <p>Tjek altid KSizes for layout konstanter:</p>
+                        <code>KSizes.margin4x // ✅ Korrekt</code>
+                        <code>KSizes.margin5x // ❌ Eksisterer ikke</code>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Known Limitations -->
+            <section class="content-section">
+                <h2>⚠️ Kendte Begrænsninger</h2>
+                
+                <div class="info-box info">
+                    <h3>Aktuelle Begrænsninger</h3>
+                    <ul>
+                        <li><strong>Hovedapp navigation:</strong> Kun onboarding er implementeret</li>
+                        <li><strong>Data eksport:</strong> Ingen export funktionalitet endnu</li>
+                        <li><strong>Offline sync:</strong> Kun lokal storage på nuværende tidspunkt</li>
+                        <li><strong>Bruger autentificering:</strong> Ikke implementeret</li>
+                    </ul>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html> 

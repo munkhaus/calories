@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Management - Flutter Calories App</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html" class="active">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+                
+                <li class="section">Features</li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="nutrition-tracking.html">🍎 Nutrition</a></li>
+                <li><a href="user-profile.html">⚙️ Profile</a></li>
+                
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Setup</a></li>
+                <li><a href="coding-standards.html">📝 Standards</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>🔄 State Management</h1>
+                <p>Komplet guide til Riverpod state management i Flutter Calories appen.</p>
+            </header>
+
+            <div class="wiki-content">
+                <div class="info-box info">
+                    <strong>🎯 Riverpod Philosophy:</strong> Vi bruger Riverpod for type-safe, testable og performant state management med clear separation of concerns.
+                </div>
+
+                <h2>Riverpod Overview</h2>
+                
+                <p>Flutter Calories appen bruger <strong>Riverpod</strong> som primary state management løsning. Riverpod giver os:</p>
+                
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>✅ Fordele</h3>
+                        <ul>
+                            <li>Type safety på compile time</li>
+                            <li>Automatic disposal af resources</li>
+                            <li>Provider overrides til testing</li>
+                            <li>Performance optimizations</li>
+                            <li>DevTools support</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="wiki-card">
+                        <h3>🏗️ Patterns</h3>
+                        <ul>
+                            <li>StateNotifier for complex state</li>
+                            <li>Provider for dependencies</li>
+                            <li>FutureProvider for async data</li>
+                            <li>StreamProvider for real-time data</li>
+                            <li>Family providers for parameterized data</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>State Architecture Patterns</h2>
+
+                <h3>🔧 StateNotifier Pattern</h3>
+                <p>Vores primære pattern for complex state management:</p>
+
+                <div class="code-block">
+                    <pre><code>class OnboardingNotifier extends StateNotifier&lt;OnboardingState&gt; {
+  OnboardingNotifier() : super(const OnboardingState()) {
+    _loadSavedProgress();
+  }
+
+  Future&lt;void&gt; updateName(String name) async {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(name: name),
+    );
+    await _autoSaveProgress();
+  }
+
+  Future&lt;void&gt; updateDateOfBirth(DateTime dateOfBirth) async {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(dateOfBirth: dateOfBirth),
+    );
+    _calculateTargets();
+    await _autoSaveProgress();
+  }
+}</code></pre>
+                </div>
+
+                <h3>📦 Provider Definition</h3>
+                <div class="code-block">
+                    <pre><code>final onboardingProvider = StateNotifierProvider&lt;OnboardingNotifier, OnboardingState&gt;(
+  (ref) =&gt; OnboardingNotifier(),
+);
+
+// Service provider for dependency injection
+final onboardingServiceProvider = Provider&lt;IOnboardingService&gt;(
+  (ref) =&gt; OnboardingStorageService(),
+);</code></pre>
+                </div>
+
+                <h2>State Classes med Freezed</h2>
+                
+                <p>Alle state classes bruger <strong>Freezed</strong> for immutability og type safety:</p>
+
+                <div class="code-block">
+                    <pre><code>@freezed
+class OnboardingState with _$OnboardingState {
+  const OnboardingState._();
+
+  const factory OnboardingState({
+    @Default(OnboardingStep.welcome) OnboardingStep currentStep,
+    @Default(UserProfileModel()) UserProfileModel userProfile,
+    @Default(false) bool isLoading,
+    @Default(false) bool hasError,
+    String? errorMessage,
+    @Default(false) bool isEditingFromSummary,
+  }) = _OnboardingState;
+
+  // Computed properties
+  bool get canProceedToNext =&gt; switch (currentStep) {
+    OnboardingStep.welcome =&gt; true,
+    OnboardingStep.personalInfo =&gt; userProfile.name.isNotEmpty && 
+                                   userProfile.dateOfBirth != null && 
+                                   userProfile.gender != null,
+    OnboardingStep.physicalInfo =&gt; userProfile.heightCm &gt; 0 && 
+                                    userProfile.currentWeightKg &gt; 0,
+    OnboardingStep.goals =&gt; userProfile.goalType != null && 
+                            userProfile.activityLevel != null,
+    OnboardingStep.summary =&gt; !isLoading,
+    OnboardingStep.completed =&gt; true,
+  };
+}</code></pre>
+                </div>
+
+                <h2>UI Integration</h2>
+
+                <h3>🖥️ ConsumerWidget Pattern</h3>
+                <div class="code-block">
+                    <pre><code>class PersonalInfoStepWidget extends ConsumerStatefulWidget {
+  const PersonalInfoStepWidget({super.key});
+
+  @override
+  ConsumerState&lt;PersonalInfoStepWidget&gt; createState() =&gt; _PersonalInfoStepWidgetState();
+}
+
+class _PersonalInfoStepWidgetState extends ConsumerState&lt;PersonalInfoStepWidget&gt; {
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(onboardingProvider);
+    final notifier = ref.read(onboardingProvider.notifier);
+    
+    return Column(
+      children: [
+        TextField(
+          onChanged: notifier.updateName,
+          decoration: InputDecoration(hintText: 'Dit navn'),
+        ),
+        // ... more widgets
+      ],
+    );
+  }
+}</code></pre>
+                </div>
+
+                <h3>🎯 Selective Rebuilds</h3>
+                <p>Optimer performance med selective rebuilds:</p>
+
+                <div class="code-block">
+                    <pre><code>// Kun rebuild når navn ændres
+final nameProvider = Provider&lt;String&gt;((ref) {
+  return ref.watch(onboardingProvider.select((state) =&gt; state.userProfile.name));
+});
+
+// Brug i widget
+Widget build(BuildContext context) {
+  final name = ref.watch(nameProvider);
+  return Text(name);
+}</code></pre>
+                </div>
+
+                <h2>Async State Management</h2>
+
+                <h3>⏳ Loading States</h3>
+                <div class="code-block">
+                    <pre><code>Future&lt;void&gt; completeOnboarding() async {
+  state = state.copyWith(isLoading: true, hasError: false);
+  
+  try {
+    final completedProfile = state.userProfile.copyWith(
+      isOnboardingCompleted: true,
+      createdAt: DateTime.now(),
+    );
+    
+    final saveSuccess = await OnboardingStorageService.saveUserProfile(completedProfile);
+    
+    if (saveSuccess) {
+      state = state.copyWith(
+        userProfile: completedProfile,
+        currentStep: OnboardingStep.completed,
+        isLoading: false,
+      );
+    } else {
+      throw Exception('Failed to save user profile');
+    }
+  } catch (e) {
+    state = state.copyWith(
+      isLoading: false,
+      hasError: true,
+      errorMessage: 'Kunne ikke gemme dine oplysninger. Prøv igen.',
+    );
+  }
+}</code></pre>
+                </div>
+
+                <h2>Auto-Save Pattern</h2>
+                
+                <p>Implementering af automatic data persistence:</p>
+
+                <div class="code-block">
+                    <pre><code>class OnboardingNotifier extends StateNotifier&lt;OnboardingState&gt; {
+  Timer? _saveTimer;
+
+  Future&lt;void&gt; _autoSaveProgress() async {
+    // Debounce saves to avoid excessive storage operations
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        await OnboardingStorageService.savePartialProgress(state.userProfile);
+      } catch (e) {
+        // Handle save errors gracefully
+        print('Auto-save failed: $e');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _saveTimer?.cancel();
+    super.dispose();
+  }
+}</code></pre>
+                </div>
+
+                <h2>Error Handling Patterns</h2>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🚨 Error States</h3>
+                        <div class="code-block">
+                            <pre><code>// I state class
+@Default(false) bool hasError,
+String? errorMessage,
+
+// I notifier
+void clearError() {
+  state = state.copyWith(
+    hasError: false, 
+    errorMessage: null
+  );
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="wiki-card">
+                        <h3>🔄 Retry Logic</h3>
+                        <div class="code-block">
+                            <pre><code>// I UI
+if (state.hasError) {
+  return ErrorWidget(
+    message: state.errorMessage,
+    onRetry: () {
+      notifier.clearError();
+      notifier.retry();
+    },
+  );
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>Testing State Management</h2>
+
+                <h3>🧪 Provider Overrides</h3>
+                <div class="code-block">
+                    <pre><code>testWidgets('onboarding updates name correctly', (tester) async {
+  final mockStorage = MockOnboardingStorageService();
+  
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        onboardingServiceProvider.overrideWithValue(mockStorage),
+      ],
+      child: MaterialApp(home: OnboardingPage()),
+    ),
+  );
+
+  // Test interactions
+  await tester.enterText(find.byType(TextField), 'Test Name');
+  await tester.pump();
+
+  final container = ProviderScope.containerOf(
+    tester.element(find.byType(OnboardingPage))
+  );
+  final state = container.read(onboardingProvider);
+  
+  expect(state.userProfile.name, equals('Test Name'));
+});</code></pre>
+                </div>
+
+                <h2>Performance Best Practices</h2>
+                
+                <div class="info-box warning">
+                    <strong>⚡ Performance Tips:</strong>
+                    <ul>
+                        <li><strong>Use .select():</strong> Kun rebuild når specifikke felter ændres</li>
+                        <li><strong>Avoid watchers in build():</strong> Flyt providers uden for build metoden</li>
+                        <li><strong>Dispose properly:</strong> Cancel timers og subscriptions</li>
+                        <li><strong>Use autoDispose:</strong> For providers der ikke skal bevares</li>
+                    </ul>
+                </div>
+
+                <h2>Common Patterns</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Pattern</th>
+                            <th>Use Case</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>StateNotifier</td>
+                            <td>Complex business logic</td>
+                            <td>Onboarding, User Profile</td>
+                        </tr>
+                        <tr>
+                            <td>Provider</td>
+                            <td>Dependency injection</td>
+                            <td>Services, Repositories</td>
+                        </tr>
+                        <tr>
+                            <td>FutureProvider</td>
+                            <td>One-time async data</td>
+                            <td>Initial data loading</td>
+                        </tr>
+                        <tr>
+                            <td>StreamProvider</td>
+                            <td>Real-time updates</td>
+                            <td>WebSocket connections</td>
+                        </tr>
+                        <tr>
+                            <td>Family</td>
+                            <td>Parameterized providers</td>
+                            <td>User by ID, Food by category</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Debugging & DevTools</h2>
+                
+                <div class="code-block">
+                    <pre><code>// Enable logging for development
+class OnboardingNotifier extends StateNotifier&lt;OnboardingState&gt; {
+  @override
+  set state(OnboardingState value) {
+    if (kDebugMode) {
+      print('State change: ${state.currentStep} → ${value.currentStep}');
+    }
+    super.state = value;
+  }
+}</code></pre>
+                </div>
+
+                <div class="grid grid-2">
+                    <div>
+                        <h4>🔗 Relaterede Sider</h4>
+                        <ul>
+                            <li><a href="architecture.html">App Arkitektur</a></li>
+                            <li><a href="onboarding.html">Onboarding Implementation</a></li>
+                            <li><a href="testing.html">Testing Guide</a></li>
+                            <li><a href="error-handling.html">Error Handling</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4>📖 Eksterne Resurser</h4>
+                        <ul>
+                            <li><a href="https://riverpod.dev/" target="_blank">Riverpod Documentation</a></li>
+                            <li><a href="https://pub.dev/packages/freezed" target="_blank">Freezed Package</a></li>
+                            <li><a href="https://flutter.dev/docs/development/data-and-backend/state-mgmt/options" target="_blank">Flutter State Management Options</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html> 

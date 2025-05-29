@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flutter Calories App - Dokumentation</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html" class="active">🏠 Oversigt</a></li>
+                
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                
+                <li class="section">Implementerede Features</li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                
+                <li class="section">Udvikling</li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+                
+                <li class="section">Planlagte Features</li>
+                <li><span class="disabled">🍎 Nutrition Tracking</span></li>
+                <li><span class="disabled">⚙️ User Profile</span></li>
+                <li><span class="disabled">📊 Analytics</span></li>
+                
+                <li class="section">Development</li>
+                <li><span class="disabled">🚀 Setup</span></li>
+                <li><span class="disabled">📝 Standards</span></li>
+                <li><span class="disabled">🧪 Testing</span></li>
+                
+                <li class="section">Design</li>
+                <li><span class="disabled">🎨 Design System</span></li>
+                <li><span class="disabled">🔄 User Flows</span></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>Flutter Calories App Dokumentation</h1>
+                <p>Velkommen til den officielle dokumentation for Flutter Calories appen. Her finder du alt du behøver for at forstå, udvikle og bidrage til projektet.</p>
+            </header>
+
+            <div class="wiki-content">
+                <div class="info-box warning">
+                    <strong>⚠️ Aktuel Status:</strong> Dette projekt er i tidlig udviklingsfase. På nuværende tidspunkt er kun onboarding-funktionaliteten implementeret. Nutrition tracking og andre features er endnu ikke byggede.
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>✅ Hvad der Fungerer</h3>
+                        <ul>
+                            <li>Komplet onboarding flow</li>
+                            <li>Bruger data indsamling</li>
+                            <li>Kalorie beregninger (BMR/TDEE)</li>
+                            <li>Data persistering</li>
+                            <li>Clean architecture struktur</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>🚧 Under Udvikling</h3>
+                        <ul>
+                            <li>Nutrition tracking</li>
+                            <li>Fødevare database</li>
+                            <li>Måltid logging</li>
+                            <li>Progress tracking</li>
+                            <li>Analytics dashboard</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>Nuværende Funktionalitet</h2>
+                
+                <div class="wiki-card">
+                    <h3>📝 Onboarding Flow (Implementeret)</h3>
+                    <p>En komplet onboarding proces der indsamler brugerdata og beregner personlige mål:</p>
+                    <ul>
+                        <li><strong>Velkomst:</strong> Introduktion til appen</li>
+                        <li><strong>Personlige Oplysninger:</strong> Navn, fødselsdag, køn</li>
+                        <li><strong>Fysiske Mål:</strong> Højde, nuværende vægt, målvægt</li>
+                        <li><strong>Aktivitetsniveau:</strong> Fra stillesiddende til meget aktiv</li>
+                        <li><strong>Mål:</strong> Vægttab, vægtøgning, muskelopbygning, vedligeholdelse</li>
+                        <li><strong>Opsummering:</strong> Gennemgang, kalorie beregning og bekræftelse</li>
+                    </ul>
+                    <a href="onboarding.html" class="btn-secondary">Se Onboarding Dokumentation</a>
+                </div>
+
+                <div class="info-box info">
+                    <strong>🔢 Kalorie Beregninger:</strong> Appen beregner automatisk brugerens daglige kaloriemål baseret på BMR (grundstofskifte), aktivitetsniveau og måltype. Makronæringsstoffer (protein, fedt, kulhydrater) beregnes også.
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🚀 Kom i Gang</h3>
+                        <p>Lær hvordan du opsætter udviklingsmiljøet og får appen til at køre lokalt.</p>
+                        <a href="setup.html" class="btn">Opsætningsvejledning</a>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>🏗️ Arkitektur</h3>
+                        <p>Forstå den underliggende arkitektur og designprincipper bag appen.</p>
+                        <a href="architecture.html" class="btn">Se Arkitektur</a>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>🎨 Design System</h3>
+                        <p>Udforsk vores designsprog, komponenter og UI-retningslinjer.</p>
+                        <a href="design-system.html" class="btn">Design Guide</a>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>⚙️ State Management</h3>
+                        <p>Lær hvordan vi håndterer state med Riverpod og organiserer data flow.</p>
+                        <a href="state-management.html" class="btn">State Management</a>
+                    </div>
+                </div>
+
+                <h2>Projektets Struktur</h2>
+                <p>Projektet følger Clean Architecture principper med en klar adskillelse mellem lag:</p>
+
+                <div class="grid grid-3">
+                    <div class="wiki-card">
+                        <h3>🎯 Domain Layer</h3>
+                        <p>Indeholder business logic, entities og use cases. Uafhængig af eksterne dependencies.</p>
+                        <ul>
+                            <li>Models</li>
+                            <li>Interfaces</li>
+                            <li>Business Rules</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>💼 Application Layer</h3>
+                        <p>State management og koordination mellem UI og domain layer.</p>
+                        <ul>
+                            <li>Riverpod Providers</li>
+                            <li>State Classes</li>
+                            <li>Use Case Orchestration</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>🖥️ Presentation Layer</h3>
+                        <p>UI komponenter og brugerinteraktion.</p>
+                        <ul>
+                            <li>Widgets</li>
+                            <li>Pages</li>
+                            <li>UI Logic</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>Vigtige Features</h2>
+                
+                <div class="wiki-card">
+                    <h3>📝 Onboarding Flow</h3>
+                    <p>En omfattende onboarding proces der indsamler brugerdata og opsætter personlige mål:</p>
+                    <ul>
+                        <li><strong>Personlige Oplysninger:</strong> Navn, fødselsdag, køn</li>
+                        <li><strong>Fysiske Mål:</strong> Højde, nuværende vægt, målvægt</li>
+                        <li><strong>Aktivitetsniveau:</strong> Fra stillesiddende til meget aktiv</li>
+                        <li><strong>Mål:</strong> Vægttab, vægtøgning, vedligeholdelse</li>
+                        <li><strong>Opsummering:</strong> Gennemgang og bekræftelse</li>
+                    </ul>
+                    <a href="onboarding.html" class="btn-secondary">Se Onboarding Dokumentation</a>
+                </div>
+
+                <h2>Teknologi Stack</h2>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kategori</th>
+                            <th>Teknologi</th>
+                            <th>Formål</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Framework</td>
+                            <td>Flutter</td>
+                            <td>Cross-platform app udvikling</td>
+                        </tr>
+                        <tr>
+                            <td>State Management</td>
+                            <td>Riverpod</td>
+                            <td>Reaktiv state management</td>
+                        </tr>
+                        <tr>
+                            <td>Code Generation</td>
+                            <td>Freezed</td>
+                            <td>Immutable data classes</td>
+                        </tr>
+                        <tr>
+                            <td>JSON Serialization</td>
+                            <td>json_annotation</td>
+                            <td>Automatisk JSON serialization</td>
+                        </tr>
+                        <tr>
+                            <td>Routing</td>
+                            <td>Go Router</td>
+                            <td>Declarative routing</td>
+                        </tr>
+                        <tr>
+                            <td>Local Storage</td>
+                            <td>Shared Preferences</td>
+                            <td>Lokal datalagring</td>
+                        </tr>
+                        <tr>
+                            <td>Icons</td>
+                            <td>Material Design Icons</td>
+                            <td>Ikon bibliotek</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h2>Hurtig Navigation</h2>
+                
+                <div class="info-box success">
+                    <strong>💡 Tip:</strong> Brug søgefunktionen i sidebaren til hurtigt at finde specifik dokumentation. Du kan også bruge Ctrl+F til at søge på den nuværende side.
+                </div>
+
+                <div class="grid grid-2">
+                    <div>
+                        <h4>🔧 For Udviklere</h4>
+                        <ul>
+                            <li><a href="setup.html">Opsætning af udviklingsmiljø</a></li>
+                            <li><a href="coding-standards.html">Kodestandard og retningslinjer</a></li>
+                            <li><a href="state-management.html">State management guide</a></li>
+                            <li><a href="testing.html">Test strategi og vejledning</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4>🎨 For Designere</h4>
+                        <ul>
+                            <li><a href="design-system.html">Design system og komponenter</a></li>
+                            <li><a href="user-flows.html">Brugerflows og UX mønstre</a></li>
+                            <li><a href="wireframes.html">Wireframes og mockups</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-box warning">
+                    <strong>⚠️ Bemærk:</strong> Denne dokumentation opdateres løbende i takt med projektets udvikling. Hvis du finder fejl eller manglende information, er du velkommen til at bidrage med forbedringer.
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html> 
