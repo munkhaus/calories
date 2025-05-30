@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
@@ -18,25 +17,25 @@ class SummaryStepWidget extends ConsumerWidget {
     final userProfile = state.userProfile;
 
     return OnboardingBaseLayout(
-      title: '📋 Din opsummering',
+      title: 'Din opsummering',
       subtitle: 'Gennemgå og bekræft dine oplysninger',
       children: [
-        // Personal Information Card
+        // Personal Information Card - simplified
         _buildPersonalInfoCard(context, state, ref),
         
         KSizes.spacingVerticalM,
         
-        // Physical Information Card  
+        // Physical Information Card - simplified
         _buildPhysicalInfoCard(context, state, ref),
         
         KSizes.spacingVerticalM,
         
-        // Goals Information Card
+        // Goals Information Card - simplified
         _buildGoalsInfoCard(context, state, ref),
         
         KSizes.spacingVerticalL,
         
-        // Final calorie target - at the end
+        // Final calorie target - clean and prominent
         _buildCalorieTargetCard(context, userProfile),
       ],
     );
@@ -44,135 +43,63 @@ class SummaryStepWidget extends ConsumerWidget {
 
   Widget _buildCalorieTargetCard(BuildContext context, UserProfileModel userProfile) {
     return Container(
-      padding: EdgeInsets.all(KSizes.margin4x),
+      padding: EdgeInsets.all(KSizes.margin6x),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.3),
+          width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon and title
+          Text(
+            'Dit daglige kaloriemål',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: KSizes.fontWeightSemiBold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          
+          KSizes.spacingVerticalL,
+          
+          // Final result - prominently displayed
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              // Icon container
-              Container(
-                padding: EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  MdiIcons.target,
+              Text(
+                userProfile.targetCalories.toString(),
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: AppColors.primary,
-                  size: KSizes.iconM,
+                  fontWeight: KSizes.fontWeightBold,
                 ),
               ),
-              
-              SizedBox(width: KSizes.margin3x),
-              
-              // Title and subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Dit daglige kaloriemål',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: KSizes.fontWeightSemiBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Personligt tilpasset til dig',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+              KSizes.spacingHorizontalS,
+              Text(
+                'kcal',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: KSizes.fontWeightMedium,
                 ),
               ),
             ],
           ),
-          
-          SizedBox(height: KSizes.margin3x),
-          
-          // Explanation first
-          Container(
-            padding: EdgeInsets.all(KSizes.margin3x),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(KSizes.radiusS),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.1),
-              ),
-            ),
-            child: Text(
-              'Dette er din personlige kalorie-anbefaling baseret på alle dine oplysninger og mål.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
-              ),
+          KSizes.spacingVerticalS,
+          Text(
+            'per dag',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
           
-          SizedBox(height: KSizes.margin3x),
+          KSizes.spacingVerticalL,
           
-          // Final result - prominently displayed
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(KSizes.margin6x),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(KSizes.radiusM),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
-                width: 2,
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '${userProfile.targetCalories}',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: KSizes.fontWeightBold,
-                      ),
-                    ),
-                    SizedBox(width: KSizes.margin1x),
-                    Text(
-                      'kcal',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: KSizes.margin1x),
-                Text(
-                  'per dag',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+          // Simple explanation
+          OnboardingHelpText(
+            text: 'Dette er din personlige kalorie-anbefaling baseret på alle dine oplysninger og mål.',
           ),
         ],
       ),
@@ -186,50 +113,19 @@ class SummaryStepWidget extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.account,
-                size: KSizes.iconM,
-                color: AppColors.primary,
-              ),
-              KSizes.spacingHorizontalS,
-              Expanded(
-                child: Text(
-                  'Personlige oplysninger',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-              ),
-              Icon(
-                MdiIcons.chevronRight,
-                size: KSizes.iconM,
-                color: AppColors.textTertiary,
-              ),
-            ],
+          Text(
+            'Personlige oplysninger',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightSemiBold,
+              color: AppColors.textPrimary,
+            ),
           ),
+          
           KSizes.spacingVerticalM,
           
-          _buildInfoRow(
-            context,
-            'Navn:',
-            state.userProfile.name.isNotEmpty ? state.userProfile.name : 'Ikke angivet',
-          ),
-          
-          _buildInfoRow(
-            context,
-            'Alder:',
-            state.userProfile.dateOfBirth != null 
-                ? '${_calculateAge(state.userProfile.dateOfBirth!)} år'
-                : 'Ikke angivet',
-          ),
-          
-          _buildInfoRow(
-            context,
-            'Køn:',
-            _getGenderText(state.userProfile.gender),
-          ),
+          _buildInfoRow('Navn', state.userProfile.name),
+          _buildInfoRow('Alder', _calculateAge(state.userProfile.dateOfBirth).toString() + ' år'),
+          _buildInfoRow('Køn', _getGenderText(state.userProfile.gender)),
         ],
       ),
     );
@@ -242,68 +138,19 @@ class SummaryStepWidget extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.humanMaleHeight,
-                size: KSizes.iconM,
-                color: AppColors.secondary,
-              ),
-              KSizes.spacingHorizontalS,
-              Expanded(
-                child: Text(
-                  'Fysiske oplysninger',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-              ),
-              Icon(
-                MdiIcons.chevronRight,
-                size: KSizes.iconM,
-                color: AppColors.textTertiary,
-              ),
-            ],
+          Text(
+            'Fysiske oplysninger',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightSemiBold,
+              color: AppColors.textPrimary,
+            ),
           ),
+          
           KSizes.spacingVerticalM,
           
-          _buildInfoRow(
-            context,
-            'Højde:',
-            state.userProfile.heightCm > 0 
-                ? '${state.userProfile.heightCm.round()} cm'
-                : 'Ikke angivet',
-          ),
-          
-          _buildInfoRow(
-            context,
-            'Nuværende vægt:',
-            state.userProfile.currentWeightKg > 0 
-                ? '${state.userProfile.currentWeightKg.toStringAsFixed(1)} kg'
-                : 'Ikke angivet',
-          ),
-          
-          if (state.userProfile.heightCm > 0 && state.userProfile.currentWeightKg > 0) ...[
-            KSizes.spacingVerticalS,
-            Row(
-              children: [
-                Text(
-                  'BMI:',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '${state.userProfile.bmi.toStringAsFixed(1)} - ${state.userProfile.bmiCategory}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: _getBMIColor(state.userProfile.bmi),
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-              ],
-            ),
-          ],
+          _buildInfoRow('Højde', state.userProfile.heightCm.round().toString() + ' cm'),
+          _buildInfoRow('Vægt', state.userProfile.currentWeightKg.toStringAsFixed(1) + ' kg'),
+          _buildInfoRow('BMI', _calculateBMI(state.userProfile).toStringAsFixed(1)),
         ],
       ),
     );
@@ -316,52 +163,28 @@ class SummaryStepWidget extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.target,
-                size: KSizes.iconM,
-                color: AppColors.success,
-              ),
-              KSizes.spacingHorizontalS,
-              Expanded(
-                child: Text(
-                  'Mål og kalorier',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-              ),
-              Icon(
-                MdiIcons.chevronRight,
-                size: KSizes.iconM,
-                color: AppColors.textTertiary,
-              ),
-            ],
+          Text(
+            'Mål og aktivitet',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightSemiBold,
+              color: AppColors.textPrimary,
+            ),
           ),
+          
           KSizes.spacingVerticalM,
           
-          _buildInfoRow(
-            context,
-            'Hovedmål:',
-            _getGoalTypeText(state.userProfile.goalType),
-          ),
+          _buildInfoRow('Hovedmål', _getGoalTypeText(state.userProfile.goalType)),
+          _buildInfoRow('Arbejde', _getWorkActivityText(state.userProfile.workActivityLevel)),
+          _buildInfoRow('Motion', _getLeisureActivityText(state.userProfile.leisureActivityLevel)),
           
-          _buildInfoRow(
-            context,
-            'Målvægt:',
-            state.userProfile.targetWeightKg > 0 
-                ? '${state.userProfile.targetWeightKg.toStringAsFixed(1)} kg'
-                : 'Ikke angivet',
-          ),
-          
-          _buildInfoRow(
-            context,
-            'Daglige kalorier:',
-            state.userProfile.targetCalories > 0 
-                ? '${state.userProfile.targetCalories} kcal'
-                : 'Ikke beregnet',
-          ),
+          // Only show target weight and weekly goal if relevant
+          if (state.userProfile.goalType != GoalType.weightMaintenance && 
+              state.userProfile.targetWeightKg > 0) ...[
+            _buildInfoRow('Målvægt', state.userProfile.targetWeightKg.toStringAsFixed(1) + ' kg'),
+          ],
+          if (state.userProfile.weeklyGoalKg > 0) ...[
+            _buildInfoRow('Ugentligt mål', state.userProfile.weeklyGoalKg.toStringAsFixed(1) + ' kg/uge'),
+          ],
         ],
       ),
     );
@@ -372,25 +195,63 @@ class SummaryStepWidget extends ConsumerWidget {
     required VoidCallback onTap,
     required Widget child,
   }) {
-    return Card(
-      elevation: 1,
-      shadowColor: AppColors.primary.withOpacity(0.1),
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(
+          color: AppColors.border.withValues(alpha: 0.1),
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
-        hoverColor: AppColors.primary.withOpacity(0.03),
-        splashColor: AppColors.primary.withOpacity(0.06),
-        child: Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(
-              color: AppColors.primary.withOpacity(0.08),
-              width: 1,
+        child: Padding(
+          padding: EdgeInsets.all(KSizes.margin2x),
+          child: Row(
+            children: [
+              Expanded(child: child),
+              Icon(
+                Icons.edit,
+                color: AppColors.primary,
+                size: KSizes.iconS,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: KSizes.margin2x),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: KSizes.fontSizeM,
+              ),
             ),
           ),
-          child: child,
-        ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: KSizes.fontSizeM,
+                fontWeight: KSizes.fontWeightMedium,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -399,31 +260,21 @@ class SummaryStepWidget extends ConsumerWidget {
     ref.read(onboardingProvider.notifier).goToStep(step);
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: KSizes.margin2x),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: KSizes.fontWeightMedium,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ],
-      ),
-    );
+  int _calculateAge(DateTime? dateOfBirth) {
+    if (dateOfBirth == null) return 0;
+    final now = DateTime.now();
+    int age = now.year - dateOfBirth.year;
+    if (now.month < dateOfBirth.month || 
+        (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  double _calculateBMI(UserProfileModel profile) {
+    if (profile.heightCm <= 0 || profile.currentWeightKg <= 0) return 0;
+    final heightM = profile.heightCm / 100;
+    return profile.currentWeightKg / (heightM * heightM);
   }
 
   String _getGenderText(Gender? gender) {
@@ -433,43 +284,56 @@ class SummaryStepWidget extends ConsumerWidget {
       case Gender.female:
         return 'Kvinde';
       case null:
-        return 'Ikke angivet';
+        return '';
     }
   }
 
   String _getGoalTypeText(GoalType? goalType) {
     switch (goalType) {
       case GoalType.weightLoss:
-        return 'Vægttab';
+        return 'Tabe vægt';
       case GoalType.weightMaintenance:
-        return 'Vægtvedligeholdelse';
+        return 'Vedligeholde vægt';
       case GoalType.weightGain:
-        return 'Vægtøgning';
+        return 'Tage på';
       case GoalType.muscleGain:
-        return 'Muskelopbygning';
+        return 'Bygge muskler';
       case null:
-        return 'Ikke angivet';
+        return '';
     }
   }
 
-  Color _getBMIColor(double bmi) {
-    if (bmi < 18.5) {
-      return AppColors.info;
-    } else if (bmi < 25) {
-      return AppColors.success;
-    } else if (bmi < 30) {
-      return AppColors.warning;
-    } else {
-      return AppColors.error;
+  String _getWorkActivityText(WorkActivityLevel? level) {
+    switch (level) {
+      case WorkActivityLevel.sedentary:
+        return 'Stillesiddende';
+      case WorkActivityLevel.light:
+        return 'Let aktivitet';
+      case WorkActivityLevel.moderate:
+        return 'Moderat aktivitet';
+      case WorkActivityLevel.heavy:
+        return 'Tung aktivitet';
+      case WorkActivityLevel.veryHeavy:
+        return 'Meget tung aktivitet';
+      case null:
+        return '';
     }
   }
 
-  int _calculateAge(DateTime dateOfBirth) {
-    DateTime now = DateTime.now();
-    int age = now.year - dateOfBirth.year;
-    if (now.month < dateOfBirth.month || (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
-      age--;
+  String _getLeisureActivityText(LeisureActivityLevel? level) {
+    switch (level) {
+      case LeisureActivityLevel.sedentary:
+        return 'Ikke aktiv';
+      case LeisureActivityLevel.lightlyActive:
+        return 'Let aktiv';
+      case LeisureActivityLevel.moderatelyActive:
+        return 'Moderat aktiv';
+      case LeisureActivityLevel.veryActive:
+        return 'Meget aktiv';
+      case LeisureActivityLevel.extraActive:
+        return 'Ekstremt aktiv';
+      case null:
+        return 'Manuel registrering';
     }
-    return age;
   }
-} 
+}

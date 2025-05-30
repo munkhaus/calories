@@ -66,7 +66,6 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
     return OnboardingBaseLayout(
       title: 'Dine fysiske mål',
       subtitle: 'Højde og vægt hjælper os med at beregne dine kaloriebehov.',
-      titleIcon: Icons.straighten,
       children: [
         // Height section
         OnboardingSection(
@@ -96,17 +95,14 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: Icons.height,
           title: 'Hvor høj er du?',
           subtitle: 'Indtast din højde i centimeter.',
-          iconColor: AppColors.primary,
         ),
         
         KSizes.spacingVerticalL,
         
-        // Height input with better styling
+        // Height input with simplified styling
         OnboardingInputContainer(
-          color: AppColors.primary,
           isActive: state.userProfile.heightCm > 0,
           child: TextField(
             controller: _heightController,
@@ -162,7 +158,6 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           max: 220,
           divisions: 100,
           onChanged: notifier.updateHeight,
-          color: AppColors.primary,
           minLabel: '120 cm',
           maxLabel: '220 cm',
         ),
@@ -172,8 +167,6 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           KSizes.spacingVerticalM,
           OnboardingHelpText(
             text: 'Indtast en højde mellem 120-220 cm',
-            icon: Icons.warning_outlined,
-            color: AppColors.warning,
           ),
         ],
       ],
@@ -185,17 +178,14 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: Icons.monitor_weight_outlined,
           title: 'Hvad vejer du nu?',
           subtitle: 'Indtast din nuværende vægt i kilogram.',
-          iconColor: AppColors.secondary,
         ),
         
         KSizes.spacingVerticalL,
         
-        // Weight input with better styling
+        // Weight input with simplified styling
         OnboardingInputContainer(
-          color: AppColors.secondary,
           isActive: state.userProfile.currentWeightKg > 0,
           child: TextField(
             controller: _currentWeightController,
@@ -208,7 +198,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
             ],
             onChanged: (value) {
               final weight = double.tryParse(value) ?? 0;
-              if (weight >= 30 && weight <= 200) {
+              if (weight >= 30 && weight <= 300) {
                 notifier.updateCurrentWeight(weight);
               }
             },
@@ -225,11 +215,11 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
                   : null,
               border: InputBorder.none,
               hintStyle: TextStyle(
-                color: AppColors.secondary.withOpacity(0.6),
+                color: AppColors.primary.withOpacity(0.6),
                 fontSize: KSizes.fontSizeL,
               ),
               suffixStyle: TextStyle(
-                color: AppColors.secondary,
+                color: AppColors.primary,
                 fontWeight: KSizes.fontWeightMedium,
                 fontSize: KSizes.fontSizeL,
               ),
@@ -237,32 +227,29 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
             style: TextStyle(
               fontSize: KSizes.fontSizeXXL,
               fontWeight: KSizes.fontWeightBold,
-              color: AppColors.secondary,
+              color: AppColors.primary,
             ),
           ),
         ),
         
         KSizes.spacingVerticalL,
         
-        // Current Weight Slider
+        // Weight Slider
         OnboardingSlider(
           value: state.userProfile.currentWeightKg,
           min: 30,
-          max: 200,
-          divisions: 340,
+          max: 300,
+          divisions: 270,
           onChanged: notifier.updateCurrentWeight,
-          color: AppColors.secondary,
           minLabel: '30 kg',
-          maxLabel: '200 kg',
+          maxLabel: '300 kg',
         ),
         
         // Help text for weight validation
         if (_currentWeightController.text.isNotEmpty && state.userProfile.currentWeightKg <= 0) ...[
           KSizes.spacingVerticalM,
           OnboardingHelpText(
-            text: 'Indtast en vægt mellem 30-200 kg',
-            icon: Icons.warning_outlined,
-            color: AppColors.warning,
+            text: 'Indtast en vægt mellem 30-300 kg',
           ),
         ],
       ],
@@ -270,121 +257,96 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
   }
 
   Widget _buildBMISection(BuildContext context, dynamic state) {
-    final bmi = state.userProfile.bmi;
-    final category = state.userProfile.bmiCategory;
+    final height = state.userProfile.heightCm;
+    final weight = state.userProfile.currentWeightKg;
     
-    Color bmiColor;
-    IconData bmiIcon;
-    String explanation;
+    if (height <= 0 || weight <= 0) return const SizedBox.shrink();
+    
+    // Calculate BMI
+    final bmi = weight / ((height / 100) * (height / 100));
+    
+    // Determine BMI category and color
+    String category;
+    Color categoryColor;
     
     if (bmi < 18.5) {
-      bmiColor = AppColors.info;
-      bmiIcon = Icons.trending_down;
-      explanation = 'Undervægt - Overvej at tage på for optimal sundhed';
+      category = 'Undervægt';
+      categoryColor = AppColors.warning;
     } else if (bmi < 25) {
-      bmiColor = AppColors.success;
-      bmiIcon = Icons.check_circle;
-      explanation = 'Normalvægt - Du har en sund vægt!';
+      category = 'Normal vægt';
+      categoryColor = AppColors.success;
     } else if (bmi < 30) {
-      bmiColor = AppColors.warning;
-      bmiIcon = Icons.warning_outlined;
-      explanation = 'Overvægt - Overvej vægttab for bedre sundhed';
+      category = 'Overvægt';
+      categoryColor = AppColors.warning;
     } else {
-      bmiColor = AppColors.error;
-      bmiIcon = Icons.error_outline;
-      explanation = 'Svær overvægt - Vægttab vil forbedre din sundhed betydeligt';
+      category = 'Fedme';
+      categoryColor = AppColors.error;
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: Icons.calculate_outlined,
-          title: 'Dit BMI resultat',
-          subtitle: 'BMI viser din vægt i forhold til din højde.',
-          iconColor: bmiColor,
+          title: 'Dit BMI',
+          subtitle: 'Body Mass Index baseret på højde og vægt.',
         ),
         
         KSizes.spacingVerticalL,
         
-        // BMI Display Card
+        // BMI Display
         Container(
+          width: double.infinity,
           padding: EdgeInsets.all(KSizes.margin4x),
           decoration: BoxDecoration(
-            color: bmiColor.withOpacity(0.1),
+            color: AppColors.primary.withOpacity(0.05),
             borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(color: bmiColor.withOpacity(0.3)),
+            border: Border.all(
+              color: AppColors.primary.withOpacity(0.2),
+            ),
           ),
           child: Column(
             children: [
-              // BMI Value
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Icon(
-                    bmiIcon,
-                    color: bmiColor,
-                    size: KSizes.iconL,
+                  Text(
+                    bmi.toStringAsFixed(1),
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: KSizes.fontWeightBold,
+                    ),
                   ),
-                  KSizes.spacingHorizontalM,
-                  Column(
-                    children: [
-                      Text(
-                        bmi.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontSize: KSizes.fontSizeXXL,
-                          fontWeight: KSizes.fontWeightBold,
-                          color: bmiColor,
-                        ),
-                      ),
-                      Text(
-                        'BMI',
-                        style: TextStyle(
-                          fontSize: KSizes.fontSizeS,
-                          color: bmiColor,
-                          fontWeight: KSizes.fontWeightMedium,
-                        ),
-                      ),
-                    ],
+                  KSizes.spacingHorizontalS,
+                  Text(
+                    'BMI',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
-              
-              KSizes.spacingVerticalM,
-              
-              // Category and Explanation
-              Text(
-                category,
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                  color: bmiColor,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              
               KSizes.spacingVerticalS,
-              
-              Text(
-                explanation,
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeM,
-                  color: AppColors.textSecondary,
-                  height: 1.3,
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: KSizes.margin3x,
+                  vertical: KSizes.margin1x,
                 ),
-                textAlign: TextAlign.center,
+                decoration: BoxDecoration(
+                  color: categoryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Text(
+                  category,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: categoryColor,
+                    fontWeight: KSizes.fontWeightMedium,
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-        
-        KSizes.spacingVerticalM,
-        
-        // BMI Information Help Text
-        OnboardingHelpText(
-          text: 'BMI er vejledende og tager ikke højde for muskelmasse.',
-          icon: Icons.info_outline,
-          color: AppColors.info,
         ),
       ],
     );

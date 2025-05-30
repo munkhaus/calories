@@ -54,41 +54,33 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
     });
 
     return OnboardingBaseLayout(
-      title: '🎯 Hvad er dit mål?',
+      title: 'Hvad er dit mål?',
       subtitle: 'Vælg det mål der passer bedst til dig',
       children: [
-        // Goal selection cards with consistent primary color theme
+        // Goal selection cards - simplified
         OnboardingSection(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               OnboardingSectionHeader(
-                icon: Icons.trending_down,
                 title: 'Vælg dit hovedmål',
                 subtitle: 'Dit mål påvirker dine daglige kalorier.',
-                iconColor: AppColors.primary,
               ),
               
               KSizes.spacingVerticalL,
         
-              // Weight Loss Goal - using consistent primary color theme
+              // Weight Loss Goal - simplified design
               OnboardingOptionCard(
                 title: 'Tabe vægt',
                 description: 'Sund og bæredygtig vægttab over tid.',
-                icon: Icons.trending_down,
-                color: AppColors.primary, // Changed from AppColors.error
                 isSelected: state.userProfile.goalType == GoalType.weightLoss,
                 onTap: () => notifier.updateGoalType(GoalType.weightLoss),
               ),
               
-              KSizes.spacingVerticalM,
-        
               // Weight Maintenance Goal
               OnboardingOptionCard(
                 title: 'Vedligeholde vægt',
                 description: 'Holde min nuværende vægt stabil.',
-                icon: Icons.trending_flat,
-                color: AppColors.primary, // Changed from AppColors.info
                 isSelected: state.userProfile.goalType == GoalType.weightMaintenance,
                 onTap: () {
                   notifier.updateGoalType(GoalType.weightMaintenance);
@@ -99,26 +91,18 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
                 },
               ),
               
-              KSizes.spacingVerticalM,
-              
               // Weight Gain Goal
               OnboardingOptionCard(
                 title: 'Tage på',
                 description: 'Sund vægtøgning og opbygning af masse.',
-                icon: Icons.trending_up,
-                color: AppColors.primary, // Changed from AppColors.success
                 isSelected: state.userProfile.goalType == GoalType.weightGain,
                 onTap: () => notifier.updateGoalType(GoalType.weightGain),
               ),
-              
-              KSizes.spacingVerticalM,
         
               // Muscle Gain Goal
               OnboardingOptionCard(
                 title: 'Bygge muskler',
                 description: 'Fokus på muskelmasse og styrke.',
-                icon: Icons.fitness_center,
-                color: AppColors.primary, // Changed from AppColors.warning
                 isSelected: state.userProfile.goalType == GoalType.muscleGain,
                 onTap: () => notifier.updateGoalType(GoalType.muscleGain),
               ),
@@ -126,7 +110,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
           ),
         ),
         
-        // Target weight input (if goal is not maintenance) - NOW WITH SLIDER
+        // Target weight input (if goal is not maintenance)
         if (state.userProfile.goalType != null && 
             state.userProfile.goalType != GoalType.weightMaintenance) ...[
           KSizes.spacingVerticalL,
@@ -154,17 +138,14 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
     final currentWeight = state.userProfile.currentWeightKg;
     
     String title;
-    String subtitle;
     
     switch (goalType) {
       case GoalType.weightLoss:
         title = 'Hvad er din målvægt?';
-        subtitle = 'Indtast den vægt du gerne vil nå. Vælg et realistisk mål for bæredygtige resultater.';
         break;
       case GoalType.weightGain:
       case GoalType.muscleGain:
         title = 'Hvad er din målvægt?';
-        subtitle = 'Indtast den vægt du ønsker at opnå. Husk at muskelopbygning tager tid.';
         break;
       default:
         return const SizedBox.shrink();
@@ -182,72 +163,67 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           OnboardingSectionHeader(
-            icon: Icons.track_changes,
             title: title,
             subtitle: 'Sæt et realistisk mål.',
-            iconColor: AppColors.primary, // Changed from AppColors.secondary
           ),
           
           KSizes.spacingVerticalL,
           
-          // Target weight input with consistent primary color
+          // Target weight input - simplified styling
           OnboardingInputContainer(
-            color: AppColors.primary, // Changed from AppColors.secondary
             isActive: state.userProfile.targetWeightKg > 0,
             child: TextFormField(
               initialValue: state.userProfile.targetWeightKg > 0 
                   ? state.userProfile.targetWeightKg.toStringAsFixed(1)
                   : '',
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              onChanged: (value) {
+                final weight = double.tryParse(value) ?? 0;
+                if (weight >= minWeight && weight <= maxWeight) {
+                  notifier.updateTargetWeight(weight);
+                }
+              },
               decoration: InputDecoration(
-                labelText: 'Målvægt',
+                hintText: 'Indtast målvægt',
                 suffixText: 'kg',
                 border: InputBorder.none,
-                labelStyle: TextStyle(
-                  color: AppColors.primary, // Changed from AppColors.secondary
-                  fontWeight: KSizes.fontWeightMedium,
+                hintStyle: TextStyle(
+                  color: AppColors.primary.withOpacity(0.6),
+                  fontSize: KSizes.fontSizeL,
                 ),
                 suffixStyle: TextStyle(
-                  color: AppColors.primary, // Changed from AppColors.secondary
+                  color: AppColors.primary,
                   fontWeight: KSizes.fontWeightMedium,
                   fontSize: KSizes.fontSizeL,
                 ),
               ),
               style: TextStyle(
-                fontSize: KSizes.fontSizeXL,
+                fontSize: KSizes.fontSizeXXL,
                 fontWeight: KSizes.fontWeightBold,
-                color: AppColors.primary, // Changed from AppColors.secondary
+                color: AppColors.primary,
               ),
-              textAlign: TextAlign.center,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (value) {
-                final weight = double.tryParse(value);
-                if (weight != null && weight > 0) {
-                  notifier.updateTargetWeight(weight);
-                }
-              },
             ),
           ),
           
           KSizes.spacingVerticalL,
           
-          // ADD SLIDER for target weight - consistent with physical info step
+          // Target weight slider
           OnboardingSlider(
             value: targetWeight,
             min: minWeight,
             max: maxWeight,
             divisions: ((maxWeight - minWeight) * 2).round(),
             onChanged: notifier.updateTargetWeight,
-            color: AppColors.primary,
             minLabel: '${minWeight.round()} kg',
             maxLabel: '${maxWeight.round()} kg',
           ),
           
-          if (currentWeight > 0) ...[
+          // Weight difference help text
+          if (state.userProfile.targetWeightKg > 0 && currentWeight > 0) ...[
             KSizes.spacingVerticalM,
             OnboardingHelpText(
-              text: 'Din nuværende vægt: ${currentWeight.toStringAsFixed(1)} kg',
-              icon: Icons.info_outline,
-              color: AppColors.info,
+              text: _getWeightDifferenceText(goalType, currentWeight, state.userProfile.targetWeightKg),
             ),
           ],
         ],
@@ -261,150 +237,149 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
     dynamic notifier,
   ) {
     final goalType = state.userProfile.goalType;
-    
+    if (goalType == GoalType.weightMaintenance) return const SizedBox.shrink();
+
     String title;
-    String subtitle;
-    String recommendation;
     String unit;
-    double minWeekly;
-    double maxWeekly;
+    double min, max, defaultValue;
     
-    switch (goalType) {
-      case GoalType.weightLoss:
-        title = 'Hvor hurtigt vil du tabe dig?';
-        subtitle = 'Vælg et realistisk tempo for sundt og bæredygtigt vægttab.';
-        recommendation = 'Anbefalet: 0.3-0.7 kg per uge';
-        unit = 'kg/uge';
-        minWeekly = 0.1;
-        maxWeekly = 1.0;
-        break;
-      case GoalType.weightGain:
-        title = 'Hvor hurtigt vil du tage på?';
-        subtitle = 'Vælg et passende tempo for sund vægtøgning uden overdreven fedtopbygning.';
-        recommendation = 'Anbefalet: 0.3-0.5 kg per uge';
-        unit = 'kg/uge';
-        minWeekly = 0.1;
-        maxWeekly = 0.8;
-        break;
-      case GoalType.muscleGain:
-        title = 'Hvor hurtigt vil du bygge muskler?';
-        subtitle = 'Muskelopbygning kræver tålmodighed. Langsomt og støt vinder løbet.';
-        recommendation = 'Anbefalet: 0.2-0.4 kg per uge';
-        unit = 'kg/uge';
-        minWeekly = 0.1;
-        maxWeekly = 0.6;
-        break;
-      default:
-        return const SizedBox.shrink();
+    if (goalType == GoalType.weightLoss) {
+      title = 'Hvor meget vil du tabe per uge?';
+      unit = 'kg/uge';
+      min = 0.1;
+      max = 1.0;
+      defaultValue = 0.5;
+    } else {
+      title = 'Hvor meget vil du tage på per uge?';
+      unit = 'kg/uge';
+      min = 0.1;
+      max = 0.8;
+      defaultValue = 0.3;
     }
 
     double weeklyGoal = state.userProfile.weeklyGoalKg > 0 
-        ? state.userProfile.weeklyGoalKg.clamp(minWeekly, maxWeekly)
-        : (minWeekly + maxWeekly) / 2; // Default to middle value
+        ? state.userProfile.weeklyGoalKg 
+        : defaultValue;
 
     return OnboardingSection(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           OnboardingSectionHeader(
-            icon: Icons.speed,
-            title: 'Hvor hurtigt?',
-            subtitle: 'Vælg et realistisk tempo.',
-            iconColor: AppColors.primary, // Changed from AppColors.warning
-          ),
-          
-          KSizes.spacingVerticalM,
-          
-          OnboardingHelpText(
-            text: recommendation,
-            color: AppColors.success,
+            title: title,
+            subtitle: 'Vælg et bæredygtigt tempo.',
           ),
           
           KSizes.spacingVerticalL,
           
-          // Weekly goal input with consistent primary color
+          // Weekly goal input - simplified styling
           OnboardingInputContainer(
-            color: AppColors.primary, // Changed from AppColors.warning
             isActive: state.userProfile.weeklyGoalKg > 0,
             child: TextFormField(
-              initialValue: state.userProfile.weeklyGoalKg > 0 
+              initialValue: state.userProfile.weeklyGoalKg > 0
                   ? state.userProfile.weeklyGoalKg.toStringAsFixed(1)
                   : '',
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              onChanged: (value) {
+                final goal = double.tryParse(value) ?? 0;
+                if (goal >= min && goal <= max) {
+                  notifier.updateWeeklyGoal(goal);
+                }
+              },
               decoration: InputDecoration(
-                labelText: 'Ugentligt mål',
+                hintText: 'Indtast ugentligt mål',
                 suffixText: unit,
                 border: InputBorder.none,
-                labelStyle: TextStyle(
-                  color: AppColors.primary, // Changed from AppColors.warning
-                  fontWeight: KSizes.fontWeightMedium,
+                hintStyle: TextStyle(
+                  color: AppColors.primary.withOpacity(0.6),
+                  fontSize: KSizes.fontSizeL,
                 ),
                 suffixStyle: TextStyle(
-                  color: AppColors.primary, // Changed from AppColors.warning
+                  color: AppColors.primary,
                   fontWeight: KSizes.fontWeightMedium,
                   fontSize: KSizes.fontSizeL,
                 ),
               ),
               style: TextStyle(
-                fontSize: KSizes.fontSizeXL,
+                fontSize: KSizes.fontSizeXXL,
                 fontWeight: KSizes.fontWeightBold,
-                color: AppColors.primary, // Changed from AppColors.warning
+                color: AppColors.primary,
               ),
-              textAlign: TextAlign.center,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              onChanged: (value) {
-                final weeklyGoal = double.tryParse(value);
-                if (weeklyGoal != null && weeklyGoal > 0 && weeklyGoal <= maxWeekly) {
-                  notifier.updateWeeklyGoal(weeklyGoal);
-                }
-              },
             ),
           ),
           
           KSizes.spacingVerticalL,
           
-          // ADD SLIDER for weekly goal - consistent with other inputs
+          // Weekly goal slider
           OnboardingSlider(
-            value: weeklyGoal,
-            min: minWeekly,
-            max: maxWeekly,
-            divisions: ((maxWeekly - minWeekly) * 10).round(),
+            value: weeklyGoal.clamp(min, max),
+            min: min,
+            max: max,
+            divisions: ((max - min) * 10).round(),
             onChanged: notifier.updateWeeklyGoal,
-            color: AppColors.primary,
-            minLabel: '${minWeekly.toStringAsFixed(1)} kg/uge',
-            maxLabel: '${maxWeekly.toStringAsFixed(1)} kg/uge',
+            minLabel: '${min.toStringAsFixed(1)} kg',
+            maxLabel: '${max.toStringAsFixed(1)} kg',
+          ),
+          
+          // Weekly goal recommendation
+          KSizes.spacingVerticalM,
+          OnboardingHelpText(
+            text: _getWeeklyGoalRecommendation(goalType, weeklyGoal),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildGoalExplanation(GoalType goalType) {
-    String explanationText;
-    IconData icon;
+    String explanation;
     
     switch (goalType) {
       case GoalType.weightLoss:
-        explanationText = 'Vi beregner et kalorieunderskud baseret på dit mål.';
-        icon = Icons.trending_down;
+        explanation = 'Vægttab kræver et kalorieunderskud. Vi beregner dine kalorier så du når dit mål på en sund måde.';
         break;
       case GoalType.weightMaintenance:
-        explanationText = 'Vi beregner kalorier til at holde din vægt stabil.';
-        icon = Icons.trending_flat;
+        explanation = 'For at holde vægten stabil matcher vi dit kalorieforbrug med dit indtag.';
         break;
       case GoalType.weightGain:
-        explanationText = 'Vi beregner et kalorieoverskud baseret på dit mål.';
-        icon = Icons.trending_up;
+        explanation = 'Vægtøgning kræver et kalorieoverskud. Vi sørger for du får nok kalorier til sund vækst.';
         break;
       case GoalType.muscleGain:
-        explanationText = 'Vi beregner kalorier optimeret til muskelopbygning.';
-        icon = Icons.fitness_center;
+        explanation = 'Muskelopbygning kræver både kalorier og protein. Vi optimerer dit indtag til maksimal muskelvækst.';
         break;
     }
+
+    return OnboardingHelpText(text: explanation);
+  }
+
+  String _getWeightDifferenceText(GoalType goalType, double currentWeight, double targetWeight) {
+    final difference = (targetWeight - currentWeight).abs();
     
-    return OnboardingHelpText(
-      text: explanationText,
-      icon: icon,
-      color: AppColors.primary, // Consistent primary color for all explanations
-    );
+    if (goalType == GoalType.weightLoss) {
+      return 'Du vil tabe ${difference.toStringAsFixed(1)} kg samlet.';
+    } else {
+      return 'Du vil tage ${difference.toStringAsFixed(1)} kg på samlet.';
+    }
+  }
+
+  String _getWeeklyGoalRecommendation(GoalType goalType, double weeklyGoal) {
+    if (goalType == GoalType.weightLoss) {
+      if (weeklyGoal <= 0.3) {
+        return 'Langsomt og bæredygtigt tempo - godt valg!';
+      } else if (weeklyGoal <= 0.7) {
+        return 'Moderat tempo - realistisk for de fleste.';
+      } else {
+        return 'Hurtigt tempo - kan være udfordrende at holde.';
+      }
+    } else {
+      if (weeklyGoal <= 0.2) {
+        return 'Langsomt tempo - minimerer fedtindtag.';
+      } else if (weeklyGoal <= 0.5) {
+        return 'Moderat tempo - god balance mellem muskler og fedt.';
+      } else {
+        return 'Hurtigt tempo - kan give mere fedt end muskler.';
+      }
+    }
   }
 } 

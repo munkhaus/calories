@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
@@ -28,8 +27,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         // Educational note
         OnboardingHelpText(
           text: 'Dette er din personlige udregning - se hvordan vi kommer frem til tallet:',
-          icon: MdiIcons.lightbulbOutline,
-          color: AppColors.info,
         ),
         
         KSizes.spacingVerticalL,
@@ -41,8 +38,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           subtitle: 'Kalorier din krop bruger i hvile',
           value: '${_calculateBMR(userProfile).round()} kcal',
           explanation: 'Dit grundforbrug er den energi din krop bruger bare for at holde dig i live - vejrtrækning, hjerteslag, fordøjelse og så videre.',
-          icon: MdiIcons.heart,
-          color: AppColors.primary,
         ),
         
         KSizes.spacingVerticalM,
@@ -54,8 +49,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           subtitle: 'Baseret på arbejde og fritid',
           value: '${_calculateTDEE(userProfile).round()} kcal',
           explanation: 'Vi lægger ekstra kalorier til baseret på hvor aktiv du er. Jo mere du bevæger dig, jo flere kalorier forbrænder du.',
-          icon: MdiIcons.run,
-          color: AppColors.secondary,
         ),
         
         KSizes.spacingVerticalM,
@@ -67,8 +60,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           subtitle: _getGoalAdjustmentDescription(userProfile.goalType),
           value: _getGoalAdjustmentText(userProfile),
           explanation: _getGoalExplanation(userProfile.goalType),
-          icon: _getGoalIcon(userProfile.goalType),
-          color: AppColors.success,
         ),
         
         KSizes.spacingVerticalL,
@@ -86,135 +77,63 @@ class CalorieEducationStepWidget extends ConsumerWidget {
 
   Widget _buildCalorieTargetCard(BuildContext context, UserProfileModel userProfile) {
     return Container(
-      padding: EdgeInsets.all(KSizes.margin4x),
+      padding: EdgeInsets.all(KSizes.margin6x),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: AppColors.primary.withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.3),
+          width: 2,
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon and title
+          Text(
+            'Dit daglige kaloriemål',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: KSizes.fontWeightSemiBold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          
+          KSizes.spacingVerticalL,
+          
+          // Final result - prominently displayed
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              // Icon container
-              Container(
-                padding: EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  MdiIcons.target,
+              Text(
+                userProfile.targetCalories.toString(),
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: AppColors.primary,
-                  size: KSizes.iconM,
+                  fontWeight: KSizes.fontWeightBold,
                 ),
               ),
-              
-              SizedBox(width: KSizes.margin3x),
-              
-              // Title and subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Dit daglige kaloriemål',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: KSizes.fontWeightSemiBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Dit personlige resultat',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+              KSizes.spacingHorizontalS,
+              Text(
+                'kcal',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: KSizes.fontWeightMedium,
                 ),
               ),
             ],
           ),
-          
-          SizedBox(height: KSizes.margin3x),
-          
-          // Explanation first
-          Container(
-            padding: EdgeInsets.all(KSizes.margin3x),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(KSizes.radiusS),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.1),
-              ),
-            ),
-            child: Text(
-              'Dette er dit personlige kaloriemål baseret på dine oplysninger. Se nedenfor hvordan vi beregner det.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
-              ),
+          KSizes.spacingVerticalS,
+          Text(
+            'per dag',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
           
-          SizedBox(height: KSizes.margin3x),
+          KSizes.spacingVerticalL,
           
-          // Final result - prominently displayed
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(KSizes.margin6x),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(KSizes.radiusM),
-              border: Border.all(
-                color: AppColors.primary.withOpacity(0.3),
-                width: 2,
-              ),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '${userProfile.targetCalories}',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: KSizes.fontWeightBold,
-                      ),
-                    ),
-                    SizedBox(width: KSizes.margin1x),
-                    Text(
-                      'kcal',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: KSizes.margin1x),
-                Text(
-                  'per dag',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
+          // Simple explanation
+          OnboardingHelpText(
+            text: 'Dette er din personlige kalorie-anbefaling baseret på alle dine oplysninger og mål.',
           ),
         ],
       ),
@@ -227,8 +146,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
     required String subtitle,
     required String value,
     required String explanation,
-    required IconData icon,
-    required Color color,
   }) {
     return Container(
       padding: EdgeInsets.all(KSizes.margin4x),
@@ -236,102 +153,54 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: color.withOpacity(0.2),
+          color: AppColors.border.withValues(alpha: 0.1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with icon and title
-          Row(
-            children: [
-              // Icon container
-              Container(
-                padding: EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: KSizes.iconM,
-                ),
-              ),
-              
-              SizedBox(width: KSizes.margin3x),
-              
-              // Title and subtitle
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: KSizes.fontWeightSemiBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: KSizes.margin3x),
-          
-          // Explanation first - what is this concept?
-          Container(
-            padding: EdgeInsets.all(KSizes.margin3x),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(KSizes.radiusS),
-              border: Border.all(
-                color: color.withOpacity(0.1),
-              ),
+          // Title and subtitle
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightSemiBold,
+              color: AppColors.textPrimary,
             ),
-            child: Text(
-              explanation,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
-              ),
+          ),
+          KSizes.spacingVerticalXS,
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
           
-          // Then show the result - now it makes sense!
+          KSizes.spacingVerticalM,
+          
+          // Explanation
+          OnboardingHelpText(
+            text: explanation,
+          ),
+          
+          // Result value
           if (value.isNotEmpty) ...[
-            SizedBox(height: KSizes.margin3x),
+            KSizes.spacingVerticalM,
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(KSizes.margin4x),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(KSizes.radiusM),
                 border: Border.all(
-                  color: color.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
               child: Center(
                 child: Text(
                   value,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: color,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.primary,
                     fontWeight: KSizes.fontWeightBold,
                   ),
                 ),
@@ -343,138 +212,28 @@ class CalorieEducationStepWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildTrustIndicators(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        border: Border.all(
-          color: AppColors.info.withOpacity(0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.informationOutline,
-                color: AppColors.info,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Text(
-                'Sådan beregner vi det',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.info,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: KSizes.margin3x),
-          
-          // Simple calculation explanation
-          _buildCalculationPoint(
-            context,
-            'Din krop forbrænder kalorier bare for at fungere - det kalder vi grundforbrug',
-            MdiIcons.heart,
-          ),
-          
-          SizedBox(height: KSizes.margin2x),
-          
-          _buildCalculationPoint(
-            context,
-            'Vi lægger kalorier til baseret på hvor aktiv du er i dit arbejde og din fritid',
-            MdiIcons.run,
-          ),
-          
-          SizedBox(height: KSizes.margin2x),
-          
-          _buildCalculationPoint(
-            context,
-            'Endelig justerer vi for dit mål - færre kalorier for vægttab, flere for vægtøgning',
-            MdiIcons.target,
-          ),
-          
-          SizedBox(height: KSizes.margin3x),
-          
-          Text(
-            'Beregningerne tager højde for din alder, køn, højde og vægt, så de passer til netop dig.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalculationPoint(BuildContext context, String text, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: EdgeInsets.all(KSizes.margin1x),
-          decoration: BoxDecoration(
-            color: AppColors.info.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(KSizes.radiusS),
-          ),
-          child: Icon(
-            icon,
-            color: AppColors.info,
-            size: KSizes.iconS,
-          ),
-        ),
-        SizedBox(width: KSizes.margin3x),
-        Expanded(
-          child: Text(
-            text,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textPrimary,
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildProcessSummary(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: AppColors.info.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: AppColors.info.withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.lightbulbOn,
-                color: AppColors.info,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Text(
-                'Sådan hænger det sammen',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.info,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                ),
-              ),
-            ],
+          Text(
+            'Sådan hænger det sammen',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: KSizes.fontWeightSemiBold,
+            ),
           ),
           
-          SizedBox(height: KSizes.margin3x),
+          KSizes.spacingVerticalM,
           
           Text(
             'Vi starter med at beregne hvor mange kalorier din krop bruger i hvile, lægger til for din daglige aktivitet, og justerer så op eller ned baseret på dit mål. På den måde får du et realistisk kaloriemål der passer til dit liv.',
@@ -484,7 +243,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
             ),
           ),
           
-          SizedBox(height: KSizes.margin3x),
+          KSizes.spacingVerticalM,
           
           Text(
             'Beregningerne tager højde for din alder, køn, højde og vægt, så de passer til netop dig.',
@@ -502,34 +261,24 @@ class CalorieEducationStepWidget extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: AppColors.warning.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: AppColors.warning.withOpacity(0.2),
+          color: AppColors.primary.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.alertOutline,
-                color: AppColors.warning,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Text(
-                'Vigtige forbehold',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.warning,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                ),
-              ),
-            ],
+          Text(
+            'Vigtige forbehold',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.primary,
+              fontWeight: KSizes.fontWeightSemiBold,
+            ),
           ),
           
-          SizedBox(height: KSizes.margin3x),
+          KSizes.spacingVerticalM,
           
           ..._buildDisclaimerPoints(context),
         ],
@@ -556,11 +305,11 @@ class CalorieEducationStepWidget extends ConsumerWidget {
             width: 4,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.warning,
+              color: AppColors.primary,
               shape: BoxShape.circle,
             ),
           ),
-          SizedBox(width: KSizes.margin2x),
+          KSizes.spacingHorizontalS,
           Expanded(
             child: Text(
               disclaimer,
@@ -681,21 +430,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         return 'For at holde din vægt skal du spise cirka lige så mange kalorier som du forbrænder hver dag.';
       default:
         return 'Dit kaloriemål er tilpasset til dit specifikke mål.';
-    }
-  }
-
-  IconData _getGoalIcon(GoalType? goalType) {
-    switch (goalType) {
-      case GoalType.weightLoss:
-        return MdiIcons.trendingDown;
-      case GoalType.weightGain:
-        return MdiIcons.trendingUp;
-      case GoalType.muscleGain:
-        return MdiIcons.dumbbell;
-      case GoalType.weightMaintenance:
-        return MdiIcons.scaleBalance;
-      default:
-        return MdiIcons.target;
     }
   }
 } 

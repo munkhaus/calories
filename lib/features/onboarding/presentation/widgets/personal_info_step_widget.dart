@@ -110,7 +110,6 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
     return OnboardingBaseLayout(
       title: 'Lad os lære dig at kende',
       subtitle: 'Fortæl os lidt om dig selv, så vi kan personalisere din oplevelse.',
-      titleIcon: Icons.person_outline,
       children: [
         // Name section
         OnboardingSection(
@@ -139,16 +138,13 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: Icons.badge_outlined,
           title: 'Hvad hedder du?',
           subtitle: 'Dit navn gør appen mere personlig.',
-          iconColor: AppColors.primary,
         ),
         
         KSizes.spacingVerticalL,
         
         OnboardingInputContainer(
-          color: AppColors.primary,
           isActive: state.userProfile.name.isNotEmpty,
           child: TextField(
             controller: _nameController,
@@ -163,21 +159,21 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
               ),
               suffixIcon: state.userProfile.name.isNotEmpty 
                   ? Icon(
-                      Icons.check_circle,
+                        Icons.check_circle,
                       color: AppColors.success,
-                      size: KSizes.iconM,
+                        size: KSizes.iconM,
                     )
                   : null,
-            ),
-            style: TextStyle(
-              fontSize: KSizes.fontSizeXL,
-              fontWeight: KSizes.fontWeightBold,
-              color: AppColors.primary,
+              ),
+              style: TextStyle(
+                fontSize: KSizes.fontSizeXL,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.primary,
             ),
             textCapitalization: TextCapitalization.words,
             onChanged: notifier.updateName,
             onSubmitted: (_) => _dayFocus.requestFocus(),
-          ),
+            ),
         ),
       ],
     );
@@ -196,10 +192,8 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: Icons.cake_outlined,
           title: 'Hvornår er din fødselsdag?',
           subtitle: 'Din alder bruges til at beregne dine kaloriebehov.',
-          iconColor: AppColors.primary,
         ),
         
         KSizes.spacingVerticalL,
@@ -272,53 +266,11 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
           ],
         ),
         
-        // Age slider for consistent UX with other steps
-        if (age >= 16 && age <= 80) ...[
-          KSizes.spacingVerticalL,
-          OnboardingSlider(
-            value: age.toDouble(),
-            min: 16,
-            max: 80,
-            divisions: 64,
-            onChanged: (newAge) {
-              // Calculate approximate birth year from age
-              final currentYear = DateTime.now().year;
-              final birthYear = currentYear - newAge.round();
-              final currentMonth = DateTime.now().month;
-              final currentDay = DateTime.now().day;
-              
-              // Set a reasonable birth date (middle of year)
-              try {
-                final newDate = DateTime(birthYear, currentMonth, currentDay);
-                notifier.updateDateOfBirth(newDate);
-                
-                // Update text fields
-                _dayController.text = currentDay.toString();
-                _monthController.text = currentMonth.toString();  
-                _yearController.text = birthYear.toString();
-              } catch (e) {
-                // Fallback to beginning of year if date is invalid
-                final newDate = DateTime(birthYear, 1, 1);
-                notifier.updateDateOfBirth(newDate);
-                
-                _dayController.text = '1';
-                _monthController.text = '1';
-                _yearController.text = birthYear.toString();
-              }
-            },
-            color: AppColors.primary,
-            minLabel: '16 år',
-            maxLabel: '80 år',
-          ),
-        ],
-        
-        // Show age if date is valid
+        // Show age if date is valid - simplified display
         if (age > 0) ...[
           KSizes.spacingVerticalM,
           OnboardingHelpText(
             text: 'Du er $age år gammel. Dette bruges til præcise beregninger.',
-            icon: Icons.info_outline,
-            color: AppColors.success,
           ),
         ],
       ],
@@ -356,7 +308,6 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
         ),
         KSizes.spacingVerticalS,
         OnboardingInputContainer(
-          color: AppColors.primary,
           child: TextField(
             controller: controller,
             focusNode: focusNode,
@@ -393,95 +344,30 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: Icons.people_outline,
           title: 'Hvad er dit køn?',
           subtitle: 'Mænd og kvinder har forskellige kaloriebehov.',
-          iconColor: AppColors.primary,
         ),
         
         KSizes.spacingVerticalL,
         
-        Row(
+        // Simplified gender selection - removed individual cards
+        Column(
           children: [
-            Expanded(
-              child: _buildGenderCard(
-                context: context,
-                title: 'Mand',
-                icon: Icons.male,
-                isSelected: state.userProfile.gender == Gender.male,
-                onTap: () => notifier.updateGender(Gender.male),
-              ),
+            OnboardingOptionCard(
+              title: 'Mand',
+              description: 'Højere muskelmasse, øget kalorieforbrug',
+              isSelected: state.userProfile.gender == Gender.male,
+              onTap: () => notifier.updateGender(Gender.male),
             ),
-            KSizes.spacingHorizontalM,
-            Expanded(
-              child: _buildGenderCard(
-                context: context,
-                title: 'Kvinde',
-                icon: Icons.female,
-                isSelected: state.userProfile.gender == Gender.female,
-                onTap: () => notifier.updateGender(Gender.female),
-              ),
+            OnboardingOptionCard(
+              title: 'Kvinde',
+              description: 'Lavere muskelmasse, reduceret kalorieforbrug',
+              isSelected: state.userProfile.gender == Gender.female,
+              onTap: () => notifier.updateGender(Gender.female),
             ),
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildGenderCard({
-    required BuildContext context,
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      elevation: isSelected ? 4 : 1,
-      shadowColor: AppColors.primary.withOpacity(0.2),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        side: BorderSide(
-          color: isSelected ? AppColors.primary : AppColors.border.withOpacity(0.3),
-          width: isSelected ? 2 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        child: Container(
-          height: 100, // Reduced height since we removed the checkmark
-          padding: EdgeInsets.symmetric(
-            horizontal: KSizes.margin2x,
-            vertical: KSizes.margin3x,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: EdgeInsets.all(KSizes.margin1x),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(isSelected ? 0.2 : 0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: KSizes.iconM,
-                ),
-              ),
-              SizedBox(height: KSizes.margin2x),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: KSizes.fontWeightSemiBold,
-                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 } 
