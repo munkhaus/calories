@@ -6,5 +6,4 @@ enum OnboardingStep {
   goals,             // Goal selection only
   calorieEducation,  // Pedagogical explanation of calorie calculation
   summary,
-  completed,
 } 

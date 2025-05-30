@@ -26,7 +26,7 @@ class OnboardingState with _$OnboardingState {
   bool get isGoals => currentStep == OnboardingStep.goals;
   bool get isCalorieEducation => currentStep == OnboardingStep.calorieEducation;
   bool get isSummary => currentStep == OnboardingStep.summary;
-  bool get isCompleted => currentStep == OnboardingStep.completed;
+  bool get isCompleted => false;
 
   /// Check if we can proceed to next step
   bool get canProceedToNext {
@@ -49,8 +49,6 @@ class OnboardingState with _$OnboardingState {
         return true; // This is just an educational step
       case OnboardingStep.summary:
         return true;
-      case OnboardingStep.completed:
-        return true;
     }
   }
 
@@ -70,13 +68,11 @@ class OnboardingState with _$OnboardingState {
       case OnboardingStep.calorieEducation:
         return 0.86; // 6/7
       case OnboardingStep.summary:
-        return 0.95; // Almost done
-      case OnboardingStep.completed:
-        return 1.0;
+        return 1.0; // Complete
     }
   }
 
-  /// Get total number of steps (excluding completed)
+  /// Get total number of steps
   int get totalSteps => 7;
 
   /// Get current step number (1-based)
@@ -95,8 +91,6 @@ class OnboardingState with _$OnboardingState {
       case OnboardingStep.calorieEducation:
         return 6;
       case OnboardingStep.summary:
-        return 7;
-      case OnboardingStep.completed:
         return 7;
     }
   }
@@ -118,8 +112,6 @@ class OnboardingState with _$OnboardingState {
         return 'Sådan beregner vi dine kalorier';
       case OnboardingStep.summary:
         return 'Opsummering';
-      case OnboardingStep.completed:
-        return 'Færdig!';
     }
   }
 
@@ -140,8 +132,6 @@ class OnboardingState with _$OnboardingState {
         return 'Forstå din personlige kalorie-beregning';
       case OnboardingStep.summary:
         return 'Lad os gennemgå dine oplysninger';
-      case OnboardingStep.completed:
-        return 'Du er klar til at starte din sundhedsrejse!';
     }
   }
 } 

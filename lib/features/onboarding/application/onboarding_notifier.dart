@@ -25,7 +25,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       
       state = state.copyWith(
         userProfile: updatedProfile,
-        currentStep: OnboardingStep.completed,
+        currentStep: OnboardingStep.summary,
       );
       
       _calculateTargets();
@@ -98,8 +98,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       OnboardingStep.leisureActivity => OnboardingStep.goals,
       OnboardingStep.goals => OnboardingStep.calorieEducation,
       OnboardingStep.calorieEducation => OnboardingStep.summary,
-      OnboardingStep.summary => OnboardingStep.completed,
-      OnboardingStep.completed => OnboardingStep.completed,
+      OnboardingStep.summary => OnboardingStep.summary,
     };
 
     state = state.copyWith(currentStep: nextStep);
@@ -115,7 +114,6 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       OnboardingStep.goals => OnboardingStep.leisureActivity,
       OnboardingStep.calorieEducation => OnboardingStep.goals,
       OnboardingStep.summary => OnboardingStep.calorieEducation,
-      OnboardingStep.completed => OnboardingStep.summary,
     };
 
     state = state.copyWith(currentStep: previousStep);
@@ -345,7 +343,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         
         state = state.copyWith(
           userProfile: completedProfile,
-          currentStep: OnboardingStep.completed,
+          currentStep: OnboardingStep.summary,
           isLoading: false,
         );
       } else {

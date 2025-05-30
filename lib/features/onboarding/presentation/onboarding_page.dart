@@ -133,41 +133,7 @@ class OnboardingPage extends ConsumerWidget {
         return const CalorieEducationStepWidget();
       case OnboardingStep.summary:
         return const SummaryStepWidget();
-      case OnboardingStep.completed:
-        return _buildCompletedStep();
     }
-  }
-
-  Widget _buildCompletedStep() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.check_circle,
-            size: KSizes.iconXXL * 2,
-            color: Colors.green,
-          ),
-          SizedBox(height: KSizes.margin4x),
-          Text(
-            'Tillykke!',
-            style: TextStyle(
-              fontSize: KSizes.fontSizeHeading,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: KSizes.margin2x),
-          Text(
-            'Du er nu klar til at starte din sundhedsrejse',
-            style: TextStyle(
-              fontSize: KSizes.fontSizeL,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildNavigationButtons(BuildContext context, WidgetRef ref, OnboardingState state) {
@@ -191,16 +157,8 @@ class OnboardingPage extends ConsumerWidget {
             child: ElevatedButton(
               onPressed: state.canProceedToNext
                   ? () async {
-                      if (state.currentStep == OnboardingStep.completed) {
-                        // Navigate to main app by replacing entire app structure
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => const AppWrapper(),
-                          ),
-                          (route) => false,
-                        );
-                      } else if (state.currentStep == OnboardingStep.summary) {
-                        // Complete onboarding before going to completion screen
+                      if (state.currentStep == OnboardingStep.summary) {
+                        // Complete onboarding and go directly to main app
                         await ref.read(onboardingProvider.notifier).completeOnboarding();
                         if (ref.read(onboardingProvider).hasError) {
                           // Show error message if completion failed
@@ -211,8 +169,13 @@ class OnboardingPage extends ConsumerWidget {
                             ),
                           );
                         } else {
-                          // Proceed to next step (completed screen)
-                          ref.read(onboardingProvider.notifier).nextStep();
+                          // Navigate directly to main app
+                          Navigator.of(context).pushAndRemoveUntil(
+                            MaterialPageRoute(
+                              builder: (context) => const AppWrapper(),
+                            ),
+                            (route) => false,
+                          );
                         }
                       } else {
                         ref.read(onboardingProvider.notifier).nextStep();
@@ -220,13 +183,11 @@ class OnboardingPage extends ConsumerWidget {
                     }
                   : null,
               child: Text(
-                state.currentStep == OnboardingStep.completed
-                    ? 'Start app'
-                    : state.currentStep == OnboardingStep.summary
-                        ? 'Fuldfør'
-                        : state.canProceedToNext 
-                            ? 'Fortsæt'
-                            : 'Udfyld felterne',
+                state.currentStep == OnboardingStep.summary
+                    ? 'Fuldfør'
+                    : state.canProceedToNext 
+                        ? 'Fortsæt'
+                        : 'Udfyld felterne',
               ),
             ),
           ),
@@ -251,8 +212,6 @@ class OnboardingPage extends ConsumerWidget {
         return '📚 Lær om kalorier';
       case OnboardingStep.summary:
         return '✅ Gennemgå dine oplysninger';
-      case OnboardingStep.completed:
-        return '🎉 Du er klar til at starte!';
     }
   }
 }

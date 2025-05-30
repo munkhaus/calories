@@ -191,7 +191,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
                   children: [
                     Text(
                       '${userProfile.targetCalories}',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: AppColors.primary,
                         fontWeight: KSizes.fontWeightBold,
                       ),
@@ -199,7 +199,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
                     SizedBox(width: KSizes.margin1x),
                     Text(
                       'kcal',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: AppColors.primary,
                         fontWeight: KSizes.fontWeightMedium,
                       ),
