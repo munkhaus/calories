@@ -70,8 +70,8 @@ class CalorieOverviewWidget extends ConsumerWidget {
               children: [
                 // Modern icon container
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
@@ -83,48 +83,46 @@ class CalorieOverviewWidget extends ConsumerWidget {
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primary.withOpacity(0.3),
-                        blurRadius: KSizes.blurRadiusL,
-                        offset: KSizes.shadowOffsetM,
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Icon(
                     MdiIcons.fire,
                     color: Colors.white,
-                    size: KSizes.iconL,
+                    size: KSizes.iconM,
                   ),
                 ),
                 
-                const SizedBox(width: KSizes.margin4x),
+                const SizedBox(width: KSizes.margin3x),
                 
+                // Title and date in same row
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      // Main title with better typography
                       Text(
                         'Dagens kalorier',
                         style: TextStyle(
-                          fontSize: KSizes.fontSizeXXL,
+                          fontSize: KSizes.fontSizeXL,
                           fontWeight: KSizes.fontWeightBold,
                           color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
                         ),
                       ),
                       
-                      const SizedBox(height: KSizes.margin1x),
+                      const SizedBox(width: KSizes.margin3x),
                       
                       // Date selector with modern design
                       GestureDetector(
                         onTap: () => _showDatePicker(context, ref),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: KSizes.margin3x,
-                            vertical: KSizes.margin2x,
+                            horizontal: KSizes.margin2x,
+                            vertical: KSizes.margin1x,
                           ),
                           decoration: BoxDecoration(
                             color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(KSizes.radiusL),
+                            borderRadius: BorderRadius.circular(KSizes.radiusM),
                             border: Border.all(
                               color: AppColors.primary.withOpacity(0.2),
                               width: 1,
@@ -135,14 +133,14 @@ class CalorieOverviewWidget extends ConsumerWidget {
                             children: [
                               Icon(
                                 MdiIcons.calendar,
-                                size: KSizes.iconS,
+                                size: KSizes.iconXS,
                                 color: AppColors.primary,
                               ),
-                              const SizedBox(width: KSizes.margin2x),
+                              const SizedBox(width: KSizes.margin1x),
                               Text(
                                 selectedDateNotifier.formattedDate,
                                 style: TextStyle(
-                                  fontSize: KSizes.fontSizeM,
+                                  fontSize: KSizes.fontSizeS,
                                   color: AppColors.primary,
                                   fontWeight: KSizes.fontWeightSemiBold,
                                 ),
@@ -155,30 +153,34 @@ class CalorieOverviewWidget extends ConsumerWidget {
                   ),
                 ),
                 
-                // Navigation and info controls with modern design
-                Row(
-                  children: [
-                    _buildControlButton(
-                      icon: MdiIcons.chevronLeft,
-                      onTap: selectedDateNotifier.previousDay,
-                    ),
-                    const SizedBox(width: KSizes.margin1x),
-                    _buildControlButton(
-                      icon: MdiIcons.chevronRight,
-                      onTap: selectedDateNotifier.nextDay,
-                    ),
-                    const SizedBox(width: KSizes.margin2x),
-                    _buildControlButton(
-                      icon: MdiIcons.informationOutline,
-                      onTap: () => _showCalorieDetails(context, userProfile),
-                      isPrimary: true,
-                    ),
-                  ],
+                // Info button only
+                _buildControlButton(
+                  icon: MdiIcons.informationOutline,
+                  onTap: () => _showCalorieDetails(context, userProfile),
+                  isPrimary: true,
                 ),
               ],
             ),
             
-            SizedBox(height: KSizes.margin8x),
+            const SizedBox(height: KSizes.margin2x),
+            
+            // Navigation controls in separate row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildControlButton(
+                  icon: MdiIcons.chevronLeft,
+                  onTap: selectedDateNotifier.previousDay,
+                ),
+                const SizedBox(width: KSizes.margin4x),
+                _buildControlButton(
+                  icon: MdiIcons.chevronRight,
+                  onTap: selectedDateNotifier.nextDay,
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin6x),
             
             // Enhanced circular progress with modern design
             Stack(
@@ -305,8 +307,8 @@ class CalorieOverviewWidget extends ConsumerWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
           gradient: isPrimary 
               ? LinearGradient(
@@ -331,7 +333,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
         ),
         child: Icon(
           icon,
-          size: KSizes.iconS,
+          size: KSizes.iconXS,
           color: isPrimary ? Colors.white : AppColors.textSecondary,
         ),
       ),

@@ -242,8 +242,8 @@ class DashboardHeader extends ConsumerWidget {
       onInfoTap: onInfoTap,
       customAction: Row(
         children: [
-          // Registration button with pending count
-          if (onRegistrationTap != null)
+          // Registration button with pending count - only show if there are pending items
+          if (onRegistrationTap != null && pendingCount > 0)
             GestureDetector(
               onTap: onRegistrationTap,
               child: Container(
@@ -253,14 +253,12 @@ class DashboardHeader extends ConsumerWidget {
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: pendingCount > 0 
-                        ? [AppColors.warning, AppColors.warning.withOpacity(0.8)]
-                        : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
                   ),
                   borderRadius: BorderRadius.circular(KSizes.radiusL),
                   boxShadow: [
                     BoxShadow(
-                      color: (pendingCount > 0 ? AppColors.warning : AppColors.primary).withOpacity(0.3),
+                      color: AppColors.warning.withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -270,21 +268,20 @@ class DashboardHeader extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      pendingCount > 0 ? MdiIcons.camera : MdiIcons.plus,
+                      MdiIcons.camera,
                       color: Colors.white,
                       size: KSizes.iconS,
                     ),
-                    const SizedBox(width: KSizes.margin1x),
                     if (pendingCount > 0) ...[
-                      // Show count badge when there are pending items
+                      const SizedBox(width: KSizes.margin1x),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: KSizes.margin2x,
                           vertical: KSizes.margin1x,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(KSizes.radiusS),
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
                         ),
                         child: Text(
                           '$pendingCount',
@@ -293,16 +290,6 @@ class DashboardHeader extends ConsumerWidget {
                             fontSize: KSizes.fontSizeS,
                             fontWeight: KSizes.fontWeightBold,
                           ),
-                        ),
-                      ),
-                    ] else ...[
-                      // Show "Registrer" text when no pending items
-                      Text(
-                        'Registrer',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: KSizes.fontSizeS,
-                          fontWeight: KSizes.fontWeightBold,
                         ),
                       ),
                     ],

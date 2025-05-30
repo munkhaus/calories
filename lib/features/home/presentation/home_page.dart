@@ -28,9 +28,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     super.initState();
     _activityNotifier = ActivityNotifier();
     
-    // Add test data for pending foods
-    PendingFoodService.addTestData();
-    
     // Initialize activity data with BMR calculation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(onboardingProvider);

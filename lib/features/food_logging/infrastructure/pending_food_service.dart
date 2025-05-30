@@ -5,15 +5,15 @@ import 'camera_service.dart';
 
 /// Implementation of pending food service with real camera integration
 class PendingFoodService implements IPendingFoodService {
+  // Static list to simulate database storage
   static final List<PendingFoodModel> _pendingFoods = [];
 
-  // Constructor that adds test data for debugging
+  // Constructor - no longer adds test data automatically
   PendingFoodService() {
-    // Add test data for debugging if list is empty
-    if (_pendingFoods.isEmpty) {
-      print('🍎 PendingFoodService: Adding test data for debugging');
-      addTestData();
-    }
+    print('🍎 PendingFoodService: Service initialized without test data');
+    // Clear ALL existing data to start completely fresh
+    _pendingFoods.clear();
+    print('🍎 PendingFoodService: Cleared all existing data, total items: ${_pendingFoods.length}');
   }
 
   @override
@@ -200,22 +200,4 @@ class PendingFoodService implements IPendingFoodService {
   }
 
   static List<PendingFoodModel> get allItems => List.unmodifiable(_pendingFoods);
-  
-  // Add some test data
-  static void addTestData() {
-    _pendingFoods.addAll([
-      PendingFoodModel(
-        id: '1',
-        imagePath: 'test_burger.jpg',
-        capturedAt: DateTime.now().subtract(const Duration(minutes: 5)),
-        notes: 'Burger med pommes',
-      ),
-      PendingFoodModel(
-        id: '2',
-        imagePath: 'test_salad.jpg',
-        capturedAt: DateTime.now().subtract(const Duration(hours: 1)),
-        notes: 'Grøn salat',
-      ),
-    ]);
-  }
 } 

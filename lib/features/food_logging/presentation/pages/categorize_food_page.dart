@@ -8,6 +8,7 @@ import '../../domain/pending_food_model.dart';
 import '../../domain/user_food_log_model.dart';
 import '../../application/pending_food_cubit.dart';
 import '../../application/food_logging_notifier.dart';
+import '../../infrastructure/gemini_service.dart';
 
 /// Page for categorizing a pending food photo
 class CategorizeFoodPage extends ConsumerStatefulWidget {
@@ -28,6 +29,18 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   
   MealType _selectedMealType = MealType.morgenmad;
   bool _isProcessing = false;
+  bool _isAnalyzing = false;
+  FoodAnalysisResult? _analysisResult;
+  String? _analysisError;
+
+  final GeminiService _geminiService = GeminiService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Start analysis when page opens
+    _analyzeImage();
+  }
 
   @override
   void dispose() {
@@ -60,7 +73,12 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
               // Image preview
               _buildImagePreview(),
               
-              SizedBox(height: KSizes.margin6x),
+              SizedBox(height: KSizes.margin4x),
+              
+              // AI Analysis display
+              _buildAiAnalysisDisplay(),
+              
+              SizedBox(height: KSizes.margin4x),
               
               // Food name input
               _buildFoodNameSection(),
@@ -196,6 +214,273 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAiAnalysisDisplay() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.info.withOpacity(0.1),
+            AppColors.primary.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(
+          color: AppColors.info.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: AppColors.info,
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  MdiIcons.robot,
+                  color: Colors.white,
+                  size: KSizes.iconS,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin2x),
+              Expanded(
+                child: Text(
+                  'AI Mad Analyse',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeL,
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (_isAnalyzing)
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+                  ),
+                ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin3x),
+          
+          // Content based on state
+          if (_isAnalyzing) ...[
+            _buildAnalyzingContent(),
+          ] else if (_analysisResult != null) ...[
+            _buildAnalysisResults(),
+          ] else if (_analysisError != null) ...[
+            _buildAnalysisError(),
+          ] else ...[
+            _buildNoAnalysisContent(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyzingContent() {
+    return Row(
+      children: [
+        SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+          ),
+        ),
+        const SizedBox(width: KSizes.margin2x),
+        Text(
+          'Analyserer billede med AI...',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeM,
+            color: AppColors.textSecondary,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnalysisResults() {
+    final result = _analysisResult!;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Confidence indicator
+        Row(
+          children: [
+            Icon(
+              result.confidence > 0.7 
+                  ? MdiIcons.checkCircle 
+                  : result.confidence > 0.4 
+                      ? MdiIcons.alertCircle 
+                      : MdiIcons.closeCircle,
+              color: result.confidence > 0.7 
+                  ? AppColors.success 
+                  : result.confidence > 0.4 
+                      ? AppColors.warning 
+                      : AppColors.error,
+              size: KSizes.iconS,
+            ),
+            const SizedBox(width: KSizes.margin1x),
+            Text(
+              'Sikkerhed: ${(result.confidence * 100).toInt()}%',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeS,
+                fontWeight: KSizes.fontWeightMedium,
+                color: result.confidence > 0.7 
+                    ? AppColors.success 
+                    : result.confidence > 0.4 
+                        ? AppColors.warning 
+                        : AppColors.error,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: KSizes.margin2x),
+        
+        // Analysis details
+        _buildAnalysisDetail('Mad:', result.foodName, MdiIcons.silverwareForkKnife),
+        _buildAnalysisDetail('Beskrivelse:', result.description, MdiIcons.textShort),
+        _buildAnalysisDetail('Portion:', result.portionSize, MdiIcons.scaleBalance),
+        _buildAnalysisDetail('Kalorier:', '${result.estimatedCalories} kcal', MdiIcons.fire),
+        
+        const SizedBox(height: KSizes.margin2x),
+        
+        // Helper text
+        Text(
+          'AI\'en har foreslået værdierne ovenfor. Du kan redigere dem efter behov.',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeS,
+            color: AppColors.textTertiary,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAnalysisDetail(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: KSizes.margin1x),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: KSizes.iconXS,
+            color: AppColors.info,
+          ),
+          const SizedBox(width: KSizes.margin1x),
+          Text(
+            '$label ',
+            style: TextStyle(
+              fontSize: KSizes.fontSizeS,
+              fontWeight: KSizes.fontWeightMedium,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: KSizes.fontSizeS,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalysisError() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(
+              MdiIcons.alertCircle,
+              color: AppColors.error,
+              size: KSizes.iconS,
+            ),
+            const SizedBox(width: KSizes.margin2x),
+            Expanded(
+              child: Text(
+                _analysisError!,
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeM,
+                  color: AppColors.error,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: KSizes.margin2x),
+        GestureDetector(
+          onTap: _analyzeImage,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: KSizes.margin3x,
+              vertical: KSizes.margin2x,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.info.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              border: Border.all(color: AppColors.info.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  MdiIcons.refresh,
+                  size: KSizes.iconXS,
+                  color: AppColors.info,
+                ),
+                const SizedBox(width: KSizes.margin1x),
+                Text(
+                  'Prøv igen',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.info,
+                    fontWeight: KSizes.fontWeightMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNoAnalysisContent() {
+    return Text(
+      'Ingen AI analyse tilgængelig for dette billede',
+      style: TextStyle(
+        fontSize: KSizes.fontSizeM,
+        color: AppColors.textSecondary,
+        fontStyle: FontStyle.italic,
       ),
     );
   }
@@ -405,10 +690,10 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
     }
 
     final calories = int.tryParse(_caloriesController.text.trim());
-    if (calories == null || calories <= 0) {
+    if (calories == null || calories < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Angiv venligst et gyldigt antal kalorier'),
+          content: Text('Angiv venligst et gyldigt antal kalorier (0 eller højere)'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -514,6 +799,72 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           setState(() => _isProcessing = false);
         }
       }
+    }
+  }
+
+  void _analyzeImage() async {
+    // Only analyze real images, not mock ones
+    if (widget.pendingFood.imagePath.isEmpty || 
+        widget.pendingFood.imagePath.startsWith('mock_')) {
+      print('🤖 CategorizeFoodPage: Skipping analysis for mock image');
+      return;
+    }
+
+    setState(() {
+      _isAnalyzing = true;
+      _analysisError = null;
+    });
+
+    print('🤖 CategorizeFoodPage: Starting image analysis...');
+
+    try {
+      // Use REAL Gemini API call instead of mock
+      final result = await _geminiService.analyzeFoodImage(widget.pendingFood.imagePath);
+      
+      if (result.isSuccess) {
+        print('🤖 CategorizeFoodPage: Analysis successful');
+        final analysis = result.success;
+        
+        setState(() {
+          _analysisResult = analysis;
+          _isAnalyzing = false;
+          
+          // Auto-fill form with AI results
+          _foodNameController.text = analysis.foodName;
+          _caloriesController.text = analysis.estimatedCalories.toString();
+        });
+        
+        print('🤖 CategorizeFoodPage: Form auto-filled with AI results');
+      } else {
+        print('🤖 CategorizeFoodPage: Analysis failed: ${result.failure}');
+        setState(() {
+          _isAnalyzing = false;
+          _analysisError = _getErrorMessage(result.failure);
+        });
+      }
+    } catch (e) {
+      print('🤖 CategorizeFoodPage: Exception during analysis: $e');
+      setState(() {
+        _isAnalyzing = false;
+        _analysisError = 'Der opstod en uventet fejl under analysen';
+      });
+    }
+  }
+
+  String _getErrorMessage(GeminiError error) {
+    switch (error) {
+      case GeminiError.invalidApiKey:
+        return 'Ugyldig API nøgle til AI analyse';
+      case GeminiError.networkError:
+        return 'Netværksfejl - tjek din internetforbindelse';
+      case GeminiError.imageProcessingError:
+        return 'Kunne ikke behandle billedet';
+      case GeminiError.parseError:
+        return 'Kunne ikke forstå AI\'s svar';
+      case GeminiError.quotaExceeded:
+        return 'AI analyse grænse nået for i dag';
+      case GeminiError.unknown:
+        return 'Ukendt fejl under AI analyse';
     }
   }
 } 

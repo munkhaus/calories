@@ -119,7 +119,9 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
                 ),
               ),
               SizedBox(width: KSizes.margin3x),
-              Text('Tager billede...'),
+              Expanded(
+                child: Text('Tager billede...'),
+              ),
             ],
           ),
           backgroundColor: AppColors.warning,
@@ -140,7 +142,9 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Text('Billede taget! Kategoriser det når du er klar.'),
+                Expanded(
+                  child: Text('Billede taget! Kategoriser det når du er klar.'),
+                ),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -163,7 +167,9 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
               children: [
                 Icon(MdiIcons.alertCircle, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Text('Kunne ikke tage billede'),
+                Expanded(
+                  child: Text('Kunne ikke tage billede'),
+                ),
               ],
             ),
             backgroundColor: AppColors.error,
@@ -576,10 +582,8 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   void initState() {
     super.initState();
     
-    // Add test data for pending foods
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      PendingFoodService.addTestData();
-    });
+    // No longer adding test data - service starts clean
+    // PendingFoodService.addTestData() - removed since method no longer exists
   }
 }
 
