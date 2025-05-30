@@ -449,15 +449,12 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
         onTap: onTap,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         child: Container(
-          constraints: BoxConstraints(
-            minHeight: 80,
-          ),
+          height: 120, // Fixed height to ensure both cards are same size
           padding: EdgeInsets.symmetric(
             horizontal: KSizes.margin2x,
             vertical: KSizes.margin3x,
           ),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
@@ -473,26 +470,26 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
                 ),
               ),
               SizedBox(height: KSizes.margin1x),
-              Flexible(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: KSizes.fontWeightSemiBold,
-                    color: isSelected ? AppColors.primary : AppColors.textPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: KSizes.fontWeightSemiBold,
+                  color: isSelected ? AppColors.primary : AppColors.textPrimary,
                 ),
+                textAlign: TextAlign.center,
               ),
-              if (isSelected) ...[
-                SizedBox(height: KSizes.margin1x),
-                Icon(
-                  MdiIcons.checkCircle,
-                  color: AppColors.primary,
-                  size: KSizes.iconXS,
-                ),
-              ],
+              SizedBox(height: KSizes.margin1x),
+              // Always reserve space for checkmark to maintain consistent height
+              SizedBox(
+                height: KSizes.iconXS.toDouble(),
+                child: isSelected 
+                  ? Icon(
+                      MdiIcons.checkCircle,
+                      color: AppColors.primary,
+                      size: KSizes.iconXS,
+                    )
+                  : null, // Empty space when not selected
+              ),
             ],
           ),
         ),

@@ -341,10 +341,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         // Clear partial progress since we're done
         await OnboardingStorageService.clearPartialProgress();
         
+        // Update profile but keep loading state true and don't change step
+        // This prevents UI flashing before navigation
         state = state.copyWith(
           userProfile: completedProfile,
-          currentStep: OnboardingStep.summary,
-          isLoading: false,
+          // Keep currentStep as is and keep loading true
         );
       } else {
         throw Exception('Failed to save user profile');

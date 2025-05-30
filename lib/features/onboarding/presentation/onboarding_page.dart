@@ -160,16 +160,19 @@ class OnboardingPage extends ConsumerWidget {
                       if (state.currentStep == OnboardingStep.summary) {
                         // Complete onboarding and go directly to main app
                         await ref.read(onboardingProvider.notifier).completeOnboarding();
-                        if (ref.read(onboardingProvider).hasError) {
+                        
+                        // Check final state after completion
+                        final finalState = ref.read(onboardingProvider);
+                        if (finalState.hasError) {
                           // Show error message if completion failed
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(ref.read(onboardingProvider).errorMessage ?? 'Der opstod en fejl'),
+                              content: Text(finalState.errorMessage ?? 'Der opstod en fejl'),
                               backgroundColor: Colors.red,
                             ),
                           );
                         } else {
-                          // Navigate directly to main app
+                          // Navigate directly to main app (loading state stays true until navigation)
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(
                               builder: (context) => const AppWrapper(),
