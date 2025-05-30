@@ -50,7 +50,7 @@ class OnboardingState with _$OnboardingState {
       case OnboardingStep.summary:
         return true;
       case OnboardingStep.completed:
-        return false;
+        return true;
     }
   }
 

@@ -11,6 +11,7 @@ import 'widgets/leisure_activity_step_widget.dart';
 import 'widgets/goals_step_widget.dart';
 import 'widgets/calorie_explanation_step_widget.dart';
 import 'widgets/summary_step_widget.dart';
+import '../../../main.dart';
 
 /// Main onboarding page
 class OnboardingPage extends ConsumerWidget {
@@ -167,9 +168,30 @@ class OnboardingPage extends ConsumerWidget {
             flex: state.currentStepNumber > 1 ? 1 : 2,
             child: ElevatedButton(
               onPressed: state.canProceedToNext
-                  ? () {
+                  ? () async {
                       if (state.currentStep == OnboardingStep.completed) {
-                        Navigator.of(context).pushReplacementNamed('/dashboard');
+                        // Navigate to main app by replacing entire app structure
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (context) => const AppWrapper(),
+                          ),
+                          (route) => false,
+                        );
+                      } else if (state.currentStep == OnboardingStep.summary) {
+                        // Complete onboarding before going to completion screen
+                        await ref.read(onboardingProvider.notifier).completeOnboarding();
+                        if (ref.read(onboardingProvider).hasError) {
+                          // Show error message if completion failed
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(ref.read(onboardingProvider).errorMessage ?? 'Der opstod en fejl'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        } else {
+                          // Proceed to next step (completed screen)
+                          ref.read(onboardingProvider.notifier).nextStep();
+                        }
                       } else {
                         ref.read(onboardingProvider.notifier).nextStep();
                       }
