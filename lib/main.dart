@@ -10,12 +10,15 @@ import 'features/onboarding/presentation/onboarding_page.dart';
 import 'features/onboarding/infrastructure/onboarding_storage_service.dart';
 import 'features/info/presentation/info_page.dart';
 import 'features/food_logging/infrastructure/favorite_food_service.dart';
+import 'features/activity/infrastructure/favorite_activity_service.dart';
+import 'features/splash/presentation/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize test favorites for demonstration
   FavoriteFoodService.addTestFavorites();
+  FavoriteActivityService.addTestFavorites();
   
   runApp(
     const ProviderScope(
@@ -59,11 +62,12 @@ class AppWrapper extends StatefulWidget {
 class _AppWrapperState extends State<AppWrapper> {
   bool? _isOnboardingCompleted;
   bool? _isInfoAccepted;
+  bool _showSplash = true;
 
   @override
   void initState() {
     super.initState();
-    _checkStatus();
+    // Don't check status immediately, wait for splash to complete
   }
 
   Future<void> _checkStatus() async {
@@ -87,8 +91,20 @@ class _AppWrapperState extends State<AppWrapper> {
     });
   }
 
+  void _onSplashComplete() {
+    setState(() {
+      _showSplash = false;
+    });
+    _checkStatus();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Show splash first
+    if (_showSplash) {
+      return SplashPage(onComplete: _onSplashComplete);
+    }
+    
     if (_isOnboardingCompleted == null || _isInfoAccepted == null) {
       // Loading state
       return const Scaffold(

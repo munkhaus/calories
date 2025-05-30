@@ -7,8 +7,12 @@ import '../../domain/favorite_food_model.dart';
 import '../../domain/user_food_log_model.dart';
 import '../../infrastructure/favorite_food_service.dart';
 import '../../application/food_logging_notifier.dart';
+import '../../../activity/domain/favorite_activity_model.dart';
+import '../../../activity/domain/user_activity_log_model.dart';
+import '../../../activity/infrastructure/favorite_activity_service.dart';
+import '../../../activity/application/activity_notifier.dart';
 
-/// Page for managing favorites - view, add, edit, delete
+/// Page for managing both food and activity favorites with tabs
 class FavoritesPage extends ConsumerStatefulWidget {
   const FavoritesPage({super.key});
 
@@ -16,16 +20,27 @@ class FavoritesPage extends ConsumerStatefulWidget {
   ConsumerState<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends ConsumerState<FavoritesPage> {
-  final FavoriteFoodService _favoriteFoodService = FavoriteFoodService();
-  List<FavoriteFoodModel> _favorites = [];
+class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProviderStateMixin {
+  final FavoriteFoodService _foodService = FavoriteFoodService();
+  final FavoriteActivityService _activityService = FavoriteActivityService();
+  late TabController _tabController;
+  
+  List<FavoriteFoodModel> _foodFavorites = [];
+  List<FavoriteActivityModel> _activityFavorites = [];
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _loadFavorites();
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadFavorites() async {
@@ -35,22 +50,25 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     });
 
     try {
-      final result = await _favoriteFoodService.getFavorites();
-      if (result.isSuccess) {
-        setState(() {
-          _favorites = result.success;
-          _isLoading = false;
-        });
-      } else {
-        setState(() {
-          _error = 'Kunne ikke indlæse favoritter';
-          _isLoading = false;
-        });
+      // Load food favorites
+      final foodResult = await _foodService.getFavorites();
+      if (foodResult.isSuccess) {
+        _foodFavorites = foodResult.success;
       }
+
+      // Load activity favorites
+      final activityResult = await _activityService.getFavorites();
+      if (activityResult.isSuccess) {
+        _activityFavorites = activityResult.success;
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
-        _error = 'Der opstod en fejl: $e';
         _isLoading = false;
+        _error = 'Fejl ved indlæsning af favoritter';
       });
     }
   }
@@ -60,56 +78,59 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Mine Favoritter'),
+        title: Text('Favoritter'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
         titleTextStyle: TextStyle(
           color: AppColors.textPrimary,
-          fontSize: KSizes.fontSizeL,
+          fontSize: KSizes.fontSizeXL,
           fontWeight: KSizes.fontWeightBold,
         ),
-        actions: [
-          IconButton(
-            onPressed: _showAddFavoriteDialog,
-            icon: Icon(MdiIcons.plus),
-            tooltip: 'Tilføj favorit',
-          ),
-        ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(
+              icon: Icon(MdiIcons.silverwareForkKnife),
+              text: 'Mad',
+            ),
+            Tab(
+              icon: Icon(MdiIcons.runFast),
+              text: 'Aktiviteter',
+            ),
+          ],
+          labelColor: AppColors.primary,
+          unselectedLabelColor: AppColors.textSecondary,
+          indicatorColor: AppColors.primary,
+        ),
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
         ),
-        child: SafeArea(
-          child: _buildBody(),
-        ),
+        child: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primary,
+                ),
+              )
+            : _error != null
+                ? _buildErrorState()
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildFoodFavoritesTab(),
+                      _buildActivityFavoritesTab(),
+                    ],
+                  ),
       ),
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(height: KSizes.margin4x),
-            Text(
-              'Indlæser favoritter...',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: KSizes.fontSizeM,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_error != null) {
-      return Center(
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -122,8 +143,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             Text(
               _error!,
               style: TextStyle(
+                fontSize: KSizes.fontSizeL,
                 color: AppColors.error,
-                fontSize: KSizes.fontSizeM,
+                fontWeight: KSizes.fontWeightBold,
               ),
               textAlign: TextAlign.center,
             ),
@@ -134,144 +156,137 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFoodFavoritesTab() {
+    if (_foodFavorites.isEmpty) {
+      return _buildEmptyState(
+        icon: MdiIcons.silverwareForkKnife,
+        title: 'Ingen mad-favoritter endnu',
+        subtitle: 'Tilføj favoritter ved at markere måltider som favoritter når du kategoriserer dem',
       );
     }
 
-    if (_favorites.isEmpty) {
-      return Center(
+    return RefreshIndicator(
+      onRefresh: _loadFavorites,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        itemCount: _foodFavorites.length,
+        itemBuilder: (context, index) {
+          final favorite = _foodFavorites[index];
+          return _buildFoodFavoriteCard(favorite);
+        },
+      ),
+    );
+  }
+
+  Widget _buildActivityFavoritesTab() {
+    if (_activityFavorites.isEmpty) {
+      return _buildEmptyState(
+        icon: MdiIcons.runFast,
+        title: 'Ingen aktivitets-favoritter endnu',
+        subtitle: 'Tilføj favoritter ved at markere aktiviteter som favoritter når du logger dem',
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadFavorites,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        itemCount: _activityFavorites.length,
+        itemBuilder: (context, index) {
+          final favorite = _activityFavorites[index];
+          return _buildActivityFavoriteCard(favorite);
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              MdiIcons.starOutline,
-              size: 96,
+              icon,
+              size: 64,
               color: AppColors.textTertiary,
             ),
             SizedBox(height: KSizes.margin4x),
             Text(
-              'Ingen favoritter endnu',
+              title,
               style: TextStyle(
+                fontSize: KSizes.fontSizeL,
                 color: AppColors.textSecondary,
-                fontSize: KSizes.fontSizeXL,
                 fontWeight: KSizes.fontWeightBold,
-              ),
-            ),
-            SizedBox(height: KSizes.margin2x),
-            Text(
-              'Tryk på + for at tilføje din første favorit',
-              style: TextStyle(
-                color: AppColors.textTertiary,
-                fontSize: KSizes.fontSizeM,
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: KSizes.margin6x),
-            ElevatedButton.icon(
-              onPressed: _showAddFavoriteDialog,
-              icon: Icon(MdiIcons.plus),
-              label: Text('Tilføj Favorit'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(
-                  horizontal: KSizes.margin6x,
-                  vertical: KSizes.margin3x,
-                ),
+            SizedBox(height: KSizes.margin2x),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textTertiary,
+                height: 1.4,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
-      );
-    }
-
-    return Column(
-      children: [
-        // Header stats
-        Container(
-          margin: EdgeInsets.all(KSizes.margin4x),
-          padding: EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(color: AppColors.border.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                MdiIcons.star,
-                color: AppColors.warning,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Expanded(
-                child: Text(
-                  '${_favorites.length} favoritter gemt',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    fontWeight: KSizes.fontWeightMedium,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              Text(
-                'Total: ${_favorites.fold<int>(0, (sum, fav) => sum + fav.usageCount)} anvendelser',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeS,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-
-        // Favorites list
-        Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-            itemCount: _favorites.length,
-            itemBuilder: (context, index) {
-              final favorite = _favorites[index];
-              return _buildFavoriteCard(favorite);
-            },
-          ),
-        ),
-      ],
+      ),
     );
   }
 
-  Widget _buildFavoriteCard(FavoriteFoodModel favorite) {
+  Widget _buildFoodFavoriteCard(FavoriteFoodModel favorite) {
     return Container(
-      margin: EdgeInsets.only(bottom: KSizes.margin3x),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusM),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(KSizes.margin4x),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(color: AppColors.border.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // Header row with food name and actions
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(KSizes.margin2x),
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(KSizes.radiusS),
-                    ),
-                    child: Icon(
-                      MdiIcons.star,
-                      color: AppColors.warning,
-                      size: KSizes.iconS,
-                    ),
-                  ),
-                  
-                  SizedBox(width: KSizes.margin3x),
-                  
-                  Expanded(
-                    child: Text(
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: _getMealColor(favorite.mealType).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  _getMealIcon(favorite.mealType),
+                  color: _getMealColor(favorite.mealType),
+                  size: KSizes.iconM,
+                ),
+              ),
+              
+              SizedBox(width: KSizes.margin3x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
                       favorite.foodName,
                       style: TextStyle(
                         fontSize: KSizes.fontSizeL,
@@ -279,140 +294,217 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                  ),
-                  
-                  // Action buttons
-                  PopupMenuButton<String>(
-                    onSelected: (value) => _handleFavoriteAction(value, favorite),
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'log',
-                        child: Row(
-                          children: [
-                            Icon(MdiIcons.foodForkDrink, size: KSizes.iconS),
-                            SizedBox(width: KSizes.margin2x),
-                            Text('Log mad'),
-                          ],
-                        ),
+                    SizedBox(height: KSizes.margin1x),
+                    Text(
+                      '${favorite.mealType.mealTypeDisplayName} • ${favorite.calories} kcal',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
                       ),
-                      PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(MdiIcons.pencil, size: KSizes.iconS),
-                            SizedBox(width: KSizes.margin2x),
-                            Text('Rediger'),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(MdiIcons.delete, size: KSizes.iconS, color: AppColors.error),
-                            SizedBox(width: KSizes.margin2x),
-                            Text('Slet', style: TextStyle(color: AppColors.error)),
-                          ],
-                        ),
-                      ),
-                    ],
-                    child: Icon(
-                      MdiIcons.dotsVertical,
-                      color: AppColors.textSecondary,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               
-              SizedBox(height: KSizes.margin3x),
-              
-              // Details
-              Row(
-                children: [
-                  _buildDetailChip(
-                    icon: MdiIcons.fire,
-                    label: '${favorite.calories} kcal',
-                    color: AppColors.primary,
-                  ),
-                  
-                  SizedBox(width: KSizes.margin2x),
-                  
-                  _buildDetailChip(
-                    icon: MdiIcons.clockOutline,
-                    label: favorite.mealTypeDisplayName,
-                    color: AppColors.secondary,
-                  ),
-                  
-                  SizedBox(width: KSizes.margin2x),
-                  
-                  _buildDetailChip(
-                    icon: MdiIcons.scaleBalance,
-                    label: '${favorite.quantity} ${favorite.servingUnit}',
-                    color: AppColors.info,
-                  ),
-                ],
-              ),
-              
-              SizedBox(height: KSizes.margin2x),
-              
-              // Usage stats
-              Row(
-                children: [
-                  Icon(
-                    MdiIcons.chartLine,
-                    size: KSizes.iconXS,
-                    color: AppColors.textTertiary,
-                  ),
-                  SizedBox(width: KSizes.margin1x),
-                  Text(
-                    'Brugt ${favorite.usageCount} gange',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeS,
-                      color: AppColors.textTertiary,
+              PopupMenuButton<String>(
+                onSelected: (value) => _handleFoodFavoriteAction(value, favorite),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'use',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.plus, color: AppColors.primary),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Tilføj som måltid'),
+                      ],
                     ),
                   ),
-                  Spacer(),
-                  Text(
-                    'Sidst brugt: ${_formatLastUsed(favorite.lastUsed)}',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeS,
-                      color: AppColors.textTertiary,
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.pencil, color: AppColors.secondary),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Rediger'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.delete, color: AppColors.error),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Slet'),
+                      ],
                     ),
                   ),
                 ],
+                child: Icon(
+                  MdiIcons.dotsVertical,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),
-        ),
+          
+          SizedBox(height: KSizes.margin3x),
+          
+          Row(
+            children: [
+              _buildInfoChip('${favorite.quantity} ${favorite.servingUnit}', MdiIcons.scaleBalance),
+              SizedBox(width: KSizes.margin2x),
+              _buildInfoChip('Brugt ${favorite.usageCount} gange', MdiIcons.heart),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDetailChip({
-    required IconData icon,
-    required String label,
-    required Color color,
-  }) {
+  Widget _buildActivityFavoriteCard(FavoriteActivityModel favorite) {
     return Container(
-      padding: EdgeInsets.symmetric(
+      margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(color: AppColors.border.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: _getIntensityColor(favorite.intensity).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  _getActivityIcon(favorite.activityName),
+                  color: _getIntensityColor(favorite.intensity),
+                  size: KSizes.iconM,
+                ),
+              ),
+              
+              SizedBox(width: KSizes.margin3x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      favorite.activityName,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin1x),
+                    Text(
+                      '${_getIntensityDisplayName(favorite.intensity)} • ${favorite.caloriesBurned} kcal',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              PopupMenuButton<String>(
+                onSelected: (value) => _handleActivityFavoriteAction(value, favorite),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'use',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.plus, color: AppColors.primary),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Tilføj som aktivitet'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'edit',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.pencil, color: AppColors.secondary),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Rediger'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.delete, color: AppColors.error),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Slet'),
+                      ],
+                    ),
+                  ),
+                ],
+                child: Icon(
+                  MdiIcons.dotsVertical,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: KSizes.margin3x),
+          
+          Row(
+            children: [
+              if (favorite.inputType == ActivityInputType.varighed && favorite.durationMinutes > 0)
+                _buildInfoChip('${favorite.durationMinutes.round()} min', MdiIcons.clock)
+              else if (favorite.inputType == ActivityInputType.distance && favorite.distanceKm > 0)
+                _buildInfoChip('${favorite.distanceKm} km', MdiIcons.mapMarker),
+              SizedBox(width: KSizes.margin2x),
+              _buildInfoChip('Brugt ${favorite.usageCount} gange', MdiIcons.heart),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(String text, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
         horizontal: KSizes.margin2x,
         vertical: KSizes.margin1x,
       ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: AppColors.primary.withOpacity(0.1),
         borderRadius: BorderRadius.circular(KSizes.radiusS),
-        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: KSizes.iconXS, color: color),
+          Icon(
+            icon,
+            size: KSizes.iconXS,
+            color: AppColors.primary,
+          ),
           SizedBox(width: KSizes.margin1x),
           Text(
-            label,
+            text,
             style: TextStyle(
               fontSize: KSizes.fontSizeXS,
-              color: color,
+              color: AppColors.primary,
               fontWeight: KSizes.fontWeightMedium,
             ),
           ),
@@ -421,46 +513,73 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     );
   }
 
-  void _handleFavoriteAction(String action, FavoriteFoodModel favorite) {
+  Future<void> _handleFoodFavoriteAction(String action, FavoriteFoodModel favorite) async {
     switch (action) {
-      case 'log':
-        _logFavorite(favorite);
+      case 'use':
+        await _useFoodFavorite(favorite);
         break;
       case 'edit':
-        _showEditFavoriteDialog(favorite);
+        await _editFoodFavorite(favorite);
         break;
       case 'delete':
-        _showDeleteConfirmationDialog(favorite);
+        await _deleteFoodFavorite(favorite);
         break;
     }
   }
 
-  Future<void> _logFavorite(FavoriteFoodModel favorite) async {
+  Future<void> _handleActivityFavoriteAction(String action, FavoriteActivityModel favorite) async {
+    switch (action) {
+      case 'use':
+        await _useActivityFavorite(favorite);
+        break;
+      case 'edit':
+        await _editActivityFavorite(favorite);
+        break;
+      case 'delete':
+        await _deleteActivityFavorite(favorite);
+        break;
+    }
+  }
+
+  Future<void> _useFoodFavorite(FavoriteFoodModel favorite) async {
     try {
-      // Convert to UserFoodLogModel and log it
-      final foodLog = favorite.toUserFoodLog();
+      // Convert favorite to UserFoodLogModel and log directly
+      final foodLog = UserFoodLogModel(
+        userId: 1, // TODO: Get real user ID
+        foodName: favorite.foodName,
+        mealType: favorite.mealType,
+        quantity: favorite.quantity,
+        servingUnit: favorite.servingUnit,
+        calories: favorite.calories,
+        protein: favorite.protein,
+        fat: favorite.fat,
+        carbs: favorite.carbs,
+        loggedAt: DateTime.now().toIso8601String(),
+      );
+
+      // Log the food
       await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
 
-      // Update favorite usage statistics
+      // Update favorite usage
       final updatedFavorite = favorite.withUpdatedUsage();
-      await _favoriteFoodService.updateFavorite(updatedFavorite);
-
-      // Reload favorites to show updated stats
-      _loadFavorites();
+      await _foodService.updateFavorite(updatedFavorite);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${favorite.foodName} blev logget!'),
+            content: Text('${favorite.foodName} er tilføjet som måltid!'),
             backgroundColor: AppColors.success,
           ),
         );
+        
+        // Refresh favorites to show updated usage
+        _loadFavorites();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fejl ved logging: $e'),
+            content: Text('Fejl ved tilføjelse af måltid: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -468,51 +587,39 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     }
   }
 
-  void _showEditFavoriteDialog(FavoriteFoodModel favorite) {
-    showDialog(
-      context: context,
-      builder: (context) => _FavoriteEditDialog(
-        favorite: favorite,
-        onSave: (updatedFavorite) => _saveFavoriteChanges(updatedFavorite),
-      ),
-    );
-  }
-
-  void _showAddFavoriteDialog() {
-    final newFavorite = FavoriteFoodModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      createdAt: DateTime.now(),
-      lastUsed: DateTime.now(),
-    );
-    
-    showDialog(
-      context: context,
-      builder: (context) => _FavoriteEditDialog(
-        favorite: newFavorite,
-        isNew: true,
-        onSave: (newFavorite) => _addNewFavorite(newFavorite),
-      ),
-    );
-  }
-
-  Future<void> _saveFavoriteChanges(FavoriteFoodModel updatedFavorite) async {
+  Future<void> _useActivityFavorite(FavoriteActivityModel favorite) async {
     try {
-      final result = await _favoriteFoodService.updateFavorite(updatedFavorite);
-      if (result.isSuccess) {
-        _loadFavorites();
+      // Convert favorite to UserActivityLogModel and log directly
+      final activityLog = favorite.toUserActivityLog();
+
+      // Create an ActivityNotifier instance to log the activity
+      final activityNotifier = ActivityNotifier();
+      final success = await activityNotifier.logActivity(activityLog);
+
+      if (success) {
+        // Update favorite usage
+        final updatedFavorite = favorite.withUpdatedUsage();
+        await _activityService.updateFavorite(updatedFavorite);
+
+        // Refresh all ActivityNotifier instances globally
+        await ActivityNotifier.refreshAllInstances();
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Favorit opdateret!'),
+              content: Text('${favorite.activityName} er tilføjet som aktivitet!'),
               backgroundColor: AppColors.success,
             ),
           );
+          
+          // Refresh favorites to show updated usage
+          _loadFavorites();
         }
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Kunne ikke opdatere favorit'),
+              content: Text('Kunne ikke tilføje aktivitet'),
               backgroundColor: AppColors.error,
             ),
           );
@@ -522,7 +629,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fejl ved opdatering: $e'),
+            content: Text('Fejl ved tilføjelse af aktivitet: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -530,80 +637,43 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
     }
   }
 
-  Future<void> _addNewFavorite(FavoriteFoodModel newFavorite) async {
-    try {
-      final result = await _favoriteFoodService.addToFavorites(newFavorite);
-      if (result.isSuccess) {
-        _loadFavorites();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Favorit tilføjet!'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          String message = 'Kunne ikke tilføje favorit';
-          if (result.failure.toString().contains('alreadyExists')) {
-            message = 'En lignende favorit findes allerede';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fejl ved tilføjelse: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    }
-  }
-
-  void _showDeleteConfirmationDialog(FavoriteFoodModel favorite) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Slet favorit?'),
-        content: Text('Er du sikker på, at du vil slette "${favorite.foodName}"?\n\nDenne handling kan ikke fortrydes.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuller'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _deleteFavorite(favorite);
-            },
-            child: Text(
-              'Slet',
-              style: TextStyle(color: AppColors.error),
-            ),
-          ),
-        ],
+  Future<void> _editFoodFavorite(FavoriteFoodModel favorite) async {
+    // TODO: Implement food favorite editing dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Redigering af mad-favoritter kommer snart'),
+        backgroundColor: AppColors.info,
       ),
     );
   }
 
-  Future<void> _deleteFavorite(FavoriteFoodModel favorite) async {
-    try {
-      final result = await _favoriteFoodService.removeFromFavorites(favorite.id);
+  Future<void> _editActivityFavorite(FavoriteActivityModel favorite) async {
+    // TODO: Implement activity favorite editing dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Redigering af aktivitets-favoritter kommer snart'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+  }
+
+  Future<void> _deleteFoodFavorite(FavoriteFoodModel favorite) async {
+    final confirmed = await _showDeleteConfirmDialog(
+      'Slet ${favorite.foodName}?',
+      'Er du sikker på, at du vil slette denne mad-favorit?',
+    );
+
+    if (confirmed == true) {
+      final result = await _foodService.removeFromFavorites(favorite.id);
       if (result.isSuccess) {
-        _loadFavorites();
+        setState(() {
+          _foodFavorites.removeWhere((f) => f.id == favorite.id);
+        });
+        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${favorite.foodName} blev slettet'),
+              content: Text('${favorite.foodName} er slettet fra favoritter'),
               backgroundColor: AppColors.success,
             ),
           );
@@ -618,251 +688,126 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> {
           );
         }
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fejl ved sletning: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+    }
+  }
+
+  Future<void> _deleteActivityFavorite(FavoriteActivityModel favorite) async {
+    final confirmed = await _showDeleteConfirmDialog(
+      'Slet ${favorite.activityName}?',
+      'Er du sikker på, at du vil slette denne aktivitets-favorit?',
+    );
+
+    if (confirmed == true) {
+      final result = await _activityService.removeFromFavorites(favorite.id);
+      if (result.isSuccess) {
+        setState(() {
+          _activityFavorites.removeWhere((f) => f.id == favorite.id);
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${favorite.activityName} er slettet fra favoritter'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Kunne ikke slette favorit'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
   }
 
-  String _formatLastUsed(DateTime lastUsed) {
-    final now = DateTime.now();
-    final difference = now.difference(lastUsed);
-    
-    if (difference.inDays == 0) {
-      return 'I dag';
-    } else if (difference.inDays == 1) {
-      return 'I går';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} dage siden';
-    } else if (difference.inDays < 30) {
-      return '${(difference.inDays / 7).floor()} uger siden';
-    } else {
-      return '${(difference.inDays / 30).floor()} måneder siden';
-    }
-  }
-}
-
-/// Dialog for editing or adding favorites
-class _FavoriteEditDialog extends StatefulWidget {
-  final FavoriteFoodModel favorite;
-  final bool isNew;
-  final Function(FavoriteFoodModel) onSave;
-
-  const _FavoriteEditDialog({
-    required this.favorite,
-    this.isNew = false,
-    required this.onSave,
-  });
-
-  @override
-  State<_FavoriteEditDialog> createState() => _FavoriteEditDialogState();
-}
-
-class _FavoriteEditDialogState extends State<_FavoriteEditDialog> {
-  late TextEditingController _foodNameController;
-  late TextEditingController _caloriesController;
-  late TextEditingController _quantityController;
-  late TextEditingController _servingUnitController;
-  late MealType _selectedMealType;
-
-  @override
-  void initState() {
-    super.initState();
-    _foodNameController = TextEditingController(text: widget.favorite.foodName);
-    _caloriesController = TextEditingController(text: widget.isNew ? '' : widget.favorite.calories.toString());
-    _quantityController = TextEditingController(text: widget.isNew ? '1' : widget.favorite.quantity.toString());
-    _servingUnitController = TextEditingController(text: widget.favorite.servingUnit);
-    _selectedMealType = widget.favorite.mealType;
-  }
-
-  @override
-  void dispose() {
-    _foodNameController.dispose();
-    _caloriesController.dispose();
-    _quantityController.dispose();
-    _servingUnitController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.isNew ? 'Tilføj Favorit' : 'Rediger Favorit'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Food name
-            TextField(
-              controller: _foodNameController,
-              decoration: InputDecoration(
-                labelText: 'Navn på mad *',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(MdiIcons.silverwareForkKnife),
-              ),
-            ),
-
-            SizedBox(height: KSizes.margin3x),
-
-            // Calories
-            TextField(
-              controller: _caloriesController,
-              decoration: InputDecoration(
-                labelText: 'Kalorier *',
-                border: OutlineInputBorder(),
-                suffixText: 'kcal',
-                prefixIcon: Icon(MdiIcons.fire),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-
-            SizedBox(height: KSizes.margin3x),
-
-            // Quantity and serving unit
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: _quantityController,
-                    decoration: InputDecoration(
-                      labelText: 'Mængde *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(MdiIcons.scaleBalance),
-                    ),
-                    keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  ),
-                ),
-                
-                SizedBox(width: KSizes.margin2x),
-                
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    controller: _servingUnitController,
-                    decoration: InputDecoration(
-                      labelText: 'Enhed *',
-                      border: OutlineInputBorder(),
-                      hintText: 'f.eks. portion, g, stk',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SizedBox(height: KSizes.margin3x),
-
-            // Meal type
-            DropdownButtonFormField<MealType>(
-              value: _selectedMealType,
-              decoration: InputDecoration(
-                labelText: 'Standard måltid',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(MdiIcons.clockOutline),
-              ),
-              items: MealType.values.map((type) {
-                return DropdownMenuItem(
-                  value: type,
-                  child: Text(_getMealTypeDisplayName(type)),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedMealType = value!;
-                });
-              },
-            ),
-          ],
-        ),
+  Future<bool?> _showDeleteConfirmDialog(String title, String content) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Nej'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Ja'),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Annuller'),
-        ),
-        ElevatedButton(
-          onPressed: _saveChanges,
-          child: Text(widget.isNew ? 'Tilføj' : 'Gem'),
-        ),
-      ],
     );
   }
 
-  void _saveChanges() {
-    final calories = int.tryParse(_caloriesController.text.trim());
-    final quantity = double.tryParse(_quantityController.text.trim());
-
-    if (_foodNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Angiv venligst navn på maden'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    if (calories == null || calories < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Angiv venligst gyldige kalorier'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    if (quantity == null || quantity <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Angiv venligst gyldig mængde'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    if (_servingUnitController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Angiv venligst enhed'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      return;
-    }
-
-    // Create updated favorite
-    final updatedFavorite = widget.favorite.copyWith(
-      foodName: _foodNameController.text.trim(),
-      calories: calories,
-      quantity: quantity,
-      servingUnit: _servingUnitController.text.trim(),
-      mealType: _selectedMealType,
-    );
-
-    Navigator.of(context).pop();
-    widget.onSave(updatedFavorite);
-  }
-
-  String _getMealTypeDisplayName(MealType type) {
-    switch (type) {
-      case MealType.none:
-        return 'Ingen kategori';
+  // Helper methods for UI
+  Color _getMealColor(MealType mealType) {
+    switch (mealType) {
       case MealType.morgenmad:
-        return 'Morgenmad';
+        return AppColors.warning;
       case MealType.frokost:
-        return 'Frokost';
+        return AppColors.primary;
       case MealType.aftensmad:
-        return 'Aftensmad';
+        return AppColors.secondary;
       case MealType.snack:
-        return 'Snack';
+        return AppColors.info;
+      default:
+        return AppColors.primary;
     }
+  }
+
+  IconData _getMealIcon(MealType mealType) {
+    switch (mealType) {
+      case MealType.morgenmad:
+        return MdiIcons.weatherSunny;
+      case MealType.frokost:
+        return MdiIcons.weatherPartlyCloudy;
+      case MealType.aftensmad:
+        return MdiIcons.weatherNight;
+      case MealType.snack:
+        return MdiIcons.cookie;
+      default:
+        return MdiIcons.silverwareForkKnife;
+    }
+  }
+
+  Color _getIntensityColor(ActivityIntensity intensity) {
+    switch (intensity) {
+      case ActivityIntensity.let:
+        return AppColors.success;
+      case ActivityIntensity.moderat:
+        return AppColors.warning;
+      case ActivityIntensity.haardt:
+        return AppColors.error;
+    }
+  }
+
+  String _getIntensityDisplayName(ActivityIntensity intensity) {
+    switch (intensity) {
+      case ActivityIntensity.let:
+        return 'Let';
+      case ActivityIntensity.moderat:
+        return 'Moderat';
+      case ActivityIntensity.haardt:
+        return 'Hård';
+    }
+  }
+
+  IconData _getActivityIcon(String activityName) {
+    final name = activityName.toLowerCase();
+    if (name.contains('løb')) return MdiIcons.run;
+    if (name.contains('gå') || name.contains('tur')) return MdiIcons.walk;
+    if (name.contains('cykel')) return MdiIcons.bike;
+    if (name.contains('svøm')) return MdiIcons.swim;
+    if (name.contains('styrke') || name.contains('vægt')) return MdiIcons.dumbbell;
+    if (name.contains('yoga')) return MdiIcons.yoga;
+    if (name.contains('tennis')) return MdiIcons.tennis;
+    if (name.contains('fodbold')) return MdiIcons.soccer;
+    return MdiIcons.runFast;
   }
 } 

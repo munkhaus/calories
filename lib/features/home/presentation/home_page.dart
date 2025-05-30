@@ -12,7 +12,9 @@ import '../../dashboard/widgets/pending_foods_widget.dart';
 import '../../food_logging/application/pending_food_cubit.dart';
 import '../../food_logging/infrastructure/pending_food_service.dart';
 import '../../food_logging/infrastructure/favorite_food_service.dart';
-import '../../food_logging/presentation/pages/select_favorite_page.dart';
+import '../../activity/infrastructure/favorite_activity_service.dart';
+import '../../food_logging/domain/user_food_log_model.dart';
+import '../../food_logging/presentation/pages/quick_favorites_page.dart';
 
 /// Main home page of the app after onboarding
 class HomePage extends ConsumerStatefulWidget {
@@ -577,56 +579,52 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _captureQuickFood(BuildContext context) async {
-    // First check if there are any favorites
-    final favoriteFoodService = FavoriteFoodService();
-    final favoritesResult = await favoriteFoodService.getFavorites();
-    
-    final hasFavorites = favoritesResult.isSuccess && favoritesResult.success.isNotEmpty;
-    
-    if (hasFavorites) {
-      // Show choice dialog
-      _showQuickFoodOptions(context);
-    } else {
-      // No favorites, go directly to camera
-      _captureFromCamera(context);
-    }
+    // Show main category selection dialog first
+    _showMainCategoryDialog(context);
   }
 
-  void _showQuickFoodOptions(BuildContext context) {
+  void _showMainCategoryDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
         title: Row(
           children: [
             Icon(MdiIcons.plus, color: AppColors.primary),
             SizedBox(width: KSizes.margin2x),
-            Text('Tilføj Mad'),
+            Text('Hvad vil du registrere?'),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildQuickFoodOption(
+            // Food category
+            _buildMainCategoryOption(
               context: context,
-              icon: MdiIcons.camera,
-              title: 'Tag billede',
-              subtitle: 'Brug kamera til at tage billede af mad',
+              icon: MdiIcons.foodApple,
+              title: 'Mad & Drikke',
+              subtitle: 'Registrer måltider og snacks',
+              color: AppColors.warning,
               onTap: () {
                 Navigator.of(context).pop();
-                _captureFromCamera(context);
+                _showFoodSubmenu(context);
               },
             ),
             
             SizedBox(height: KSizes.margin3x),
             
-            _buildQuickFoodOption(
+            // Activity category
+            _buildMainCategoryOption(
               context: context,
-              icon: MdiIcons.star,
-              title: 'Vælg favorit',
-              subtitle: 'Vælg fra dine gemte favorit retter',
+              icon: MdiIcons.runFast,
+              title: 'Aktivitet & Motion',
+              subtitle: 'Log træning og aktiviteter',
+              color: AppColors.secondary,
               onTap: () {
                 Navigator.of(context).pop();
-                _showFavoritesSelection(context);
+                _showActivitySubmenu(context);
               },
             ),
           ],
@@ -641,18 +639,297 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildQuickFoodOption({
+  void _showFoodSubmenu(BuildContext context) async {
+    // Check if there are food favorites
+    final favoriteFoodService = FavoriteFoodService();
+    final foodFavoritesResult = await favoriteFoodService.getFavorites();
+    final hasFoodFavorites = foodFavoritesResult.isSuccess && foodFavoritesResult.success.isNotEmpty;
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.foodApple, color: AppColors.warning),
+            SizedBox(width: KSizes.margin2x),
+            Text('Mad & Drikke'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Quick photo option
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.camera,
+              title: 'Tag billede',
+              subtitle: 'Hurtig fotografering af mad',
+              color: AppColors.warning,
+              onTap: () {
+                Navigator.of(context).pop();
+                _captureFromCamera(context);
+              },
+            ),
+            
+            if (hasFoodFavorites) ...[
+              SizedBox(height: KSizes.margin3x),
+              _buildSubmenuOption(
+                context: context,
+                icon: MdiIcons.star,
+                title: 'Fra Favoritter',
+                subtitle: 'Vælg fra gemte mad-favoritter',
+                color: AppColors.primary,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToFoodFavorites(context);
+                },
+              ),
+            ],
+            
+            SizedBox(height: KSizes.margin3x),
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.formTextbox,
+              title: 'Detaljeret Registrering',
+              subtitle: 'Manuel indtastning af mad',
+              color: AppColors.info,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToDetailedFood(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.image,
+              title: 'Fra Galleri',
+              subtitle: 'Vælg billede fra telefonen',
+              color: AppColors.success,
+              onTap: () {
+                Navigator.of(context).pop();
+                _captureFromGallery(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showMainCategoryDialog(context);
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(MdiIcons.arrowLeft, size: KSizes.iconXS),
+                Text(' Tilbage'),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActivitySubmenu(BuildContext context) async {
+    // Check if there are activity favorites
+    final favoriteActivityService = FavoriteActivityService();
+    final activityFavoritesResult = await favoriteActivityService.getFavorites();
+    final hasActivityFavorites = activityFavoritesResult.isSuccess && activityFavoritesResult.success.isNotEmpty;
+
+    if (!context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.runFast, color: AppColors.secondary),
+            SizedBox(width: KSizes.margin2x),
+            Text('Aktivitet & Motion'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasActivityFavorites) ...[
+              _buildSubmenuOption(
+                context: context,
+                icon: MdiIcons.star,
+                title: 'Fra Favoritter',
+                subtitle: 'Vælg fra gemte aktiviteter',
+                color: AppColors.primary,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToActivityFavorites(context);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin3x),
+            ],
+            
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.formTextbox,
+              title: 'Detaljeret Registrering',
+              subtitle: 'Manuel indtastning af aktivitet',
+              color: AppColors.info,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToDetailedActivity(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.timerOutline,
+              title: 'Hurtig Aktivitet',
+              subtitle: 'Simple aktiviteter (gåtur, løb)',
+              color: AppColors.secondary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToQuickActivity(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showMainCategoryDialog(context);
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(MdiIcons.arrowLeft, size: KSizes.iconXS),
+                Text(' Tilbage'),
+              ],
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainCategoryOption({
     required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(KSizes.radiusL),
+      child: Container(
+        padding: EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withOpacity(0.1),
+              color.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          border: Border.all(
+            color: color.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(KSizes.margin3x),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: KSizes.iconL,
+              ),
+            ),
+            
+            SizedBox(width: KSizes.margin4x),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeL,
+                      fontWeight: KSizes.fontWeightBold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: KSizes.margin1x),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeM,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            Icon(
+              MdiIcons.chevronRight,
+              color: color,
+              size: KSizes.iconM,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubmenuOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(KSizes.radiusM),
       child: Container(
-        padding: EdgeInsets.all(KSizes.margin4x),
+        padding: EdgeInsets.all(KSizes.margin3x),
         decoration: BoxDecoration(
           border: Border.all(color: AppColors.border.withOpacity(0.3)),
           borderRadius: BorderRadius.circular(KSizes.radiusM),
@@ -660,14 +937,14 @@ class _HomePageState extends ConsumerState<HomePage> {
         child: Row(
           children: [
             Container(
-              padding: EdgeInsets.all(KSizes.margin3x),
+              padding: EdgeInsets.all(KSizes.margin2x),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: color.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(KSizes.radiusS),
               ),
               child: Icon(
                 icon,
-                color: AppColors.primary,
+                color: color,
                 size: KSizes.iconM,
               ),
             ),
@@ -701,6 +978,114 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
     );
+  }
+
+  void _navigateToFoodFavorites(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuickFavoritesPage(initialTab: 0), // Food tab
+      ),
+    );
+  }
+
+  void _navigateToActivityFavorites(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuickFavoritesPage(initialTab: 1), // Activity tab
+      ),
+    );
+  }
+
+  void _navigateToDetailedFood(BuildContext context) {
+    // TODO: Navigate to detailed food registration page
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Detaljeret mad-registrering kommer snart!'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+  }
+
+  void _navigateToDetailedActivity(BuildContext context) {
+    // TODO: Navigate to detailed activity registration page
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Detaljeret aktivitets-registrering kommer snart!'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+  }
+
+  void _navigateToQuickActivity(BuildContext context) {
+    // TODO: Navigate to quick activity registration page
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Hurtig aktivitets-registrering kommer snart!'),
+        backgroundColor: AppColors.info,
+      ),
+    );
+  }
+
+  void _captureFromGallery(BuildContext context) async {
+    final cubit = ref.read(pendingFoodProvider.notifier);
+    
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: KSizes.margin3x),
+              Expanded(child: Text('Åbner galleri...')),
+            ],
+          ),
+          backgroundColor: AppColors.info,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      
+      await cubit.captureFromGallery();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(child: Text('Billede valgt! Kategoriser det når du er klar.')),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.alertCircle, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(child: Text('Kunne ikke vælge billede')),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   void _captureFromCamera(BuildContext context) async {
@@ -776,14 +1161,5 @@ class _HomePageState extends ConsumerState<HomePage> {
         );
       }
     }
-  }
-
-  void _showFavoritesSelection(BuildContext context) async {
-    // Navigate to favorites selection page
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => SelectFavoritePage(),
-      ),
-    );
   }
 } 

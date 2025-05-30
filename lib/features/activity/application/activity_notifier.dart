@@ -14,11 +14,48 @@ class ActivityNotifier extends ChangeNotifier {
   
   // Callback to refresh activity calories
   void Function()? onActivityChanged;
+  
+  // Static list to keep track of all instances for global updates
+  static final List<ActivityNotifier> _instances = [];
 
   ActivityNotifier({
     IActivityService? service,
     this.onActivityChanged, // Add callback parameter
-  }) : _service = service ?? ActivityService();
+  }) : _service = service ?? ActivityService() {
+    _instances.add(this);
+  }
+  
+  @override
+  void dispose() {
+    _instances.remove(this);
+    super.dispose();
+  }
+  
+  /// Refresh all ActivityNotifier instances (call this when logging from other screens)
+  static Future<void> refreshAllInstances() async {
+    for (final instance in _instances) {
+      await instance._refreshData();
+    }
+  }
+  
+  /// Refresh this instance's data
+  Future<void> _refreshData() async {
+    if (_currentBmr != null) {
+      await Future.wait([
+        loadActivitiesForDate(_selectedDate),
+        loadTotalCaloriesWithBmrForDate(_currentBmr!, _selectedDate),
+      ]);
+    } else {
+      await Future.wait([
+        loadActivitiesForDate(_selectedDate),
+        loadCaloriesBurnedForDate(_selectedDate),
+      ]);
+    }
+    
+    if (onActivityChanged != null) {
+      onActivityChanged!();
+    }
+  }
 
   ActivityState get state => _state;
   DateTime get selectedDate => _selectedDate;
