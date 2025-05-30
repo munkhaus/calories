@@ -10,6 +10,7 @@ import '../domain/user_activity_log_model.dart';
 import 'widgets/activity_search_widget.dart';
 import 'widgets/common_activities_widget.dart';
 import 'widgets/todays_activities_widget.dart';
+import '../../info/presentation/info_page.dart';
 
 /// Main activity logging page with full functionality
 class ActivityPage extends ConsumerStatefulWidget {
@@ -79,6 +80,21 @@ class _ActivityPageState extends ConsumerState<ActivityPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const InfoPage(),
+                ),
+              );
+            },
+            icon: Icon(
+              MdiIcons.informationOutline,
+              color: AppColors.info,
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(

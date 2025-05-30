@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
+import '../../info/presentation/info_page.dart';
 import 'activity_settings_page.dart';
 
 /// Profile page showing user onboarding results and settings
@@ -463,6 +464,17 @@ class ProfilePage extends ConsumerWidget {
               gradient: [AppColors.secondary, AppColors.secondary.withOpacity(0.8)],
               onTap: () => _navigateToActivitySettings(context),
             ),
+            
+            KSizes.spacingVerticalM,
+            
+            // Info Button
+            _buildActionButton(
+              icon: MdiIcons.informationOutline,
+              title: 'Information & Ansvarsfraskrivelse',
+              subtitle: 'Vigtig information om appen',
+              gradient: [AppColors.info, AppColors.info.withOpacity(0.8)],
+              onTap: () => _navigateToInfo(context),
+            ),
           ],
         ),
       ),
@@ -620,6 +632,14 @@ class ProfilePage extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const ActivitySettingsPage(),
+      ),
+    );
+  }
+
+  void _navigateToInfo(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const InfoPage(),
       ),
     );
   }

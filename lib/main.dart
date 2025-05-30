@@ -7,6 +7,7 @@ import 'core/theme/app_theme.dart';
 import 'core/navigation/app_navigation.dart';
 import 'features/onboarding/presentation/onboarding_page.dart';
 import 'features/onboarding/infrastructure/onboarding_storage_service.dart';
+import 'features/info/presentation/info_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,30 +43,51 @@ class AppWrapper extends StatefulWidget {
 
 class _AppWrapperState extends State<AppWrapper> {
   bool? _isOnboardingCompleted;
+  bool? _isInfoAccepted;
 
   @override
   void initState() {
     super.initState();
-    _checkOnboardingStatus();
+    _checkStatus();
   }
 
-  Future<void> _checkOnboardingStatus() async {
-    final isCompleted = await OnboardingStorageService.isOnboardingCompleted();
+  Future<void> _checkStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isOnboardingCompleted = await OnboardingStorageService.isOnboardingCompleted();
+    final isInfoAccepted = prefs.getBool('info_accepted') ?? false;
+    
     if (mounted) {
       setState(() {
-        _isOnboardingCompleted = isCompleted;
+        _isOnboardingCompleted = isOnboardingCompleted;
+        _isInfoAccepted = isInfoAccepted;
       });
     }
   }
 
+  Future<void> _acceptInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('info_accepted', true);
+    setState(() {
+      _isInfoAccepted = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_isOnboardingCompleted == null) {
+    if (_isOnboardingCompleted == null || _isInfoAccepted == null) {
       // Loading state
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
+      );
+    }
+
+    // Show info page first if not accepted
+    if (!_isInfoAccepted!) {
+      return InfoPage(
+        isInitialView: true,
+        onAccepted: _acceptInfo,
       );
     }
 

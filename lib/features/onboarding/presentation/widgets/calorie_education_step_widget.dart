@@ -35,29 +35,40 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         // Step 1: Base Metabolic Rate (BMR)
         _buildCalculationStep(
           context: context,
-          title: 'Grundforbrug',
-          subtitle: 'Kalorier din krop bruger i hvile',
-          value: '${userProfile.bmr.round()} kcal',
-          explanation: 'Dit grundforbrug er den energi din krop bruger bare for at holde dig i live - vejrtrækning, hjerteslag, fordøjelse og så videre.',
+          title: '1. Basalstofskifte (BMR)',
+          subtitle: 'Hvor mange kalorier din krop bruger i hvile',
+          value: '${userProfile.bmr.toStringAsFixed(0)} kcal',
+          explanation: 'Din krop bruger ${userProfile.bmr.toStringAsFixed(0)} kalorier hver dag bare for at holde de basale funktioner i gang. Dette tal beregnes ud fra din alder (${userProfile.age}), køn, højde (${userProfile.heightCm} cm) og vægt (${userProfile.currentWeightKg} kg).',
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
         // Step 2: Activity multiplier
         _buildCalculationStep(
           context: context,
-          title: 'Dit aktivitetsniveau',
-          subtitle: 'Baseret på arbejde og fritid',
-          value: '${userProfile.tdee.round()} kcal',
-          explanation: 'Vi lægger ekstra kalorier til baseret på hvor aktiv du er. Jo mere du bevæger dig, jo flere kalorier forbrænder du.',
+          title: '2. Aktivitetsfaktor',
+          subtitle: 'Ekstra kalorier fra din daglige aktivitet',
+          value: '${(userProfile.tdee - userProfile.bmr).toStringAsFixed(0)} kcal',
+          explanation: _getActivityExplanation(userProfile),
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
-        // Step 3: Goal adjustment
+        // Step 3: Total Daily Energy Expenditure (TDEE)
         _buildCalculationStep(
           context: context,
-          title: 'Justering for dit mål',
+          title: '3. TDEE (Totalt energiforbrug)',
+          subtitle: 'Dine samlede daglige kalorieforbrug',
+          value: '${userProfile.tdee.toStringAsFixed(0)} kcal',
+          explanation: 'Dette er det samlede antal kalorier din krop bruger på en gennemsnitlig dag. BMR (${userProfile.bmr.toStringAsFixed(0)}) + aktivitet (${(userProfile.tdee - userProfile.bmr).toStringAsFixed(0)}) = ${userProfile.tdee.toStringAsFixed(0)} kalorier.',
+        ),
+        
+        KSizes.spacingVerticalL,
+        
+        // Step 4: Goal adjustment
+        _buildCalculationStep(
+          context: context,
+          title: '4. Måljustering',
           subtitle: _getGoalAdjustmentDescription(userProfile.goalType),
           value: _getGoalAdjustmentText(userProfile),
           explanation: _getGoalExplanation(userProfile.goalType),
@@ -65,13 +76,27 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         
         KSizes.spacingVerticalL,
         
-        // Simple process explanation
-        _buildProcessSummary(context),
+        // Step 5: Final target
+        _buildCalculationStep(
+          context: context,
+          title: '5. Dit daglige kaloriemål',
+          subtitle: 'Hvor mange kalorier du skal spise dagligt',
+          value: '${userProfile.targetCalories.toStringAsFixed(0)} kcal',
+          explanation: 'Dette er dit personlige kaloriemål beregnet ud fra dit TDEE (${userProfile.tdee.toStringAsFixed(0)}) ${userProfile.goalType == GoalType.weightLoss ? 'minus' : userProfile.goalType == GoalType.weightMaintenance ? 'uden' : 'plus'} justering for dit mål.',
+        ),
         
         KSizes.spacingVerticalL,
         
-        // Medical disclaimers - single warning box
-        _buildMedicalDisclaimers(context),
+        // Simple process explanation
+        _buildProcessSummary(context),
+        
+        // Weight loss guidance (only for weight loss goal)
+        if (userProfile.goalType == GoalType.weightLoss) ...[
+          KSizes.spacingVerticalL,
+          _buildWeightLossGuidance(context, userProfile),
+        ],
+        
+        KSizes.spacingVerticalL,
       ],
     );
   }
@@ -260,34 +285,42 @@ class CalorieEducationStepWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildMedicalDisclaimers(BuildContext context) {
-    final disclaimers = [
-      'Disse beregninger er vejledende og dit faktiske behov kan variere',
-      'Rådfør dig altid med en læge før større ændringer i dit kostmønster',
-      'Appen erstatter ikke professionel medicinsk eller ernæringsmæssig rådgivning',
-      'Individuelle faktorer som medicin og helbredstilstand kan påvirke dit behov',
-      'Start med mindre ændringer og justér gradvist baseret på dine resultater'
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Vigtige forbehold',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: const Color(0xFFD84315), // Same as warning text color
-            fontWeight: KSizes.fontWeightSemiBold,
+  Widget _buildWeightLossGuidance(BuildContext context, UserProfileModel userProfile) {
+    // Calculate user's specific deficit and goal
+    final weeklyGoal = userProfile.weeklyGoalKg;
+    final dailyDeficit = (weeklyGoal * 7700) / 7; // 7700 kcal per kg fat
+    final tdee = userProfile.tdee;
+    final targetCalories = userProfile.targetCalories;
+    final actualDeficit = tdee - targetCalories;
+    
+    return Container(
+      padding: EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.info.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(
+          color: AppColors.info.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Dit vægttab mål',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.info,
+              fontWeight: KSizes.fontWeightSemiBold,
+            ),
           ),
-        ),
-        
-        KSizes.spacingVerticalM,
-        
-        // Single warning container with all disclaimers
-        OnboardingHelpText(
-          text: '• ${disclaimers.join('\n\n• ')}',
-          type: OnboardingHelpType.warning,
-        ),
-      ],
+          
+          KSizes.spacingVerticalM,
+          
+          OnboardingHelpText(
+            text: 'Dit mål er at tabe ${weeklyGoal.toStringAsFixed(1)} kg om ugen. For at opnå dette har vi beregnet et dagligt kalorieunderskud på ${actualDeficit.round()} kalorier. Dette betyder du forbrænder ${actualDeficit.round()} kalorier mere end du spiser hver dag.\n\nHusk at vægttab er individuelt og afhænger af faktorer som alder, køn, fysisk aktivitet og helbredstilstand. Tal med en sundhedsprofessionel for personlig rådgivning.',
+            type: OnboardingHelpType.neutral,
+          ),
+        ],
+      ),
     );
   }
 
@@ -306,6 +339,14 @@ class CalorieEducationStepWidget extends ConsumerWidget {
       default:
         return 'Ikke beregnet';
     }
+  }
+
+  String _getActivityExplanation(UserProfileModel profile) {
+    if (profile.activityTrackingPreference == ActivityTrackingPreference.manual) {
+      return 'Du har valgt manuel registrering af aktivitet. Dit arbejdsaktivitetsniveau (${profile.workActivityLevel?.name ?? 'ukendt'}) bruges altid, men fritidsaktivitet tilføjes ikke automatisk. Du kan tilføje specifikke aktiviteter manuelt.';
+    }
+    
+    return 'Baseret på dit arbejdsaktivitetsniveau (${profile.workActivityLevel?.name ?? 'ukendt'}) og fritidsaktivitetsniveau (${profile.leisureActivityLevel?.name ?? 'ukendt'}) beregnes ekstra kalorier til din daglige aktivitet.';
   }
 
   String _getGoalAdjustmentDescription(GoalType? goalType) {

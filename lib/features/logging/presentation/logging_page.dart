@@ -5,6 +5,7 @@ import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 import '../../food_logging/presentation/pages/food_search_page.dart';
+import '../../info/presentation/info_page.dart';
 
 /// Main food logging page with meal type selection
 class LoggingPage extends ConsumerWidget {
@@ -25,6 +26,21 @@ class LoggingPage extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const InfoPage(),
+                ),
+              );
+            },
+            icon: Icon(
+              MdiIcons.informationOutline,
+              color: AppColors.info,
+            ),
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(

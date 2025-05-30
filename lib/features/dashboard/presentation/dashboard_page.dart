@@ -10,6 +10,7 @@ import '../widgets/recent_meals_widget.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
+import '../../info/presentation/info_page.dart';
 
 /// Main dashboard page showing daily overview
 class DashboardPage extends ConsumerWidget {
@@ -70,28 +71,60 @@ class DashboardPage extends ConsumerWidget {
                               ],
                             ),
                           ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(KSizes.radiusL),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primary.withOpacity(0.1),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                          Row(
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: IconButton(
-                              onPressed: () {
-                                // TODO: Navigate to notifications
-                              },
-                              icon: Icon(
-                                MdiIcons.bellOutline,
-                                color: AppColors.primary,
-                                size: KSizes.iconM,
+                                child: IconButton(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => const InfoPage(),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    MdiIcons.informationOutline,
+                                    color: AppColors.info,
+                                    size: KSizes.iconM,
+                                  ),
+                                ),
                               ),
-                            ),
+                              KSizes.spacingHorizontalS,
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.1),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  onPressed: () {
+                                    // TODO: Navigate to notifications
+                                  },
+                                  icon: Icon(
+                                    MdiIcons.bellOutline,
+                                    color: AppColors.primary,
+                                    size: KSizes.iconM,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
