@@ -5,6 +5,7 @@ import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
+import '../../food_logging/presentation/pages/edit_meal_page.dart';
 
 /// Widget showing today's logged meals
 class RecentMealsWidget extends ConsumerWidget {
@@ -427,6 +428,21 @@ class RecentMealsWidget extends ConsumerWidget {
                   ],
                 ),
               ),
+              
+              // Options button
+              IconButton(
+                onPressed: () => _showMealOptionsMenu(context, ref, meal),
+                icon: Icon(
+                  MdiIcons.dotsVertical,
+                  color: AppColors.textTertiary,
+                  size: KSizes.iconS,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  minWidth: KSizes.iconM,
+                  minHeight: KSizes.iconM,
+                ),
+              ),
             ],
           ),
         ),
@@ -600,21 +616,11 @@ class RecentMealsWidget extends ConsumerWidget {
   }
 
   void _editMeal(BuildContext context, WidgetRef ref, UserFoodLogModel meal) {
-    // For now, show a simple dialog - in a real app this would navigate to an edit page
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Rediger ${meal.foodName}'),
-          content: Text('Edit funktionalitet kommer snart!\n\nDu kan foreløbig slette måltider og tilføje nye.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditMealPage(meal: meal),
+      ),
     );
   }
 } 

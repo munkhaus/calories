@@ -6,9 +6,11 @@ import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/pending_food_model.dart';
 import '../../domain/user_food_log_model.dart';
+import '../../domain/favorite_food_model.dart';
 import '../../application/pending_food_cubit.dart';
 import '../../application/food_logging_notifier.dart';
 import '../../infrastructure/gemini_service.dart';
+import '../../infrastructure/favorite_food_service.dart';
 
 /// Page for categorizing a pending food photo
 class CategorizeFoodPage extends ConsumerStatefulWidget {
@@ -30,10 +32,12 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   MealType _selectedMealType = MealType.morgenmad;
   bool _isProcessing = false;
   bool _isAnalyzing = false;
+  bool _markAsFavorite = false;
   FoodAnalysisResult? _analysisResult;
   String? _analysisError;
 
   final GeminiService _geminiService = GeminiService();
+  final FavoriteFoodService _favoriteFoodService = FavoriteFoodService();
 
   @override
   void initState() {
@@ -92,6 +96,11 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
               
               // Calories input
               _buildCaloriesSection(),
+              
+              SizedBox(height: KSizes.margin4x),
+              
+              // Favorite checkbox
+              _buildFavoriteSection(),
               
               SizedBox(height: KSizes.margin8x),
               
@@ -605,6 +614,24 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
     );
   }
 
+  Widget _buildFavoriteSection() {
+    return Row(
+      children: [
+        Checkbox(
+          value: _markAsFavorite,
+          onChanged: (value) => setState(() => _markAsFavorite = value!),
+        ),
+        Text(
+          'Gem som favorit',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeS,
+            color: AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildActionButtons() {
     return Column(
       children: [
@@ -720,13 +747,38 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
       // Log the food
       await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
 
+      // Save as favorite if requested
+      if (_markAsFavorite) {
+        final favorite = FavoriteFoodModel.fromUserFoodLog(foodLog);
+        final result = await _favoriteFoodService.addToFavorites(favorite);
+        
+        if (result.isSuccess) {
+          print('⭐ CategorizeFoodPage: Food saved as favorite');
+        } else {
+          print('⭐ CategorizeFoodPage: Failed to save as favorite: ${result.failure}');
+          // Show warning but don't fail the whole operation
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Maden blev gemt, men kunne ikke tilføjes til favoritter'),
+                backgroundColor: AppColors.warning,
+              ),
+            );
+          }
+        }
+      }
+
       // Mark pending food as processed
       await ref.read(pendingFoodProvider.notifier).markAsProcessed(widget.pendingFood.id);
 
       if (mounted) {
+        final message = _markAsFavorite 
+          ? 'Mad kategoriseret, gemt og tilføjet til favoritter!' 
+          : 'Mad kategoriseret og gemt!';
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Mad kategoriseret og gemt!'),
+            content: Text(message),
             backgroundColor: AppColors.success,
           ),
         );

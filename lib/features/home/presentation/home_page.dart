@@ -11,6 +11,8 @@ import '../../food_logging/application/food_logging_notifier.dart';
 import '../../dashboard/widgets/pending_foods_widget.dart';
 import '../../food_logging/application/pending_food_cubit.dart';
 import '../../food_logging/infrastructure/pending_food_service.dart';
+import '../../food_logging/infrastructure/favorite_food_service.dart';
+import '../../food_logging/presentation/pages/select_favorite_page.dart';
 
 /// Main home page of the app after onboarding
 class HomePage extends ConsumerStatefulWidget {
@@ -575,6 +577,133 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _captureQuickFood(BuildContext context) async {
+    // First check if there are any favorites
+    final favoriteFoodService = FavoriteFoodService();
+    final favoritesResult = await favoriteFoodService.getFavorites();
+    
+    final hasFavorites = favoritesResult.isSuccess && favoritesResult.success.isNotEmpty;
+    
+    if (hasFavorites) {
+      // Show choice dialog
+      _showQuickFoodOptions(context);
+    } else {
+      // No favorites, go directly to camera
+      _captureFromCamera(context);
+    }
+  }
+
+  void _showQuickFoodOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(MdiIcons.plus, color: AppColors.primary),
+            SizedBox(width: KSizes.margin2x),
+            Text('Tilføj Mad'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildQuickFoodOption(
+              context: context,
+              icon: MdiIcons.camera,
+              title: 'Tag billede',
+              subtitle: 'Brug kamera til at tage billede af mad',
+              onTap: () {
+                Navigator.of(context).pop();
+                _captureFromCamera(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            _buildQuickFoodOption(
+              context: context,
+              icon: MdiIcons.star,
+              title: 'Vælg favorit',
+              subtitle: 'Vælg fra dine gemte favorit retter',
+              onTap: () {
+                Navigator.of(context).pop();
+                _showFavoritesSelection(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickFoodOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(KSizes.radiusM),
+      child: Container(
+        padding: EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.border.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(KSizes.margin3x),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(KSizes.radiusS),
+              ),
+              child: Icon(
+                icon,
+                color: AppColors.primary,
+                size: KSizes.iconM,
+              ),
+            ),
+            
+            SizedBox(width: KSizes.margin3x),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeM,
+                      fontWeight: KSizes.fontWeightBold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: KSizes.margin1x),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeS,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _captureFromCamera(BuildContext context) async {
     final cubit = ref.read(pendingFoodProvider.notifier);
     
     try {
@@ -592,7 +721,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               SizedBox(width: KSizes.margin3x),
-              Text('Tager billede...'),
+              Expanded(child: Text('Tager billede...')),
             ],
           ),
           backgroundColor: AppColors.warning,
@@ -610,7 +739,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Text('Billede taget! Kategoriser det når du er klar.'),
+                Expanded(child: Text('Billede taget! Kategoriser det når du er klar.')),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -634,18 +763,27 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Icon(MdiIcons.alertCircle, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Text('Kunne ikke tage billede'),
+                Expanded(child: Text('Kunne ikke tage billede')),
               ],
             ),
             backgroundColor: AppColors.error,
             action: SnackBarAction(
               label: 'Prøv igen',
               textColor: Colors.white,
-              onPressed: () => _captureQuickFood(context),
+              onPressed: () => _captureFromCamera(context),
             ),
           ),
         );
       }
     }
+  }
+
+  void _showFavoritesSelection(BuildContext context) async {
+    // Navigate to favorites selection page
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SelectFavoritePage(),
+      ),
+    );
   }
 } 

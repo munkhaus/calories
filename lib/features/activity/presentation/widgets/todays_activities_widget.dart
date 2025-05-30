@@ -3,7 +3,9 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/activity_notifier.dart';
+import '../../application/activity_state.dart';
 import '../../domain/user_activity_log_model.dart';
+import '../pages/edit_activity_page.dart';
 import '../../../onboarding/domain/user_profile_model.dart';
 
 /// Widget displaying today's logged activities with enhanced design
@@ -460,7 +462,15 @@ class TodaysActivitiesWidget extends StatelessWidget {
                 subtitle: Text('Ret aktivitetsoplysninger'),
                 onTap: () {
                   Navigator.pop(context);
-                  // TODO: Navigate to edit activity
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditActivityPage(
+                        activity: activity,
+                        notifier: notifier,
+                      ),
+                    ),
+                  );
                 },
               ),
               

@@ -9,9 +9,13 @@ import 'core/navigation/app_navigation.dart';
 import 'features/onboarding/presentation/onboarding_page.dart';
 import 'features/onboarding/infrastructure/onboarding_storage_service.dart';
 import 'features/info/presentation/info_page.dart';
+import 'features/food_logging/infrastructure/favorite_food_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize test favorites for demonstration
+  FavoriteFoodService.addTestFavorites();
   
   runApp(
     const ProviderScope(

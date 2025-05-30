@@ -240,6 +240,29 @@ class ActivityNotifier extends ChangeNotifier {
     return false;
   }
 
+  /// Update an activity log
+  Future<bool> updateActivity(UserActivityLogModel activity) async {
+    final result = await _service.updateActivityLog(activity);
+    
+    if (result.isSuccess) {
+      // Refresh today's data after update - use BMR if available
+      await Future.wait([
+        loadActivitiesForDate(_selectedDate),
+        _currentBmr != null 
+          ? loadTotalCaloriesWithBmr(_currentBmr!)
+          : loadCaloriesBurnedForDate(_selectedDate),
+      ]);
+      
+      // Refresh the activity calories provider if ref is available
+      if (onActivityChanged != null) {
+        onActivityChanged!();
+      }
+      
+      return true;
+    }
+    return false;
+  }
+
   /// Clear search results
   void clearSearch() {
     _updateState(_state.copyWith(
