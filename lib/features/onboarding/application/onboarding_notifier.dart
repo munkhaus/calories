@@ -401,10 +401,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
     double tdee;
     
-    // Use new activity system if available
+    // Use new activity system if available, otherwise fall back to legacy
     if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
       // Calculate work activity multiplier based on current day
-      double workMultiplier = 1.0;
+      double workMultiplier = 1.2; // Default sedentary baseline
       if (profile.isCurrentlyWorkDay) {
         workMultiplier = switch (profile.workActivityLevel!) {
           WorkActivityLevel.sedentary => 1.2,
@@ -413,14 +413,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
           WorkActivityLevel.heavy => 1.725,
           WorkActivityLevel.veryHeavy => 1.9,
         };
-      } else {
-        // Non-work day: sedentary baseline
-        workMultiplier = 1.2;
       }
       
-      // Calculate leisure activity addition
+      // Calculate leisure activity addition - only if NOT manual tracking
       double leisureAddition = 0.0;
-      if (profile.isLeisureActivityEnabledToday) {
+      if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
+          profile.isLeisureActivityEnabledToday) {
         leisureAddition = switch (profile.leisureActivityLevel!) {
           LeisureActivityLevel.sedentary => 0.0,
           LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories

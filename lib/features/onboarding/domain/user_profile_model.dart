@@ -169,6 +169,8 @@ class UserProfileModel with _$UserProfileModel {
     }
     
     // Legacy calculation
+    if (activityLevel == null) return bmr * 1.2; // Default to sedentary if no level set
+    
     final activityMultiplier = switch (activityLevel!) {
       ActivityLevel.sedentary => 1.2,
       ActivityLevel.lightlyActive => 1.375,
@@ -187,10 +189,14 @@ class UserProfileModel with _$UserProfileModel {
     final isWorkDay = _getIsWorkDay();
     
     // On work days: use work factor, on non-work days: use sedentary work factor
-    final effectiveWorkFactor = isWorkDay ? workFactor : 1.0; // 1.0 = no additional work activity
+    final effectiveWorkFactor = isWorkDay ? workFactor : 1.2; // 1.2 = sedentary baseline for non-work days
     
-    // Always add leisure activity factor
-    final totalFactor = effectiveWorkFactor + leisureFactor - 1.0; // Subtract 1.0 to avoid double-counting BMR
+    // Add leisure activity factor only if NOT manual tracking
+    final effectiveLeisureFactor = activityTrackingPreference == ActivityTrackingPreference.manual 
+        ? 0.0 // No leisure activity addition for manual tracking
+        : (leisureFactor - 1.0); // Subtract 1.0 since leisure factor includes baseline
+    
+    final totalFactor = effectiveWorkFactor + effectiveLeisureFactor;
     
     return bmr * totalFactor.clamp(1.0, 2.5); // Safety bounds
   }
@@ -249,13 +255,7 @@ class UserProfileModel with _$UserProfileModel {
     
     if (!basicFieldsComplete) return false;
     
-    // Check if using new activity system
-    if (activityTrackingPreference == ActivityTrackingPreference.manual) {
-      // Manual tracking doesn't need activity levels set
-      return true;
-    }
-    
-    // For automatic or hybrid tracking, need either new or legacy activity system
+    // Need either new or legacy activity system
     final hasNewActivitySystem = workActivityLevel != null && leisureActivityLevel != null;
     final hasLegacyActivitySystem = activityLevel != null;
     

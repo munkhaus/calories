@@ -206,116 +206,11 @@ class CalorieOverviewWidget extends ConsumerWidget {
   }
 
   double _calculateTargetCalories(UserProfileModel profile) {
-    // Use the user's calculated target calories from their profile
-    // This should be based on their goal (weight loss, gain, maintenance)
-    // and is already properly calculated in the profile
-    if (profile.isCompleteForCalculations) {
-      // Use the profile's TDEE calculation which already handles the new activity system
-      return _calculateGoalBasedCalories(profile);
-    }
-    
-    return 2000; // Default fallback
+    // Use the pre-calculated target calories from user profile
+    // This is already calculated during onboarding with proper goal adjustments
+    return profile.targetCalories.toDouble();
   }
   
-  double _calculateGoalBasedCalories(UserProfileModel profile) {
-    if (profile.dateOfBirth == null || 
-        profile.heightCm <= 0 || 
-        profile.currentWeightKg <= 0 ||
-        profile.gender == null ||
-        profile.goalType == null) {
-      return 2000; // Default fallback
-    }
-
-    // Calculate BMR first
-    final now = DateTime.now();
-    final birthDate = profile.dateOfBirth!;
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || 
-        (now.month == birthDate.month && now.day < birthDate.day)) {
-      age--;
-    }
-
-    // Mifflin-St Jeor Equation for BMR
-    double bmr;
-    if (profile.gender == Gender.male) {
-      bmr = (10 * profile.currentWeightKg) + 
-            (6.25 * profile.heightCm) - 
-            (5 * age) + 5;
-    } else {
-      bmr = (10 * profile.currentWeightKg) + 
-            (6.25 * profile.heightCm) - 
-            (5 * age) - 161;
-    }
-
-    double tdee;
-    
-    // Use new activity system if available
-    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
-      // Calculate work activity multiplier based on current day
-      double workMultiplier = 1.2; // Default sedentary
-      
-      // Determine if today is a work day
-      final isWorkDay = profile.useAutomaticWeekdayDetection 
-          ? (now.weekday >= 1 && now.weekday <= 5)
-          : profile.isCurrentlyWorkDay;
-      
-      if (isWorkDay) {
-        workMultiplier = switch (profile.workActivityLevel!) {
-          WorkActivityLevel.sedentary => 1.2,
-          WorkActivityLevel.light => 1.375,
-          WorkActivityLevel.moderate => 1.55,
-          WorkActivityLevel.heavy => 1.725,
-          WorkActivityLevel.veryHeavy => 1.9,
-        };
-      }
-      
-      // Calculate leisure activity addition
-      double leisureAddition = 0.0;
-      if (profile.isLeisureActivityEnabledToday) {
-        leisureAddition = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 0.0,
-          LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
-          LeisureActivityLevel.moderatelyActive => 0.35, // ~350 calories
-          LeisureActivityLevel.veryActive => 0.525, // ~525 calories
-          LeisureActivityLevel.extraActive => 0.7, // ~700 calories
-        };
-      }
-      
-      tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
-    } else {
-      // Fall back to legacy activity level system
-      if (profile.activityLevel == null) {
-        return 2000; // Default fallback if no activity system is set
-      }
-      
-      final activityMultiplier = switch (profile.activityLevel!) {
-        ActivityLevel.sedentary => 1.2,
-        ActivityLevel.lightlyActive => 1.375,
-        ActivityLevel.moderatelyActive => 1.55,
-        ActivityLevel.veryActive => 1.725,
-        ActivityLevel.extraActive => 1.9,
-      };
-      
-      tdee = bmr * activityMultiplier;
-    }
-    
-    // Adjust TDEE based on goal type
-    switch (profile.goalType!) {
-      case GoalType.weightLoss:
-        // Create a deficit of 500 calories per day for 1 lb/week loss
-        return tdee - 500;
-      case GoalType.weightGain:
-        // Create a surplus of 300-500 calories per day for weight gain
-        return tdee + 400;
-      case GoalType.muscleGain:
-        // Slight surplus for muscle gain
-        return tdee + 200;
-      case GoalType.weightMaintenance:
-        // Maintain current weight
-        return tdee;
-    }
-  }
-
   double _calculateBmrCalories(UserProfileModel profile) {
     if (profile.dateOfBirth == null || 
         profile.heightCm <= 0 || 
@@ -347,10 +242,10 @@ class CalorieOverviewWidget extends ConsumerWidget {
 
     double dailyTdee;
     
-    // Use new activity system if available
+    // Use new activity system if available, otherwise fall back to legacy
     if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
       // Calculate work activity multiplier based on current day
-      double workMultiplier = 1.2; // Default sedentary
+      double workMultiplier = 1.2; // Default sedentary baseline
       
       // Determine if today is a work day
       final isWorkDay = profile.useAutomaticWeekdayDetection 
@@ -367,9 +262,10 @@ class CalorieOverviewWidget extends ConsumerWidget {
         };
       }
       
-      // Calculate leisure activity addition
+      // Calculate leisure activity addition - only if NOT manual tracking
       double leisureAddition = 0.0;
-      if (profile.isLeisureActivityEnabledToday) {
+      if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
+          profile.isLeisureActivityEnabledToday) {
         leisureAddition = switch (profile.leisureActivityLevel!) {
           LeisureActivityLevel.sedentary => 0.0,
           LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
@@ -619,6 +515,8 @@ class _WorkDayToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(onboardingProvider.notifier);
+    
+    // Determine if today is a work day - respect manual override properly
     final isWorkDay = userProfile.useAutomaticWeekdayDetection 
         ? (DateTime.now().weekday >= 1 && DateTime.now().weekday <= 5)
         : userProfile.isCurrentlyWorkDay;
@@ -658,6 +556,8 @@ class _WorkDayToggle extends ConsumerWidget {
               ),
               GestureDetector(
                 onTap: () {
+                  // When user manually toggles, disable automatic detection
+                  notifier.updateWeekdayDetection(false);
                   notifier.updateCurrentWorkDayStatus(!isWorkDay);
                 },
                 child: Container(

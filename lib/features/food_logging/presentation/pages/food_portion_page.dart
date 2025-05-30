@@ -161,161 +161,60 @@ class _FoodPortionPageState extends ConsumerState<FoodPortionPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.textPrimary),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(KSizes.margin4x),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Food Info
-                  Container(
-                    padding: EdgeInsets.all(KSizes.margin4x),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      border: Border.all(
-                        color: AppColors.border.withOpacity(0.5),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: KSizes.iconXL,
-                          height: KSizes.iconXL,
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(KSizes.radiusM),
-                          ),
-                          child: Icon(
-                            MdiIcons.food,
-                            color: AppColors.primary,
-                            size: KSizes.iconL,
-                          ),
-                        ),
-                        SizedBox(width: KSizes.margin4x),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.foodItem.name,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: KSizes.fontWeightBold,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              if (widget.foodItem.brand.isNotEmpty) ...[
-                                SizedBox(height: KSizes.margin1x),
-                                Text(
-                                  widget.foodItem.brand,
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                              SizedBox(height: KSizes.margin2x),
-                              Text(
-                                'Til ${widget.mealType.mealTypeDisplayName}',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: KSizes.fontWeightMedium,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: KSizes.margin6x),
-
-                  // Quantity Input
-                  Text(
-                    'Mængde',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  
-                  SizedBox(height: KSizes.margin4x),
-                  
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          controller: _quantityController,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: 'Mængde',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(KSizes.radiusM),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(KSizes.radiusM),
-                              borderSide: BorderSide(color: AppColors.primary, width: 2),
-                            ),
-                            filled: true,
-                            fillColor: AppColors.surface,
-                          ),
-                          onChanged: _updateQuantity,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppDesign.backgroundGradient,
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(KSizes.margin4x),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Food Info - using OnboardingSection style
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(KSizes.margin4x),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                        border: Border.all(
+                          color: AppColors.border.withOpacity(0.1),
                         ),
                       ),
-                      
-                      SizedBox(width: KSizes.margin4x),
-                      
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _selectedUnit,
-                          decoration: InputDecoration(
-                            labelText: 'Enhed',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.foodItem.name,
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: KSizes.fontWeightBold,
+                              color: AppColors.textPrimary,
                             ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(KSizes.radiusM),
-                              borderSide: BorderSide(color: AppColors.primary, width: 2),
-                            ),
-                            filled: true,
-                            fillColor: AppColors.surface,
                           ),
-                          items: [
-                            DropdownMenuItem(value: 'g', child: Text('gram')),
-                            if (widget.foodItem.servingUnit.isNotEmpty &&
-                                widget.foodItem.servingUnit != 'g')
-                              DropdownMenuItem(
-                                value: widget.foodItem.servingUnit,
-                                child: Text(_getUnitDisplayName(widget.foodItem.servingUnit)),
-                              ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _selectedUnit = value);
-                            }
-                          },
-                        ),
+                          KSizes.spacingVerticalS,
+                          Text(
+                            'Juster portionsstørrelsen efter dit indtag',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
 
-                  SizedBox(height: KSizes.margin4x),
+                    SizedBox(height: KSizes.margin6x),
 
-                  // Preset Portions
-                  if (widget.foodItem.servingSize > 0) ...[
+                    // Quantity Input
                     Text(
-                      'Hurtige valg',
+                      'Mængde',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
@@ -324,163 +223,240 @@ class _FoodPortionPageState extends ConsumerState<FoodPortionPage> {
                     
                     SizedBox(height: KSizes.margin4x),
                     
-                    Wrap(
-                      spacing: KSizes.margin2x,
-                      runSpacing: KSizes.margin2x,
+                    Row(
                       children: [
-                        _buildPresetButton(
-                          '1 ${_getUnitDisplayName(widget.foodItem.servingUnit)}',
-                          widget.foodItem.servingSize,
-                          widget.foodItem.servingUnit,
+                        Expanded(
+                          flex: 2,
+                          child: TextField(
+                            controller: _quantityController,
+                            keyboardType: TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                            ],
+                            decoration: InputDecoration(
+                              labelText: 'Mængde',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                                borderSide: BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: AppColors.surface,
+                            ),
+                            onChanged: _updateQuantity,
+                          ),
                         ),
-                        _buildPresetButton('100g', 100.0, 'g'),
-                        _buildPresetButton('200g', 200.0, 'g'),
-                        if (widget.foodItem.servingSize > 0)
+                        
+                        SizedBox(width: KSizes.margin4x),
+                        
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedUnit,
+                            decoration: InputDecoration(
+                              labelText: 'Enhed',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                                borderSide: BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                              filled: true,
+                              fillColor: AppColors.surface,
+                            ),
+                            items: [
+                              DropdownMenuItem(value: 'g', child: Text('gram')),
+                              if (widget.foodItem.servingUnit.isNotEmpty &&
+                                  widget.foodItem.servingUnit != 'g')
+                                DropdownMenuItem(
+                                  value: widget.foodItem.servingUnit,
+                                  child: Text(_getUnitDisplayName(widget.foodItem.servingUnit)),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => _selectedUnit = value);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: KSizes.margin4x),
+
+                    // Preset Portions
+                    if (widget.foodItem.servingSize > 0) ...[
+                      Text(
+                        'Hurtige valg',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: KSizes.fontWeightBold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      
+                      SizedBox(height: KSizes.margin4x),
+                      
+                      Wrap(
+                        spacing: KSizes.margin2x,
+                        runSpacing: KSizes.margin2x,
+                        children: [
                           _buildPresetButton(
-                            '2 ${_getUnitDisplayName(widget.foodItem.servingUnit)}',
-                            widget.foodItem.servingSize * 2,
+                            '1 ${_getUnitDisplayName(widget.foodItem.servingUnit)}',
+                            widget.foodItem.servingSize,
                             widget.foodItem.servingUnit,
                           ),
-                      ],
-                    ),
-                    
-                    SizedBox(height: KSizes.margin6x),
-                  ],
+                          _buildPresetButton('100g', 100.0, 'g'),
+                          _buildPresetButton('200g', 200.0, 'g'),
+                          if (widget.foodItem.servingSize > 0)
+                            _buildPresetButton(
+                              '2 ${_getUnitDisplayName(widget.foodItem.servingUnit)}',
+                              widget.foodItem.servingSize * 2,
+                              widget.foodItem.servingUnit,
+                            ),
+                        ],
+                      ),
+                      
+                      SizedBox(height: KSizes.margin6x),
+                    ],
 
-                  // Nutrition Summary
-                  Container(
-                    padding: EdgeInsets.all(KSizes.margin4x),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      border: Border.all(
-                        color: AppColors.primary.withOpacity(0.3),
-                        width: 1,
+                    // Nutrition Summary
+                    Container(
+                      padding: EdgeInsets.all(KSizes.margin4x),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ernæring for $_quantity $_selectedUnit',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: KSizes.fontWeightBold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          
+                          // Add conversion info for clarity
+                          if (_selectedUnit == widget.foodItem.servingUnit && widget.foodItem.servingSize > 0)
+                            Text(
+                              '(= ${(_quantity * widget.foodItem.servingSize).toStringAsFixed(0)}g)',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          
+                          SizedBox(height: KSizes.margin4x),
+                          
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildNutritionCard(
+                                  'Kalorier',
+                                  '${calories.round()}',
+                                  'kcal',
+                                  AppColors.primary,
+                                ),
+                              ),
+                              SizedBox(width: KSizes.margin2x),
+                              Expanded(
+                                child: _buildNutritionCard(
+                                  'Protein',
+                                  protein.toStringAsFixed(1),
+                                  'g',
+                                  AppColors.error,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          SizedBox(height: KSizes.margin2x),
+                          
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildNutritionCard(
+                                  'Fedt',
+                                  fat.toStringAsFixed(1),
+                                  'g',
+                                  AppColors.warning,
+                                ),
+                              ),
+                              SizedBox(width: KSizes.margin2x),
+                              Expanded(
+                                child: _buildNutritionCard(
+                                  'Kulhydrater',
+                                  carbs.toStringAsFixed(1),
+                                  'g',
+                                  AppColors.info,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ernæring for $_quantity $_selectedUnit',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: KSizes.fontWeightBold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        
-                        // Add conversion info for clarity
-                        if (_selectedUnit == widget.foodItem.servingUnit && widget.foodItem.servingSize > 0)
-                          Text(
-                            '(= ${(_quantity * widget.foodItem.servingSize).toStringAsFixed(0)}g)',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        
-                        SizedBox(height: KSizes.margin4x),
-                        
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildNutritionCard(
-                                'Kalorier',
-                                '${calories.round()}',
-                                'kcal',
-                                AppColors.primary,
-                              ),
-                            ),
-                            SizedBox(width: KSizes.margin2x),
-                            Expanded(
-                              child: _buildNutritionCard(
-                                'Protein',
-                                protein.toStringAsFixed(1),
-                                'g',
-                                AppColors.error,
-                              ),
-                            ),
-                          ],
-                        ),
-                        
-                        SizedBox(height: KSizes.margin2x),
-                        
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildNutritionCard(
-                                'Fedt',
-                                fat.toStringAsFixed(1),
-                                'g',
-                                AppColors.warning,
-                              ),
-                            ),
-                            SizedBox(width: KSizes.margin2x),
-                            Expanded(
-                              child: _buildNutritionCard(
-                                'Kulhydrater',
-                                carbs.toStringAsFixed(1),
-                                'g',
-                                AppColors.info,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Log Button
+            Container(
+              padding: EdgeInsets.all(KSizes.margin4x),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, -2),
                   ),
                 ],
               ),
-            ),
-          ),
-          
-          // Log Button
-          Container(
-            padding: EdgeInsets.all(KSizes.margin4x),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: Offset(0, -2),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: SizedBox(
-                width: double.infinity,
-                height: 56.0, // Standard button height
-                child: ElevatedButton(
-                  onPressed: _isLogging ? null : _logFood,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.surface,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+              child: SafeArea(
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 56.0, // Standard button height
+                  child: ElevatedButton(
+                    onPressed: _isLogging ? null : _logFood,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
                     ),
+                    child: _isLogging
+                        ? SizedBox(
+                            width: KSizes.iconM,
+                            height: KSizes.iconM,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
+                            ),
+                          )
+                        : Text(
+                            'Log til ${widget.mealType.mealTypeDisplayName}',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: KSizes.fontWeightBold,
+                              color: AppColors.surface,
+                            ),
+                          ),
                   ),
-                  child: _isLogging
-                      ? SizedBox(
-                          width: KSizes.iconM,
-                          height: KSizes.iconM,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
-                          ),
-                        )
-                      : Text(
-                          'Log til ${widget.mealType.mealTypeDisplayName}',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: KSizes.fontWeightBold,
-                            color: AppColors.surface,
-                          ),
-                        ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -37,7 +37,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           context: context,
           title: 'Grundforbrug',
           subtitle: 'Kalorier din krop bruger i hvile',
-          value: '${_calculateBMR(userProfile).round()} kcal',
+          value: '${userProfile.bmr.round()} kcal',
           explanation: 'Dit grundforbrug er den energi din krop bruger bare for at holde dig i live - vejrtrækning, hjerteslag, fordøjelse og så videre.',
         ),
         
@@ -48,7 +48,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           context: context,
           title: 'Dit aktivitetsniveau',
           subtitle: 'Baseret på arbejde og fritid',
-          value: '${_calculateTDEE(userProfile).round()} kcal',
+          value: '${userProfile.tdee.round()} kcal',
           explanation: 'Vi lægger ekstra kalorier til baseret på hvor aktiv du er. Jo mere du bevæger dig, jo flere kalorier forbrænder du.',
         ),
         
@@ -70,7 +70,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         
         KSizes.spacingVerticalL,
         
-        // Medical disclaimers - multiple points with consistent styling
+        // Medical disclaimers - single warning box
         _buildMedicalDisclaimers(context),
       ],
     );
@@ -282,81 +282,16 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         
         KSizes.spacingVerticalM,
         
-        ...disclaimers.map((disclaimer) => Padding(
-          padding: EdgeInsets.only(bottom: KSizes.margin2x),
-          child: OnboardingHelpText(
-            text: disclaimer,
-            type: OnboardingHelpType.warning,
-          ),
-        )).toList(),
+        // Single warning container with all disclaimers
+        OnboardingHelpText(
+          text: '• ${disclaimers.join('\n\n• ')}',
+          type: OnboardingHelpType.warning,
+        ),
       ],
     );
   }
 
   // Calculation methods (same as summary widget)
-  double _calculateBMR(UserProfileModel profile) {
-    if (profile.dateOfBirth == null || profile.currentWeightKg <= 0 || profile.heightCm <= 0 || profile.gender == null) {
-      return 0;
-    }
-
-    final now = DateTime.now();
-    int age = now.year - profile.dateOfBirth!.year;
-    if (now.month < profile.dateOfBirth!.month ||
-        (now.month == profile.dateOfBirth!.month && now.day < profile.dateOfBirth!.day)) {
-      age--;
-    }
-
-    if (profile.gender == Gender.male) {
-      return (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) + 5.0;
-    } else {
-      return (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) - 161.0;
-    }
-  }
-
-  double _calculateTDEE(UserProfileModel profile) {
-    final bmr = _calculateBMR(profile);
-    if (bmr <= 0) return 0;
-
-    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
-      double workMultiplier = 1.2;
-      if (profile.isCurrentlyWorkDay) {
-        workMultiplier = switch (profile.workActivityLevel!) {
-          WorkActivityLevel.sedentary => 1.2,
-          WorkActivityLevel.light => 1.375,
-          WorkActivityLevel.moderate => 1.55,
-          WorkActivityLevel.heavy => 1.725,
-          WorkActivityLevel.veryHeavy => 1.9,
-        };
-      }
-      
-      double leisureAddition = 0.0;
-      if (profile.isLeisureActivityEnabledToday) {
-        leisureAddition = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 0.0,
-          LeisureActivityLevel.lightlyActive => 0.155,
-          LeisureActivityLevel.moderatelyActive => 0.35,
-          LeisureActivityLevel.veryActive => 0.525,
-          LeisureActivityLevel.extraActive => 0.7,
-        };
-      }
-      
-      return (bmr * workMultiplier) + (bmr * leisureAddition);
-    }
-
-    if (profile.activityLevel != null) {
-      final multiplier = switch (profile.activityLevel!) {
-        ActivityLevel.sedentary => 1.2,
-        ActivityLevel.lightlyActive => 1.375,
-        ActivityLevel.moderatelyActive => 1.55,
-        ActivityLevel.veryActive => 1.725,
-        ActivityLevel.extraActive => 1.9,
-      };
-      return bmr * multiplier;
-    }
-    
-    return bmr * 1.2;
-  }
-
   String _getGoalAdjustmentText(UserProfileModel profile) {
     switch (profile.goalType) {
       case GoalType.weightLoss:
@@ -390,7 +325,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
   String _getGoalExplanation(GoalType? goalType) {
     switch (goalType) {
       case GoalType.weightLoss:
-        return 'For at tabe vægt beregnes et moderat kalorieunderskud som gør det lettere at følge planen.';
+        return 'For at tabe vægt beregnes et kalorieunderskud som gør det lettere at følge planen.';
       case GoalType.weightGain:
         return 'For at tage på beregnes ekstra kalorier til at bygge vægt på en kontrolleret måde.';
       case GoalType.muscleGain:

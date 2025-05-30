@@ -22,195 +22,100 @@ class LoggingPage extends ConsumerWidget {
             color: AppColors.textPrimary,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Container(
-              padding: EdgeInsets.all(KSizes.margin4x),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppColors.primary.withOpacity(0.1),
-                    AppColors.secondary.withOpacity(0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(KSizes.radiusL),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(KSizes.margin3x),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                    ),
-                    child: Icon(
-                      MdiIcons.silverwareForkKnife,
-                      color: AppColors.surface,
-                      size: KSizes.iconM,
-                    ),
-                  ),
-                  SizedBox(width: KSizes.margin4x),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tid til at logge!',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: KSizes.fontWeightBold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        SizedBox(height: KSizes.margin1x),
-                        Text(
-                          'Vælg hvilken type måltid du vil logge',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: KSizes.margin6x),
-
-            // Meal Type Cards
-            Text(
-              'Vælg måltidstype',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: KSizes.fontWeightBold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            
-            SizedBox(height: KSizes.margin4x),
-            
-            _buildMealTypeCard(
-              context,
-              MealType.morgenmad,
-              'Morgenmad',
-              'Start dagen godt',
-              MdiIcons.weatherSunny,
-              AppColors.warning,
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            _buildMealTypeCard(
-              context,
-              MealType.frokost,
-              'Frokost',
-              'Energi til resten af dagen',
-              MdiIcons.sunCompass,
-              AppColors.primary,
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            _buildMealTypeCard(
-              context,
-              MealType.aftensmad,
-              'Aftensmad',
-              'Afslut dagen lækkert',
-              MdiIcons.weatherNight,
-              AppColors.secondary,
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            _buildMealTypeCard(
-              context,
-              MealType.snack,
-              'Snack',
-              'Lille mellemmåltid',
-              MdiIcons.star,
-              AppColors.info,
-            ),
-
-            SizedBox(height: KSizes.margin6x),
-
-            // Quick Actions
-            Text(
-              'Hurtige handlinger',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: KSizes.fontWeightBold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            
-            SizedBox(height: KSizes.margin4x),
-            
-            Row(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppDesign.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
+                _buildSectionHeader(context, 'Vælg måltidstype'),
+                
+                const SizedBox(height: KSizes.margin6x),
+                
+                // Meal type selection cards
                 Expanded(
-                  child: _buildQuickActionCard(
-                    context,
-                    'Tag foto',
-                    'Scan din mad med kameraet',
-                    MdiIcons.camera,
-                    AppColors.success,
-                    () {
-                      // TODO: Implement camera functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Kamera-funktionen kommer snart'),
-                          backgroundColor: AppColors.info,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                SizedBox(width: KSizes.margin3x),
-                Expanded(
-                  child: _buildQuickActionCard(
-                    context,
-                    'Scan kode',
-                    'Stregkode scanning',
-                    MdiIcons.qrcodeScan,
-                    AppColors.error,
-                    () {
-                      // TODO: Implement barcode scanning
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Stregkode-scanner kommer snart'),
-                          backgroundColor: AppColors.info,
-                        ),
-                      );
-                    },
+                  child: ListView(
+                    children: MealType.values.map((mealType) {
+                      return _buildMealTypeCard(context, mealType);
+                    }).toList(),
                   ),
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildMealTypeCard(
-    BuildContext context,
-    MealType mealType,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    return Container(
+      padding: EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.1),
+            AppColors.secondary.withOpacity(0.1),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(KSizes.margin3x),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+            ),
+            child: Icon(
+              MdiIcons.silverwareForkKnife,
+              color: AppColors.surface,
+              size: KSizes.iconM,
+            ),
+          ),
+          SizedBox(width: KSizes.margin4x),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tid til at logge!',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: KSizes.margin1x),
+                Text(
+                  'Vælg hvilken type måltid du vil logge',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealTypeCard(BuildContext context, MealType mealType) {
     return Card(
       elevation: 2,
-      shadowColor: color.withOpacity(0.2),
+      shadowColor: AppColors.primary.withOpacity(0.2),
       child: InkWell(
         onTap: () {
           Navigator.of(context).push(
@@ -225,7 +130,7 @@ class LoggingPage extends ConsumerWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(KSizes.radiusM),
             border: Border.all(
-              color: color.withOpacity(0.2),
+              color: AppColors.primary.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -235,12 +140,12 @@ class LoggingPage extends ConsumerWidget {
                 width: KSizes.iconXL,
                 height: KSizes.iconXL,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: AppColors.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(KSizes.radiusM),
                 ),
                 child: Icon(
-                  icon,
-                  color: color,
+                  _getIconForMealType(mealType),
+                  color: AppColors.primary,
                   size: KSizes.iconL,
                 ),
               ),
@@ -250,7 +155,7 @@ class LoggingPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      _getTitleForMealType(mealType),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
@@ -258,7 +163,7 @@ class LoggingPage extends ConsumerWidget {
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      subtitle,
+                      _getSubtitleForMealType(mealType),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -278,67 +183,48 @@ class LoggingPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickActionCard(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    Color color,
-    VoidCallback onTap,
-  ) {
-    return Card(
-      elevation: 2,
-      shadowColor: color.withOpacity(0.2),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        child: Container(
-          padding: EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(
-              color: color.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: KSizes.iconXL,
-                height: KSizes.iconXL,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: KSizes.iconL,
-                ),
-              ),
-              SizedBox(height: KSizes.margin3x),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: KSizes.fontWeightBold,
-                  color: AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: KSizes.margin1x),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  IconData _getIconForMealType(MealType mealType) {
+    switch (mealType) {
+      case MealType.morgenmad:
+        return MdiIcons.weatherSunny;
+      case MealType.frokost:
+        return MdiIcons.sunCompass;
+      case MealType.aftensmad:
+        return MdiIcons.weatherNight;
+      case MealType.snack:
+        return MdiIcons.star;
+      default:
+        throw Exception("Unknown meal type");
+    }
+  }
+
+  String _getTitleForMealType(MealType mealType) {
+    switch (mealType) {
+      case MealType.morgenmad:
+        return 'Morgenmad';
+      case MealType.frokost:
+        return 'Frokost';
+      case MealType.aftensmad:
+        return 'Aftensmad';
+      case MealType.snack:
+        return 'Snack';
+      default:
+        throw Exception("Unknown meal type");
+    }
+  }
+
+  String _getSubtitleForMealType(MealType mealType) {
+    switch (mealType) {
+      case MealType.morgenmad:
+        return 'Start dagen godt';
+      case MealType.frokost:
+        return 'Energi til resten af dagen';
+      case MealType.aftensmad:
+        return 'Afslut dagen lækkert';
+      case MealType.snack:
+        return 'Lille mellemmåltid';
+      default:
+        throw Exception("Unknown meal type");
+    }
   }
 } 

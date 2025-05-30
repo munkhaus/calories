@@ -159,12 +159,17 @@ class DailyNutritionWidget extends ConsumerWidget {
     );
   }
 
+  /// Calculate nutrition targets based on user profile
   Map<String, double> _calculateNutritionTargets(UserProfileModel userProfile) {
+    if (!userProfile.isCompleteForCalculations) {
+      return {'protein': 0.0, 'fat': 0.0, 'carbs': 0.0, 'calories': 0.0};
+    }
+
     // Calculate nutrition targets based on user profile
     // Basic calculations: protein 1.6g/kg body weight, carbs 45-65% of calories, fat 20-35% of calories
     
     final weight = userProfile.currentWeightKg;
-    final targetCalories = userProfile.tdee; // Use the TDEE from user profile
+    final targetCalories = userProfile.targetCalories.toDouble(); // Use the target calories from user profile
     
     final proteinTarget = weight * 1.6; // 1.6g per kg body weight
     final carbsTarget = (targetCalories * 0.55) / 4; // 55% of calories, 4 cal/g
@@ -175,11 +180,6 @@ class DailyNutritionWidget extends ConsumerWidget {
       'carbs': carbsTarget,
       'fat': fatTarget,
     };
-  }
-
-  double _calculateTargetCalories(UserProfileModel userProfile) {
-    // Use the TDEE calculation from user profile model
-    return userProfile.tdee;
   }
 }
 

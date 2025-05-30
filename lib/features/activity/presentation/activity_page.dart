@@ -76,50 +76,55 @@ class _ActivityPageState extends ConsumerState<ActivityPage> {
             color: AppColors.textPrimary,
           ),
         ),
-        backgroundColor: AppColors.background,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(KSizes.margin4x),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Activity search widget with error handling
-              ActivitySearchWidget(
-                notifier: _notifier,
-                onActivitySelected: _onActivitySelected,
-              ),
-              
-              SizedBox(height: KSizes.margin4x),
-              
-              // Expanded scrollable content
-              Expanded(
-                child: ListView(
-                  children: [
-                    // Common activities section with error handling
-                    CommonActivitiesWidget(
-                      notifier: _notifier,
-                      onActivitySelected: _onActivitySelected,
-                    ),
-                    
-                    SizedBox(height: KSizes.margin6x),
-                    
-                    // Manual entry options
-                    _buildManualEntrySection(),
-                    
-                    SizedBox(height: KSizes.margin6x),
-                    
-                    // Today's activities with error handling
-                    TodaysActivitiesWidget(
-                      notifier: _notifier,
-                      onDeleteActivity: _onDeleteActivity,
-                    ),
-                  ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppDesign.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(KSizes.margin4x),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Activity search widget with error handling
+                ActivitySearchWidget(
+                  notifier: _notifier,
+                  onActivitySelected: _onActivitySelected,
                 ),
-              ),
-            ],
+                
+                SizedBox(height: KSizes.margin4x),
+                
+                // Expanded scrollable content
+                Expanded(
+                  child: ListView(
+                    children: [
+                      // Common activities section with error handling
+                      CommonActivitiesWidget(
+                        notifier: _notifier,
+                        onActivitySelected: _onActivitySelected,
+                      ),
+                      
+                      SizedBox(height: KSizes.margin6x),
+                      
+                      // Manual entry options
+                      _buildManualEntrySection(),
+                      
+                      SizedBox(height: KSizes.margin6x),
+                      
+                      // Today's activities with error handling
+                      TodaysActivitiesWidget(
+                        notifier: _notifier,
+                        onDeleteActivity: _onDeleteActivity,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
