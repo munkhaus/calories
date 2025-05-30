@@ -449,7 +449,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
         onTap: onTap,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         child: Container(
-          height: 120, // Fixed height to ensure both cards are same size
+          height: 100, // Reduced height since we removed the checkmark
           padding: EdgeInsets.symmetric(
             horizontal: KSizes.margin2x,
             vertical: KSizes.margin3x,
@@ -469,7 +469,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
                   size: KSizes.iconM,
                 ),
               ),
-              SizedBox(height: KSizes.margin1x),
+              SizedBox(height: KSizes.margin2x),
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -477,18 +477,6 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
                   color: isSelected ? AppColors.primary : AppColors.textPrimary,
                 ),
                 textAlign: TextAlign.center,
-              ),
-              SizedBox(height: KSizes.margin1x),
-              // Always reserve space for checkmark to maintain consistent height
-              SizedBox(
-                height: KSizes.iconXS.toDouble(),
-                child: isSelected 
-                  ? Icon(
-                      MdiIcons.checkCircle,
-                      color: AppColors.primary,
-                      size: KSizes.iconXS,
-                    )
-                  : null, // Empty space when not selected
               ),
             ],
           ),
