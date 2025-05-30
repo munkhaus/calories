@@ -20,6 +20,25 @@ _$UserProfileModelImpl _$$UserProfileModelImplFromJson(
   currentWeightKg: (json['currentWeightKg'] as num?)?.toDouble() ?? 0.0,
   targetWeightKg: (json['targetWeightKg'] as num?)?.toDouble() ?? 0.0,
   goalType: $enumDecodeNullable(_$GoalTypeEnumMap, json['goalType']),
+  workActivityLevel: $enumDecodeNullable(
+    _$WorkActivityLevelEnumMap,
+    json['workActivityLevel'],
+  ),
+  leisureActivityLevel: $enumDecodeNullable(
+    _$LeisureActivityLevelEnumMap,
+    json['leisureActivityLevel'],
+  ),
+  activityTrackingPreference:
+      $enumDecodeNullable(
+        _$ActivityTrackingPreferenceEnumMap,
+        json['activityTrackingPreference'],
+      ) ??
+      ActivityTrackingPreference.automatic,
+  useAutomaticWeekdayDetection:
+      json['useAutomaticWeekdayDetection'] as bool? ?? true,
+  isCurrentlyWorkDay: json['isCurrentlyWorkDay'] as bool? ?? false,
+  isLeisureActivityEnabledToday:
+      json['isLeisureActivityEnabledToday'] as bool? ?? true,
   activityLevel: $enumDecodeNullable(
     _$ActivityLevelEnumMap,
     json['activityLevel'],
@@ -50,6 +69,14 @@ Map<String, dynamic> _$$UserProfileModelImplToJson(
   'currentWeightKg': instance.currentWeightKg,
   'targetWeightKg': instance.targetWeightKg,
   'goalType': _$GoalTypeEnumMap[instance.goalType],
+  'workActivityLevel': _$WorkActivityLevelEnumMap[instance.workActivityLevel],
+  'leisureActivityLevel':
+      _$LeisureActivityLevelEnumMap[instance.leisureActivityLevel],
+  'activityTrackingPreference':
+      _$ActivityTrackingPreferenceEnumMap[instance.activityTrackingPreference]!,
+  'useAutomaticWeekdayDetection': instance.useAutomaticWeekdayDetection,
+  'isCurrentlyWorkDay': instance.isCurrentlyWorkDay,
+  'isLeisureActivityEnabledToday': instance.isLeisureActivityEnabledToday,
   'activityLevel': _$ActivityLevelEnumMap[instance.activityLevel],
   'weeklyGoalKg': instance.weeklyGoalKg,
   'targetCalories': instance.targetCalories,
@@ -68,6 +95,28 @@ const _$GoalTypeEnumMap = {
   GoalType.weightGain: 'weightGain',
   GoalType.muscleGain: 'muscleGain',
   GoalType.weightMaintenance: 'weightMaintenance',
+};
+
+const _$WorkActivityLevelEnumMap = {
+  WorkActivityLevel.sedentary: 'sedentary',
+  WorkActivityLevel.light: 'light',
+  WorkActivityLevel.moderate: 'moderate',
+  WorkActivityLevel.heavy: 'heavy',
+  WorkActivityLevel.veryHeavy: 'veryHeavy',
+};
+
+const _$LeisureActivityLevelEnumMap = {
+  LeisureActivityLevel.sedentary: 'sedentary',
+  LeisureActivityLevel.lightlyActive: 'lightlyActive',
+  LeisureActivityLevel.moderatelyActive: 'moderatelyActive',
+  LeisureActivityLevel.veryActive: 'veryActive',
+  LeisureActivityLevel.extraActive: 'extraActive',
+};
+
+const _$ActivityTrackingPreferenceEnumMap = {
+  ActivityTrackingPreference.automatic: 'automatic',
+  ActivityTrackingPreference.manual: 'manual',
+  ActivityTrackingPreference.hybrid: 'hybrid',
 };
 
 const _$ActivityLevelEnumMap = {

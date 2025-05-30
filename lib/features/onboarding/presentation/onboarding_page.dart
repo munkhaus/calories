@@ -1,186 +1,189 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/k_sizes.dart';
-import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/custom_button.dart';
-import '../../../shared/widgets/progress_indicator_widget.dart';
 import '../application/onboarding_notifier.dart';
 import '../application/onboarding_state.dart';
-import 'widgets/animated_step_transition.dart';
-import 'widgets/welcome_step_widget.dart';
+import '../domain/onboarding_step.dart';
 import 'widgets/personal_info_step_widget.dart';
 import 'widgets/physical_info_step_widget.dart';
+import 'widgets/work_activity_step_widget.dart';
+import 'widgets/leisure_activity_step_widget.dart';
 import 'widgets/goals_step_widget.dart';
+import 'widgets/calorie_explanation_step_widget.dart';
 import 'widgets/summary_step_widget.dart';
-import 'widgets/completed_step_widget.dart';
 
 /// Main onboarding page
-class OnboardingPage extends ConsumerStatefulWidget {
+class OnboardingPage extends ConsumerWidget {
   const OnboardingPage({super.key});
 
   @override
-  ConsumerState<OnboardingPage> createState() => _OnboardingPageState();
-}
-
-class _OnboardingPageState extends ConsumerState<OnboardingPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingProvider);
-
+    
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: KSizes.margin4x,
-            vertical: KSizes.margin2x,
+      appBar: AppBar(
+        title: Text(state.stepTitle),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: state.currentStepNumber > 1
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => ref.read(onboardingProvider.notifier).previousStep(),
+              )
+            : null,
+      ),
+      body: Column(
+        children: [
+          // Progress indicator
+          _buildProgressIndicator(state),
+          
+          // Step content
+          Expanded(
+            child: _buildStepContent(state.currentStep),
           ),
-          child: Column(
-            children: [
-              // Progress indicator
-              ProgressIndicatorWidget(
-                currentStep: _getStepIndex(state.currentStep),
-                totalSteps: 5,
-              ),
-              
-              const SizedBox(height: KSizes.margin6x),
-              
-              // Main content
-              Expanded(
-                child: AnimatedStepTransition(
-                  animation: _animation,
-                  child: _buildCurrentStep(state.currentStep),
-                ),
-              ),
-              
-              // Navigation buttons
-              _buildNavigationButtons(state),
-            ],
-          ),
-        ),
+          
+          // Navigation buttons
+          _buildNavigationButtons(context, ref, state),
+        ],
       ),
     );
   }
 
-  Widget _buildCurrentStep(OnboardingStep step) {
+  Widget _buildProgressIndicator(OnboardingState state) {
+    return Container(
+      padding: EdgeInsets.all(KSizes.margin4x),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Trin ${state.currentStepNumber} af ${state.totalSteps}',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeS,
+                  color: Colors.grey[600],
+                ),
+              ),
+              Text(
+                '${(state.progress * 100).round()}%',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeS,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: KSizes.margin2x),
+          LinearProgressIndicator(
+            value: state.progress,
+            backgroundColor: Colors.grey[300],
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+          ),
+          SizedBox(height: KSizes.margin2x),
+          Text(
+            state.stepDescription,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeM,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepContent(OnboardingStep step) {
     switch (step) {
-      case OnboardingStep.welcome:
-        return const WelcomeStepWidget();
-      case OnboardingStep.personalInfo:
+      case OnboardingStep.basicInfo:
         return const PersonalInfoStepWidget();
-      case OnboardingStep.physicalInfo:
+      case OnboardingStep.healthInfo:
         return const PhysicalInfoStepWidget();
+      case OnboardingStep.workActivity:
+        return const WorkActivityStepWidget();
+      case OnboardingStep.leisureActivity:
+        return const LeisureActivityStepWidget();
       case OnboardingStep.goals:
         return const GoalsStepWidget();
+      case OnboardingStep.calorieExplanation:
+        return const CalorieExplanationStepWidget();
       case OnboardingStep.summary:
         return const SummaryStepWidget();
       case OnboardingStep.completed:
-        return const CompletedStepWidget();
+        return _buildCompletedStep();
     }
   }
 
-  int _getStepIndex(OnboardingStep step) {
-    switch (step) {
-      case OnboardingStep.welcome:
-        return 0;
-      case OnboardingStep.personalInfo:
-        return 1;
-      case OnboardingStep.physicalInfo:
-        return 2;
-      case OnboardingStep.goals:
-        return 3;
-      case OnboardingStep.summary:
-        return 4;
-      case OnboardingStep.completed:
-        return 4; // Don't show as step 5
-    }
+  Widget _buildCompletedStep() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.check_circle,
+            size: KSizes.iconXXL * 2,
+            color: Colors.green,
+          ),
+          SizedBox(height: KSizes.margin4x),
+          Text(
+            'Tillykke!',
+            style: TextStyle(
+              fontSize: KSizes.fontSizeHeading,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: KSizes.margin2x),
+          Text(
+            'Du er nu klar til at starte din sundhedsrejse',
+            style: TextStyle(
+              fontSize: KSizes.fontSizeL,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _buildNavigationButtons(OnboardingState state) {
-    // Hide navigation buttons on welcome step since it has its own "Kom i gang" button
-    // Also hide on completed step
-    if (state.currentStep == OnboardingStep.welcome || 
-        state.currentStep == OnboardingStep.completed) {
-      return const SizedBox.shrink();
-    }
-
+  Widget _buildNavigationButtons(BuildContext context, WidgetRef ref, OnboardingState state) {
     return Container(
-      padding: const EdgeInsets.only(top: KSizes.margin6x),
+      padding: EdgeInsets.all(KSizes.margin4x),
       child: Row(
         children: [
-          // Special case: When editing from summary, only show "Gå til opsummering" button
-          if (state.isEditingFromSummary) ...[
+          if (state.currentStepNumber > 1)
             Expanded(
-              child: CustomButton(
-                text: 'Gå til opsummering',
-                variant: ButtonVariant.primary,
-                isLoading: state.isLoading,
-                onPressed: state.canProceedToNext
-                    ? () {
-                        ref.read(onboardingProvider.notifier).goToStep(4); // Go to summary step
-                      }
-                    : null,
+              child: OutlinedButton(
+                onPressed: () => ref.read(onboardingProvider.notifier).previousStep(),
+                child: const Text('Tilbage'),
               ),
             ),
-          ] else ...[
-            // Normal navigation: Back button (if not first step)
-            if (_getStepIndex(state.currentStep) > 0) ...[
-              Expanded(
-                child: CustomButton(
-                  text: 'Tilbage',
-                  variant: ButtonVariant.outline,
-                  onPressed: () {
-                    ref.read(onboardingProvider.notifier).previousStep();
-                  },
-                ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-            ],
-            
-            // Next/Complete button
-            Expanded(
-              flex: _getStepIndex(state.currentStep) > 0 ? 2 : 1,
-              child: CustomButton(
-                text: state.currentStep == OnboardingStep.summary ? 'Færdig' : 'Næste',
-                variant: ButtonVariant.primary,
-                isLoading: state.isLoading,
-                onPressed: state.canProceedToNext
-                    ? () async {
-                        if (state.currentStep == OnboardingStep.summary) {
-                          await ref.read(onboardingProvider.notifier).completeOnboarding();
-                          // The AppWrapper will detect completion and navigate automatically
-                        } else {
-                          ref.read(onboardingProvider.notifier).nextStep();
-                        }
+          
+          if (state.currentStepNumber > 1)
+            SizedBox(width: KSizes.margin4x),
+          
+          Expanded(
+            flex: state.currentStepNumber > 1 ? 1 : 2,
+            child: ElevatedButton(
+              onPressed: state.canProceedToNext
+                  ? () {
+                      if (state.currentStep == OnboardingStep.completed) {
+                        Navigator.of(context).pushReplacementNamed('/dashboard');
+                      } else {
+                        ref.read(onboardingProvider.notifier).nextStep();
                       }
-                    : null,
+                    }
+                  : null,
+              child: Text(
+                state.currentStep == OnboardingStep.completed
+                    ? 'Start app'
+                    : state.currentStep == OnboardingStep.summary
+                        ? 'Afslut'
+                        : 'Næste',
               ),
             ),
-          ],
+          ),
         ],
       ),
     );

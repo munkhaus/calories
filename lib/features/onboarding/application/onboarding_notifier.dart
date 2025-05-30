@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/user_profile_model.dart';
+import '../domain/onboarding_step.dart';
 import '../infrastructure/onboarding_storage_service.dart';
 import 'onboarding_state.dart';
 
@@ -9,72 +10,94 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     _loadSavedProgress();
   }
 
-  /// Load any saved progress from previous session
+  /// Load saved progress from storage
   Future<void> _loadSavedProgress() async {
-    try {
-      print('🔍 Loading saved progress...');
+    print('🔍 Loading saved progress...');
+    
+    // Check if onboarding is already completed
+    final completedProfile = await OnboardingStorageService.loadUserProfile();
+    if (completedProfile != null) {
+      print('✅ Onboarding already completed, loading permanent profile...');
+      print('📥 Found completed profile: ${completedProfile.name}');
       
-      // First check if onboarding is completed and load permanent profile
-      final isCompleted = await OnboardingStorageService.isOnboardingCompleted();
-      if (isCompleted) {
-        print('✅ Onboarding already completed, loading permanent profile...');
-        final completedProfile = await OnboardingStorageService.loadUserProfile();
-        if (completedProfile != null) {
-          print('📥 Found completed profile: ${completedProfile.name}');
-          state = state.copyWith(
-            userProfile: completedProfile,
-            currentStep: OnboardingStep.completed,
-          );
-          print('✅ Loaded completed profile successfully');
-          return;
-        }
-      }
+      // Initialize work day status if using automatic detection
+      final updatedProfile = _initializeWorkDayStatus(completedProfile);
       
-      // If no completed profile, check for partial progress
-      final savedProfile = await OnboardingStorageService.loadPartialProgress();
-      if (savedProfile != null) {
-        print('📥 Found saved partial profile: ${savedProfile.name}');
-        state = state.copyWith(userProfile: savedProfile);
-        _calculateTargets();
-        print('✅ Loaded partial progress successfully');
-      } else {
-        print('ℹ️ No saved progress found');
+      state = state.copyWith(
+        userProfile: updatedProfile,
+        currentStep: OnboardingStep.completed,
+      );
+      
+      _calculateTargets();
+      print('✅ Loaded completed profile successfully');
+      return;
+    }
+    
+    // Otherwise, load partial progress
+    final partialProfile = await OnboardingStorageService.loadPartialProgress();
+    if (partialProfile != null) {
+      print('📥 Found partial progress, continuing from ${partialProfile.name}');
+      state = state.copyWith(userProfile: partialProfile);
+      _calculateTargets();
+    } else {
+      print('📭 No saved progress found, starting fresh');
+    }
+  }
+
+  /// Initialize work day status based on automatic detection
+  UserProfileModel _initializeWorkDayStatus(UserProfileModel profile) {
+    if (profile.useAutomaticWeekdayDetection) {
+      final now = DateTime.now();
+      final isWorkDay = now.weekday >= 1 && now.weekday <= 5; // Monday = 1, Sunday = 7
+      
+      return profile.copyWith(
+        isCurrentlyWorkDay: isWorkDay,
+        // Reset leisure activity to enabled each day (user can disable if needed)
+        isLeisureActivityEnabledToday: true,
+      );
+    }
+    return profile;
+  }
+
+  /// Save updates for completed users directly to permanent storage (no auto-save logging)
+  Future<void> _saveCompletedUserUpdate() async {
+    if (state.userProfile.isOnboardingCompleted) {
+      try {
+        await OnboardingStorageService.saveUserProfile(state.userProfile);
+      } catch (e) {
+        print('❌ Failed to save user profile update: $e');
       }
-    } catch (e) {
-      // If loading fails, continue with empty profile
-      print('❌ Failed to load saved progress: $e');
     }
   }
 
   /// Auto-save progress after each update
   Future<void> _autoSaveProgress() async {
     try {
-      print('🔄 Auto-saving progress: ${state.userProfile.name}');
-      await OnboardingStorageService.savePartialProgress(state.userProfile);
-      print('✅ Auto-save successful');
+      if (state.userProfile.isOnboardingCompleted) {
+        // For completed users, do nothing - their profile is already permanently saved
+        // No auto-save needed to avoid excessive logging
+        return;
+      } else {
+        // For incomplete onboarding, save as partial progress
+        await OnboardingStorageService.savePartialProgress(state.userProfile);
+        print('✅ Auto-save successful');
+      }
     } catch (e) {
-      print('❌ Failed to auto-save progress: $e');
+      print('❌ Auto-save failed: $e');
     }
   }
 
-  /// Go to next step
+  /// Navigate to next step
   void nextStep() {
     if (!state.canProceedToNext) return;
 
-    // If editing from summary, return to summary instead of normal flow
-    if (state.isEditingFromSummary) {
-      state = state.copyWith(
-        currentStep: OnboardingStep.summary,
-        isEditingFromSummary: false,
-      );
-      return;
-    }
-
     final nextStep = switch (state.currentStep) {
-      OnboardingStep.welcome => OnboardingStep.personalInfo,
-      OnboardingStep.personalInfo => OnboardingStep.physicalInfo,
-      OnboardingStep.physicalInfo => OnboardingStep.goals,
-      OnboardingStep.goals => OnboardingStep.summary,
+      OnboardingStep.basicInfo => OnboardingStep.healthInfo,
+      OnboardingStep.healthInfo => OnboardingStep.workActivity,
+      OnboardingStep.workActivity => OnboardingStep.leisureActivity,
+      OnboardingStep.leisureActivity => OnboardingStep.goals,
+      OnboardingStep.goals => OnboardingStep.calorieExplanation,
+      OnboardingStep.calorieExplanation => OnboardingStep.summary,
       OnboardingStep.summary => OnboardingStep.completed,
       OnboardingStep.completed => OnboardingStep.completed,
     };
@@ -82,49 +105,25 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     state = state.copyWith(currentStep: nextStep);
   }
 
-  /// Go to previous step
+  /// Navigate to previous step
   void previousStep() {
-    // If editing from summary, return to summary instead of normal flow
-    if (state.isEditingFromSummary) {
-      state = state.copyWith(
-        currentStep: OnboardingStep.summary,
-        isEditingFromSummary: false,
-      );
-      return;
-    }
-
-    final prevStep = switch (state.currentStep) {
-      OnboardingStep.welcome => OnboardingStep.welcome,
-      OnboardingStep.personalInfo => OnboardingStep.welcome,
-      OnboardingStep.physicalInfo => OnboardingStep.personalInfo,
-      OnboardingStep.goals => OnboardingStep.physicalInfo,
-      OnboardingStep.summary => OnboardingStep.goals,
+    final previousStep = switch (state.currentStep) {
+      OnboardingStep.basicInfo => OnboardingStep.basicInfo,
+      OnboardingStep.healthInfo => OnboardingStep.basicInfo,
+      OnboardingStep.workActivity => OnboardingStep.healthInfo,
+      OnboardingStep.leisureActivity => OnboardingStep.workActivity,
+      OnboardingStep.goals => OnboardingStep.leisureActivity,
+      OnboardingStep.calorieExplanation => OnboardingStep.goals,
+      OnboardingStep.summary => OnboardingStep.calorieExplanation,
       OnboardingStep.completed => OnboardingStep.summary,
     };
 
-    state = state.copyWith(currentStep: prevStep);
+    state = state.copyWith(currentStep: previousStep);
   }
 
-  /// Go to specific step by number (1=personalInfo, 2=physicalInfo, 3=goals)
-  void goToStep(int stepNumber) {
-    final targetStep = switch (stepNumber) {
-      0 => OnboardingStep.welcome,
-      1 => OnboardingStep.personalInfo,
-      2 => OnboardingStep.physicalInfo,
-      3 => OnboardingStep.goals,
-      4 => OnboardingStep.summary,
-      5 => OnboardingStep.completed,
-      _ => state.currentStep, // Stay on current step if invalid
-    };
-
-    // Track if we're coming from summary to edit a section
-    final isEditingFromSummary = state.currentStep == OnboardingStep.summary && 
-                                 targetStep != OnboardingStep.summary;
-
-    state = state.copyWith(
-      currentStep: targetStep,
-      isEditingFromSummary: isEditingFromSummary,
-    );
+  /// Navigate to specific step
+  void goToStep(OnboardingStep step) {
+    state = state.copyWith(currentStep: step);
   }
 
   /// Update user name
@@ -132,7 +131,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     state = state.copyWith(
       userProfile: state.userProfile.copyWith(name: name),
     );
-    _autoSaveProgress();
+    if (state.userProfile.isOnboardingCompleted) {
+      _saveCompletedUserUpdate();
+    } else {
+      _autoSaveProgress();
+    }
   }
 
   /// Update date of birth
@@ -141,7 +144,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: state.userProfile.copyWith(dateOfBirth: dateOfBirth),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update gender
@@ -150,7 +156,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: state.userProfile.copyWith(gender: gender),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update height in cm
@@ -159,7 +168,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: state.userProfile.copyWith(heightCm: heightCm),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update current weight in kg
@@ -176,7 +188,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       ),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update target weight in kg
@@ -185,7 +200,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: state.userProfile.copyWith(targetWeightKg: targetWeightKg),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update goal type
@@ -205,7 +223,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       ),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update activity level
@@ -214,7 +235,82 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: state.userProfile.copyWith(activityLevel: activityLevel),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
+  }
+
+  /// Update activity tracking preference
+  void updateActivityTrackingPreference(ActivityTrackingPreference preference) {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(activityTrackingPreference: preference),
+    );
+    _calculateTargets();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
+  }
+
+  /// Update work activity level
+  void updateWorkActivityLevel(WorkActivityLevel workActivityLevel) {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(workActivityLevel: workActivityLevel),
+    );
+    _calculateTargets();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
+  }
+
+  /// Update leisure activity level
+  void updateLeisureActivityLevel(LeisureActivityLevel leisureActivityLevel) {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(leisureActivityLevel: leisureActivityLevel),
+    );
+    _calculateTargets();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
+  }
+
+  /// Update weekday detection preference
+  void updateWeekdayDetection(bool useAutomatic) {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(useAutomaticWeekdayDetection: useAutomatic),
+    );
+    _calculateTargets();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
+  }
+
+  /// Update current work day status (manual override)
+  void updateCurrentWorkDayStatus(bool isWorkDay) {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(isCurrentlyWorkDay: isWorkDay),
+    );
+    _calculateTargets();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
+  }
+
+  /// Update leisure activity enabled status for today
+  void updateLeisureActivityForToday(bool isEnabled) {
+    state = state.copyWith(
+      userProfile: state.userProfile.copyWith(isLeisureActivityEnabledToday: isEnabled),
+    );
+    _calculateTargets();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Update weekly goal weight change
@@ -223,7 +319,10 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: state.userProfile.copyWith(weeklyGoalKg: weeklyGoalKg),
     );
     _calculateTargets();
-    _autoSaveProgress();
+    // Auto-save is handled by _calculateTargets for completed users
+    if (!state.userProfile.isOnboardingCompleted) {
+      _autoSaveProgress();
+    }
   }
 
   /// Complete onboarding
@@ -279,7 +378,6 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         profile.currentWeightKg <= 0 || 
         profile.heightCm <= 0 ||
         profile.gender == null ||
-        profile.activityLevel == null ||
         profile.goalType == null) {
       return 0;
     }
@@ -302,16 +400,52 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       bmr = (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) - 161.0;
     }
 
-    // Apply activity level multiplier (using precise values)
-    final activityMultiplier = switch (profile.activityLevel!) {
-      ActivityLevel.sedentary => 1.2,
-      ActivityLevel.lightlyActive => 1.375,
-      ActivityLevel.moderatelyActive => 1.55,
-      ActivityLevel.veryActive => 1.725,
-      ActivityLevel.extraActive => 1.9,
-    };
-
-    double tdee = bmr * activityMultiplier;
+    double tdee;
+    
+    // Use new activity system if available
+    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
+      // Calculate work activity multiplier based on current day
+      double workMultiplier = 1.0;
+      if (profile.isCurrentlyWorkDay) {
+        workMultiplier = switch (profile.workActivityLevel!) {
+          WorkActivityLevel.sedentary => 1.2,
+          WorkActivityLevel.light => 1.375,
+          WorkActivityLevel.moderate => 1.55,
+          WorkActivityLevel.heavy => 1.725,
+          WorkActivityLevel.veryHeavy => 1.9,
+        };
+      } else {
+        // Non-work day: sedentary baseline
+        workMultiplier = 1.2;
+      }
+      
+      // Calculate leisure activity addition
+      double leisureAddition = 0.0;
+      if (profile.isLeisureActivityEnabledToday) {
+        leisureAddition = switch (profile.leisureActivityLevel!) {
+          LeisureActivityLevel.sedentary => 0.0,
+          LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
+          LeisureActivityLevel.moderatelyActive => 0.35, // ~350 calories
+          LeisureActivityLevel.veryActive => 0.525, // ~525 calories
+          LeisureActivityLevel.extraActive => 0.7, // ~700 calories
+        };
+      }
+      
+      tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
+    } else {
+      // Fall back to legacy activity level system
+      if (profile.activityLevel == null) return 0;
+      
+      final activityMultiplier = switch (profile.activityLevel!) {
+        ActivityLevel.sedentary => 1.2,
+        ActivityLevel.lightlyActive => 1.375,
+        ActivityLevel.moderatelyActive => 1.55,
+        ActivityLevel.veryActive => 1.725,
+        ActivityLevel.extraActive => 1.9,
+      };
+      
+      tdee = bmr * activityMultiplier;
+    }
 
     // Adjust for goal type with consistent calculation
     switch (profile.goalType!) {
@@ -382,6 +516,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       state = state.copyWith(
         userProfile: updatedProfile,
       );
+      
+      // Only auto-save when targets change for completed users if it's a meaningful change
+      if (state.userProfile.isOnboardingCompleted) {
+        _saveCompletedUserUpdate();
+      }
     }
   }
 
@@ -392,7 +531,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     // Do NOT reset data - just restart the flow to allow editing
     // Keep all existing userProfile data so user can edit it
     state = state.copyWith(
-      currentStep: OnboardingStep.welcome,
+      currentStep: OnboardingStep.basicInfo,
       isEditingFromSummary: false,
     );
     

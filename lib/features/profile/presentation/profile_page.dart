@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
+import 'activity_settings_page.dart';
 
 /// Profile page showing user onboarding results and settings
 class ProfilePage extends ConsumerWidget {
@@ -315,12 +316,30 @@ class ProfilePage extends ConsumerWidget {
                 MdiIcons.flagOutline,
               ),
             
-            if (userProfile.activityLevel != null)
+            // Show new activity system if available, otherwise legacy
+            if (userProfile.workActivityLevel != null && userProfile.leisureActivityLevel != null) ...[
+              _buildInfoRow(
+                'Aktivitetstracking', 
+                _getActivityTrackingText(userProfile.activityTrackingPreference), 
+                MdiIcons.chartLine,
+              ),
+              _buildInfoRow(
+                'Arbejde', 
+                _getWorkActivityText(userProfile.workActivityLevel!), 
+                MdiIcons.briefcase,
+              ),
+              _buildInfoRow(
+                'Fritid', 
+                _getLeisureActivityText(userProfile.leisureActivityLevel!), 
+                MdiIcons.run,
+              ),
+            ] else if (userProfile.activityLevel != null) ...[
               _buildInfoRow(
                 'Aktivitetsniveau', 
                 _getActivityLevelText(userProfile.activityLevel!), 
                 MdiIcons.run,
               ),
+            ],
             
             if (userProfile.targetCalories > 0) ...[
               KSizes.spacingVerticalM,
@@ -425,13 +444,24 @@ class ProfilePage extends ConsumerWidget {
             ),
             KSizes.spacingVerticalM,
             
-            // Only Edit Profile Button
+            // Edit Profile Button
             _buildActionButton(
               icon: MdiIcons.accountEdit,
               title: 'Rediger profil',
               subtitle: 'Opdater dine oplysninger',
               gradient: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
               onTap: () => _editProfile(context, ref),
+            ),
+            
+            KSizes.spacingVerticalM,
+            
+            // Activity Settings Button
+            _buildActionButton(
+              icon: MdiIcons.run,
+              title: 'Aktivitetsindstillinger',
+              subtitle: 'Juster dit arbejde og fritidsaktiviteter',
+              gradient: [AppColors.secondary, AppColors.secondary.withOpacity(0.8)],
+              onTap: () => _navigateToActivitySettings(context),
             ),
           ],
         ),
@@ -586,6 +616,14 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
+  void _navigateToActivitySettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ActivitySettingsPage(),
+      ),
+    );
+  }
+
   int _calculateAge(DateTime dateOfBirth) {
     final now = DateTime.now();
     int age = now.year - dateOfBirth.year;
@@ -620,6 +658,34 @@ class ProfilePage extends ConsumerWidget {
       ActivityLevel.moderatelyActive => 'Moderat aktiv',
       ActivityLevel.veryActive => 'Meget aktiv',
       ActivityLevel.extraActive => 'Ekstremt aktiv',
+    };
+  }
+
+  String _getActivityTrackingText(ActivityTrackingPreference activityTrackingPreference) {
+    return switch (activityTrackingPreference) {
+      ActivityTrackingPreference.automatic => 'Automatisk',
+      ActivityTrackingPreference.manual => 'Manuel',
+      ActivityTrackingPreference.hybrid => 'Hybrid',
+    };
+  }
+
+  String _getWorkActivityText(WorkActivityLevel workActivityLevel) {
+    return switch (workActivityLevel) {
+      WorkActivityLevel.sedentary => 'Kontorarbejde',
+      WorkActivityLevel.light => 'Let fysisk arbejde',
+      WorkActivityLevel.moderate => 'Moderat fysisk arbejde',
+      WorkActivityLevel.heavy => 'Hård fysisk arbejde',
+      WorkActivityLevel.veryHeavy => 'Meget hård fysisk arbejde',
+    };
+  }
+
+  String _getLeisureActivityText(LeisureActivityLevel leisureActivityLevel) {
+    return switch (leisureActivityLevel) {
+      LeisureActivityLevel.sedentary => 'Ingen/minimal aktivitet',
+      LeisureActivityLevel.lightlyActive => 'Let aktivitet (1-3 dage/uge)',
+      LeisureActivityLevel.moderatelyActive => 'Moderat aktivitet (3-5 dage/uge)',
+      LeisureActivityLevel.veryActive => 'Meget aktivitet (6-7 dage/uge)',
+      LeisureActivityLevel.extraActive => 'Ekstra aktivitet (daglig)',
     };
   }
 } 

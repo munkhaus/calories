@@ -23,7 +23,45 @@ enum GoalType {
   weightMaintenance,
 }
 
-/// Activity level enum
+/// Work activity level enum - represents physical intensity of job
+enum WorkActivityLevel {
+  @JsonValue('sedentary')
+  sedentary, // Desk job, office work
+  @JsonValue('light')
+  light, // Standing, light walking
+  @JsonValue('moderate') 
+  moderate, // Walking, lifting, some physical work
+  @JsonValue('heavy')
+  heavy, // Construction, manual labor, physical demanding job
+  @JsonValue('veryHeavy')
+  veryHeavy, // Heavy construction, farming, very demanding physical work
+}
+
+/// Leisure activity level enum - represents exercise/sports activity outside of work
+enum LeisureActivityLevel {
+  @JsonValue('sedentary')
+  sedentary, // No regular exercise
+  @JsonValue('lightlyActive')
+  lightlyActive, // 1-3 days exercise per week
+  @JsonValue('moderatelyActive')
+  moderatelyActive, // 3-5 days exercise per week
+  @JsonValue('veryActive')
+  veryActive, // 6-7 days exercise per week
+  @JsonValue('extraActive')
+  extraActive, // Daily intense exercise
+}
+
+/// Activity tracking preference enum
+enum ActivityTrackingPreference {
+  @JsonValue('automatic')
+  automatic, // Use automatic calculation based on work/leisure levels
+  @JsonValue('manual')
+  manual, // User will manually log all activities
+  @JsonValue('hybrid')
+  hybrid, // Automatic base + manual additional activities
+}
+
+/// Activity level enum (kept for backwards compatibility)
 enum ActivityLevel {
   @JsonValue('sedentary')
   sedentary,
@@ -52,7 +90,18 @@ class UserProfileModel with _$UserProfileModel {
     @Default(0.0) double currentWeightKg,
     @Default(0.0) double targetWeightKg,
     GoalType? goalType,
+    
+    // New activity system
+    WorkActivityLevel? workActivityLevel,
+    LeisureActivityLevel? leisureActivityLevel,
+    @Default(ActivityTrackingPreference.automatic) ActivityTrackingPreference activityTrackingPreference,
+    @Default(true) bool useAutomaticWeekdayDetection,
+    @Default(false) bool isCurrentlyWorkDay, // Manual override for today
+    @Default(true) bool isLeisureActivityEnabledToday, // Manual toggle for leisure activity today
+    
+    // Legacy activity level (for backwards compatibility)
     ActivityLevel? activityLevel,
+    
     @Default(0.0) double weeklyGoalKg,
     @Default(0) int targetCalories,
     @Default(0.0) double targetProteinG,
@@ -114,6 +163,12 @@ class UserProfileModel with _$UserProfileModel {
   double get tdee {
     if (!isCompleteForCalculations) return 0.0;
     
+    // Use new activity system if available, otherwise fall back to legacy
+    if (workActivityLevel != null && leisureActivityLevel != null) {
+      return _calculateTdeeWithNewSystem();
+    }
+    
+    // Legacy calculation
     final activityMultiplier = switch (activityLevel!) {
       ActivityLevel.sedentary => 1.2,
       ActivityLevel.lightlyActive => 1.375,
@@ -125,14 +180,86 @@ class UserProfileModel with _$UserProfileModel {
     return bmr * activityMultiplier;
   }
 
+  /// Calculate TDEE using the new work/leisure activity system
+  double _calculateTdeeWithNewSystem() {
+    final workFactor = _getWorkActivityFactor();
+    final leisureFactor = _getLeisureActivityFactor();
+    final isWorkDay = _getIsWorkDay();
+    
+    // On work days: use work factor, on non-work days: use sedentary work factor
+    final effectiveWorkFactor = isWorkDay ? workFactor : 1.0; // 1.0 = no additional work activity
+    
+    // Always add leisure activity factor
+    final totalFactor = effectiveWorkFactor + leisureFactor - 1.0; // Subtract 1.0 to avoid double-counting BMR
+    
+    return bmr * totalFactor.clamp(1.0, 2.5); // Safety bounds
+  }
+
+  /// Get work activity multiplier factor
+  double _getWorkActivityFactor() {
+    switch (workActivityLevel!) {
+      case WorkActivityLevel.sedentary:
+        return 1.2; // Office work
+      case WorkActivityLevel.light:
+        return 1.35; // Standing, light walking
+      case WorkActivityLevel.moderate:
+        return 1.5; // Walking, some lifting
+      case WorkActivityLevel.heavy:
+        return 1.7; // Construction, manual labor
+      case WorkActivityLevel.veryHeavy:
+        return 1.9; // Heavy construction, farming
+    }
+  }
+
+  /// Get leisure activity multiplier factor
+  double _getLeisureActivityFactor() {
+    switch (leisureActivityLevel!) {
+      case LeisureActivityLevel.sedentary:
+        return 1.0; // No additional activity
+      case LeisureActivityLevel.lightlyActive:
+        return 1.1; // 1-3 days exercise
+      case LeisureActivityLevel.moderatelyActive:
+        return 1.2; // 3-5 days exercise
+      case LeisureActivityLevel.veryActive:
+        return 1.3; // 6-7 days exercise
+      case LeisureActivityLevel.extraActive:
+        return 1.4; // Daily intense exercise
+    }
+  }
+
+  /// Determine if today is a work day
+  bool _getIsWorkDay() {
+    if (!useAutomaticWeekdayDetection) {
+      return isCurrentlyWorkDay;
+    }
+    
+    // Automatic detection: Monday-Friday are work days
+    final today = DateTime.now();
+    final weekday = today.weekday; // 1 = Monday, 7 = Sunday
+    return weekday >= 1 && weekday <= 5; // Monday to Friday
+  }
+
   /// Check if profile is complete enough for calculations
   bool get isCompleteForCalculations {
-    return dateOfBirth != null &&
+    final basicFieldsComplete = dateOfBirth != null &&
         gender != null &&
         heightCm > 0 &&
         currentWeightKg > 0 &&
-        activityLevel != null &&
         goalType != null;
+    
+    if (!basicFieldsComplete) return false;
+    
+    // Check if using new activity system
+    if (activityTrackingPreference == ActivityTrackingPreference.manual) {
+      // Manual tracking doesn't need activity levels set
+      return true;
+    }
+    
+    // For automatic or hybrid tracking, need either new or legacy activity system
+    final hasNewActivitySystem = workActivityLevel != null && leisureActivityLevel != null;
+    final hasLegacyActivitySystem = activityLevel != null;
+    
+    return hasNewActivitySystem || hasLegacyActivitySystem;
   }
 
   /// Get display name or fallback

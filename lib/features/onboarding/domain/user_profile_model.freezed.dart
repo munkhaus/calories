@@ -29,7 +29,20 @@ mixin _$UserProfileModel {
   double get heightCm => throw _privateConstructorUsedError;
   double get currentWeightKg => throw _privateConstructorUsedError;
   double get targetWeightKg => throw _privateConstructorUsedError;
-  GoalType? get goalType => throw _privateConstructorUsedError;
+  GoalType? get goalType =>
+      throw _privateConstructorUsedError; // New activity system
+  WorkActivityLevel? get workActivityLevel =>
+      throw _privateConstructorUsedError;
+  LeisureActivityLevel? get leisureActivityLevel =>
+      throw _privateConstructorUsedError;
+  ActivityTrackingPreference get activityTrackingPreference =>
+      throw _privateConstructorUsedError;
+  bool get useAutomaticWeekdayDetection => throw _privateConstructorUsedError;
+  bool get isCurrentlyWorkDay =>
+      throw _privateConstructorUsedError; // Manual override for today
+  bool get isLeisureActivityEnabledToday =>
+      throw _privateConstructorUsedError; // Manual toggle for leisure activity today
+  // Legacy activity level (for backwards compatibility)
   ActivityLevel? get activityLevel => throw _privateConstructorUsedError;
   double get weeklyGoalKg => throw _privateConstructorUsedError;
   int get targetCalories => throw _privateConstructorUsedError;
@@ -67,6 +80,12 @@ abstract class $UserProfileModelCopyWith<$Res> {
     double currentWeightKg,
     double targetWeightKg,
     GoalType? goalType,
+    WorkActivityLevel? workActivityLevel,
+    LeisureActivityLevel? leisureActivityLevel,
+    ActivityTrackingPreference activityTrackingPreference,
+    bool useAutomaticWeekdayDetection,
+    bool isCurrentlyWorkDay,
+    bool isLeisureActivityEnabledToday,
     ActivityLevel? activityLevel,
     double weeklyGoalKg,
     int targetCalories,
@@ -103,6 +122,12 @@ class _$UserProfileModelCopyWithImpl<$Res, $Val extends UserProfileModel>
     Object? currentWeightKg = null,
     Object? targetWeightKg = null,
     Object? goalType = freezed,
+    Object? workActivityLevel = freezed,
+    Object? leisureActivityLevel = freezed,
+    Object? activityTrackingPreference = null,
+    Object? useAutomaticWeekdayDetection = null,
+    Object? isCurrentlyWorkDay = null,
+    Object? isLeisureActivityEnabledToday = null,
     Object? activityLevel = freezed,
     Object? weeklyGoalKg = null,
     Object? targetCalories = null,
@@ -151,6 +176,30 @@ class _$UserProfileModelCopyWithImpl<$Res, $Val extends UserProfileModel>
                 ? _value.goalType
                 : goalType // ignore: cast_nullable_to_non_nullable
                       as GoalType?,
+            workActivityLevel: freezed == workActivityLevel
+                ? _value.workActivityLevel
+                : workActivityLevel // ignore: cast_nullable_to_non_nullable
+                      as WorkActivityLevel?,
+            leisureActivityLevel: freezed == leisureActivityLevel
+                ? _value.leisureActivityLevel
+                : leisureActivityLevel // ignore: cast_nullable_to_non_nullable
+                      as LeisureActivityLevel?,
+            activityTrackingPreference: null == activityTrackingPreference
+                ? _value.activityTrackingPreference
+                : activityTrackingPreference // ignore: cast_nullable_to_non_nullable
+                      as ActivityTrackingPreference,
+            useAutomaticWeekdayDetection: null == useAutomaticWeekdayDetection
+                ? _value.useAutomaticWeekdayDetection
+                : useAutomaticWeekdayDetection // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isCurrentlyWorkDay: null == isCurrentlyWorkDay
+                ? _value.isCurrentlyWorkDay
+                : isCurrentlyWorkDay // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isLeisureActivityEnabledToday: null == isLeisureActivityEnabledToday
+                ? _value.isLeisureActivityEnabledToday
+                : isLeisureActivityEnabledToday // ignore: cast_nullable_to_non_nullable
+                      as bool,
             activityLevel: freezed == activityLevel
                 ? _value.activityLevel
                 : activityLevel // ignore: cast_nullable_to_non_nullable
@@ -212,6 +261,12 @@ abstract class _$$UserProfileModelImplCopyWith<$Res>
     double currentWeightKg,
     double targetWeightKg,
     GoalType? goalType,
+    WorkActivityLevel? workActivityLevel,
+    LeisureActivityLevel? leisureActivityLevel,
+    ActivityTrackingPreference activityTrackingPreference,
+    bool useAutomaticWeekdayDetection,
+    bool isCurrentlyWorkDay,
+    bool isLeisureActivityEnabledToday,
     ActivityLevel? activityLevel,
     double weeklyGoalKg,
     int targetCalories,
@@ -247,6 +302,12 @@ class __$$UserProfileModelImplCopyWithImpl<$Res>
     Object? currentWeightKg = null,
     Object? targetWeightKg = null,
     Object? goalType = freezed,
+    Object? workActivityLevel = freezed,
+    Object? leisureActivityLevel = freezed,
+    Object? activityTrackingPreference = null,
+    Object? useAutomaticWeekdayDetection = null,
+    Object? isCurrentlyWorkDay = null,
+    Object? isLeisureActivityEnabledToday = null,
     Object? activityLevel = freezed,
     Object? weeklyGoalKg = null,
     Object? targetCalories = null,
@@ -295,6 +356,30 @@ class __$$UserProfileModelImplCopyWithImpl<$Res>
             ? _value.goalType
             : goalType // ignore: cast_nullable_to_non_nullable
                   as GoalType?,
+        workActivityLevel: freezed == workActivityLevel
+            ? _value.workActivityLevel
+            : workActivityLevel // ignore: cast_nullable_to_non_nullable
+                  as WorkActivityLevel?,
+        leisureActivityLevel: freezed == leisureActivityLevel
+            ? _value.leisureActivityLevel
+            : leisureActivityLevel // ignore: cast_nullable_to_non_nullable
+                  as LeisureActivityLevel?,
+        activityTrackingPreference: null == activityTrackingPreference
+            ? _value.activityTrackingPreference
+            : activityTrackingPreference // ignore: cast_nullable_to_non_nullable
+                  as ActivityTrackingPreference,
+        useAutomaticWeekdayDetection: null == useAutomaticWeekdayDetection
+            ? _value.useAutomaticWeekdayDetection
+            : useAutomaticWeekdayDetection // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isCurrentlyWorkDay: null == isCurrentlyWorkDay
+            ? _value.isCurrentlyWorkDay
+            : isCurrentlyWorkDay // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isLeisureActivityEnabledToday: null == isLeisureActivityEnabledToday
+            ? _value.isLeisureActivityEnabledToday
+            : isLeisureActivityEnabledToday // ignore: cast_nullable_to_non_nullable
+                  as bool,
         activityLevel: freezed == activityLevel
             ? _value.activityLevel
             : activityLevel // ignore: cast_nullable_to_non_nullable
@@ -349,6 +434,12 @@ class _$UserProfileModelImpl extends _UserProfileModel {
     this.currentWeightKg = 0.0,
     this.targetWeightKg = 0.0,
     this.goalType,
+    this.workActivityLevel,
+    this.leisureActivityLevel,
+    this.activityTrackingPreference = ActivityTrackingPreference.automatic,
+    this.useAutomaticWeekdayDetection = true,
+    this.isCurrentlyWorkDay = false,
+    this.isLeisureActivityEnabledToday = true,
     this.activityLevel,
     this.weeklyGoalKg = 0.0,
     this.targetCalories = 0,
@@ -387,6 +478,26 @@ class _$UserProfileModelImpl extends _UserProfileModel {
   final double targetWeightKg;
   @override
   final GoalType? goalType;
+  // New activity system
+  @override
+  final WorkActivityLevel? workActivityLevel;
+  @override
+  final LeisureActivityLevel? leisureActivityLevel;
+  @override
+  @JsonKey()
+  final ActivityTrackingPreference activityTrackingPreference;
+  @override
+  @JsonKey()
+  final bool useAutomaticWeekdayDetection;
+  @override
+  @JsonKey()
+  final bool isCurrentlyWorkDay;
+  // Manual override for today
+  @override
+  @JsonKey()
+  final bool isLeisureActivityEnabledToday;
+  // Manual toggle for leisure activity today
+  // Legacy activity level (for backwards compatibility)
   @override
   final ActivityLevel? activityLevel;
   @override
@@ -414,7 +525,7 @@ class _$UserProfileModelImpl extends _UserProfileModel {
 
   @override
   String toString() {
-    return 'UserProfileModel(id: $id, email: $email, name: $name, dateOfBirth: $dateOfBirth, gender: $gender, heightCm: $heightCm, currentWeightKg: $currentWeightKg, targetWeightKg: $targetWeightKg, goalType: $goalType, activityLevel: $activityLevel, weeklyGoalKg: $weeklyGoalKg, targetCalories: $targetCalories, targetProteinG: $targetProteinG, targetFatG: $targetFatG, targetCarbsG: $targetCarbsG, isOnboardingCompleted: $isOnboardingCompleted, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'UserProfileModel(id: $id, email: $email, name: $name, dateOfBirth: $dateOfBirth, gender: $gender, heightCm: $heightCm, currentWeightKg: $currentWeightKg, targetWeightKg: $targetWeightKg, goalType: $goalType, workActivityLevel: $workActivityLevel, leisureActivityLevel: $leisureActivityLevel, activityTrackingPreference: $activityTrackingPreference, useAutomaticWeekdayDetection: $useAutomaticWeekdayDetection, isCurrentlyWorkDay: $isCurrentlyWorkDay, isLeisureActivityEnabledToday: $isLeisureActivityEnabledToday, activityLevel: $activityLevel, weeklyGoalKg: $weeklyGoalKg, targetCalories: $targetCalories, targetProteinG: $targetProteinG, targetFatG: $targetFatG, targetCarbsG: $targetCarbsG, isOnboardingCompleted: $isOnboardingCompleted, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -436,6 +547,30 @@ class _$UserProfileModelImpl extends _UserProfileModel {
                 other.targetWeightKg == targetWeightKg) &&
             (identical(other.goalType, goalType) ||
                 other.goalType == goalType) &&
+            (identical(other.workActivityLevel, workActivityLevel) ||
+                other.workActivityLevel == workActivityLevel) &&
+            (identical(other.leisureActivityLevel, leisureActivityLevel) ||
+                other.leisureActivityLevel == leisureActivityLevel) &&
+            (identical(
+                  other.activityTrackingPreference,
+                  activityTrackingPreference,
+                ) ||
+                other.activityTrackingPreference ==
+                    activityTrackingPreference) &&
+            (identical(
+                  other.useAutomaticWeekdayDetection,
+                  useAutomaticWeekdayDetection,
+                ) ||
+                other.useAutomaticWeekdayDetection ==
+                    useAutomaticWeekdayDetection) &&
+            (identical(other.isCurrentlyWorkDay, isCurrentlyWorkDay) ||
+                other.isCurrentlyWorkDay == isCurrentlyWorkDay) &&
+            (identical(
+                  other.isLeisureActivityEnabledToday,
+                  isLeisureActivityEnabledToday,
+                ) ||
+                other.isLeisureActivityEnabledToday ==
+                    isLeisureActivityEnabledToday) &&
             (identical(other.activityLevel, activityLevel) ||
                 other.activityLevel == activityLevel) &&
             (identical(other.weeklyGoalKg, weeklyGoalKg) ||
@@ -458,7 +593,7 @@ class _$UserProfileModelImpl extends _UserProfileModel {
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     email,
@@ -469,6 +604,12 @@ class _$UserProfileModelImpl extends _UserProfileModel {
     currentWeightKg,
     targetWeightKg,
     goalType,
+    workActivityLevel,
+    leisureActivityLevel,
+    activityTrackingPreference,
+    useAutomaticWeekdayDetection,
+    isCurrentlyWorkDay,
+    isLeisureActivityEnabledToday,
     activityLevel,
     weeklyGoalKg,
     targetCalories,
@@ -478,7 +619,7 @@ class _$UserProfileModelImpl extends _UserProfileModel {
     isOnboardingCompleted,
     createdAt,
     updatedAt,
-  );
+  ]);
 
   /// Create a copy of UserProfileModel
   /// with the given fields replaced by the non-null parameter values.
@@ -508,6 +649,12 @@ abstract class _UserProfileModel extends UserProfileModel {
     final double currentWeightKg,
     final double targetWeightKg,
     final GoalType? goalType,
+    final WorkActivityLevel? workActivityLevel,
+    final LeisureActivityLevel? leisureActivityLevel,
+    final ActivityTrackingPreference activityTrackingPreference,
+    final bool useAutomaticWeekdayDetection,
+    final bool isCurrentlyWorkDay,
+    final bool isLeisureActivityEnabledToday,
     final ActivityLevel? activityLevel,
     final double weeklyGoalKg,
     final int targetCalories,
@@ -540,7 +687,20 @@ abstract class _UserProfileModel extends UserProfileModel {
   @override
   double get targetWeightKg;
   @override
-  GoalType? get goalType;
+  GoalType? get goalType; // New activity system
+  @override
+  WorkActivityLevel? get workActivityLevel;
+  @override
+  LeisureActivityLevel? get leisureActivityLevel;
+  @override
+  ActivityTrackingPreference get activityTrackingPreference;
+  @override
+  bool get useAutomaticWeekdayDetection;
+  @override
+  bool get isCurrentlyWorkDay; // Manual override for today
+  @override
+  bool get isLeisureActivityEnabledToday; // Manual toggle for leisure activity today
+  // Legacy activity level (for backwards compatibility)
   @override
   ActivityLevel? get activityLevel;
   @override

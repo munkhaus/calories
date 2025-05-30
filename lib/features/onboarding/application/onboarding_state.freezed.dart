@@ -192,7 +192,7 @@ class __$$OnboardingStateImplCopyWithImpl<$Res>
 
 class _$OnboardingStateImpl extends _OnboardingState {
   const _$OnboardingStateImpl({
-    this.currentStep = OnboardingStep.welcome,
+    this.currentStep = OnboardingStep.basicInfo,
     this.userProfile = const UserProfileModel(),
     this.isLoading = false,
     this.hasError = false,
