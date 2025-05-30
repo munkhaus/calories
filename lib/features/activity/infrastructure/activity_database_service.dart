@@ -217,6 +217,18 @@ class ActivityDatabaseService {
     return activityCalories;
   }
 
+  /// Get calories burned for specific date (activities only)
+  static Future<int> getCaloriesBurnedForDate(int userId, DateTime date) async {
+    await initialize();
+    
+    final logs = await getActivityLogsForDate(userId, date);
+    
+    // Calculate calories from logged activities
+    final activityCalories = logs.fold<int>(0, (sum, log) => sum + log.caloriesBurned);
+    
+    return activityCalories;
+  }
+
   /// Calculate BMR calories burned based on time of day
   static int calculateBmrCaloriesForTimeOfDay(double dailyBmr) {
     final now = DateTime.now();
@@ -227,6 +239,25 @@ class ActivityDatabaseService {
     final bmrCalories = (dailyBmr * percentOfDayPassed).round();
     
     return bmrCalories;
+  }
+
+  /// Calculate BMR calories burned based on specific date and time
+  static int calculateBmrCaloriesForDate(double dailyBmr, DateTime date) {
+    final now = DateTime.now();
+    final targetDate = DateTime(date.year, date.month, date.day);
+    
+    // If it's today, calculate based on current time
+    if (targetDate.year == now.year && targetDate.month == now.month && targetDate.day == now.day) {
+      return calculateBmrCaloriesForTimeOfDay(dailyBmr);
+    }
+    
+    // If it's a past date, return full BMR for that day
+    if (targetDate.isBefore(DateTime(now.year, now.month, now.day))) {
+      return dailyBmr.round();
+    }
+    
+    // If it's a future date, return 0
+    return 0;
   }
 
   /// Get total calories burned including BMR and activities
@@ -241,6 +272,21 @@ class ActivityDatabaseService {
     
     // Calculate BMR calories based on time of day
     final bmrCalories = calculateBmrCaloriesForTimeOfDay(dailyBmr);
+    
+    return activityCalories + bmrCalories;
+  }
+
+  /// Get total calories burned including BMR and activities for specific date
+  static Future<int> getTotalCaloriesBurnedWithBmrForDate(int userId, double dailyBmr, DateTime date) async {
+    await initialize();
+    
+    final logs = await getActivityLogsForDate(userId, date);
+    
+    // Calculate calories from logged activities
+    final activityCalories = logs.fold<int>(0, (sum, log) => sum + log.caloriesBurned);
+    
+    // Calculate BMR calories based on date
+    final bmrCalories = calculateBmrCaloriesForDate(dailyBmr, date);
     
     return activityCalories + bmrCalories;
   }

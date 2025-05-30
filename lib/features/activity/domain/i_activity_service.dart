@@ -43,8 +43,14 @@ abstract class IActivityService {
   /// Get today's total calories burned from activities only
   Future<Result<int, ActivityError>> getTodaysCaloriesBurned(int userId);
 
+  /// Get calories burned for specific date from activities only
+  Future<Result<int, ActivityError>> getCaloriesBurnedForDate(int userId, DateTime date);
+
   /// Get today's total calories burned including BMR based on time of day
   Future<Result<int, ActivityError>> getTotalCaloriesBurnedWithBmr(int userId, double dailyBmr);
+
+  /// Get total calories burned including BMR for specific date
+  Future<Result<int, ActivityError>> getTotalCaloriesBurnedWithBmrForDate(int userId, double dailyBmr, DateTime date);
 
   /// Delete an activity log entry
   /// 

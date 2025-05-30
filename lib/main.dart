@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/theme/app_theme.dart';
 import 'core/navigation/app_navigation.dart';
@@ -29,6 +30,16 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       home: const AppWrapper(),
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('da', 'DK'),
+        Locale('en', 'US'),
+      ],
+      locale: const Locale('da', 'DK'),
     );
   }
 }

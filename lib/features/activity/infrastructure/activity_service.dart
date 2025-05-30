@@ -94,9 +94,29 @@ class ActivityService implements IActivityService {
   }
 
   @override
+  Future<Result<int, ActivityError>> getCaloriesBurnedForDate(int userId, DateTime date) async {
+    try {
+      final calories = await ActivityDatabaseService.getCaloriesBurnedForDate(userId, date);
+      return Success(calories);
+    } catch (e) {
+      return Failure(ActivityError.database);
+    }
+  }
+
+  @override
   Future<Result<int, ActivityError>> getTotalCaloriesBurnedWithBmr(int userId, double dailyBmr) async {
     try {
       final calories = await ActivityDatabaseService.getTotalCaloriesBurnedWithBmr(userId, dailyBmr);
+      return Success(calories);
+    } catch (e) {
+      return Failure(ActivityError.database);
+    }
+  }
+
+  @override
+  Future<Result<int, ActivityError>> getTotalCaloriesBurnedWithBmrForDate(int userId, double dailyBmr, DateTime date) async {
+    try {
+      final calories = await ActivityDatabaseService.getTotalCaloriesBurnedWithBmrForDate(userId, dailyBmr, date);
       return Success(calories);
     } catch (e) {
       return Failure(ActivityError.database);

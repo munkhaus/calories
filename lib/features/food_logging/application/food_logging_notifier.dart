@@ -3,45 +3,61 @@ import '../domain/user_food_log_model.dart';
 import '../infrastructure/food_logging_service.dart';
 
 class FoodLoggingState {
-  final List<UserFoodLogModel> todaysMeals;
+  final List<UserFoodLogModel> mealsForDate;
   final bool isLoading;
   final String? error;
   final DateTime lastUpdate;
+  final DateTime selectedDate;
 
   const FoodLoggingState({
-    this.todaysMeals = const [],
+    this.mealsForDate = const [],
     this.isLoading = false,
     this.error,
     required this.lastUpdate,
+    required this.selectedDate,
   });
 
   FoodLoggingState copyWith({
-    List<UserFoodLogModel>? todaysMeals,
+    List<UserFoodLogModel>? mealsForDate,
     bool? isLoading,
     String? error,
     DateTime? lastUpdate,
+    DateTime? selectedDate,
   }) {
     return FoodLoggingState(
-      todaysMeals: todaysMeals ?? this.todaysMeals,
+      mealsForDate: mealsForDate ?? this.mealsForDate,
       isLoading: isLoading ?? this.isLoading,
       error: error ?? this.error,
       lastUpdate: lastUpdate ?? this.lastUpdate,
+      selectedDate: selectedDate ?? this.selectedDate,
     );
   }
 }
 
 class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
-  FoodLoggingNotifier() : super(FoodLoggingState(lastUpdate: DateTime.now())) {
-    loadTodaysMeals();
+  FoodLoggingNotifier() : super(FoodLoggingState(
+    lastUpdate: DateTime.now(),
+    selectedDate: DateTime.now(),
+  )) {
+    loadMealsForDate(state.selectedDate);
   }
 
-  Future<void> loadTodaysMeals() async {
-    state = state.copyWith(isLoading: true, error: null);
+  /// Indlæser måltider for en specifik dato
+  Future<void> loadMealsForDate(DateTime date) async {
+    // Standardisér datoen til midnat
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    state = state.copyWith(
+      isLoading: true, 
+      error: null,
+      selectedDate: normalizedDate,
+    );
     
     try {
-      final meals = await FoodLoggingService.getTodaysMeals();
+      const userId = 1; // TODO: Get actual user ID
+      final meals = await FoodLoggingService.getFoodLogsForDate(userId, normalizedDate);
       state = state.copyWith(
-        todaysMeals: meals,
+        mealsForDate: meals,
         isLoading: false,
         lastUpdate: DateTime.now(),
       );
@@ -54,11 +70,16 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
     }
   }
 
+  /// Indlæser måltider for i dag (legacy method for bagudkompatibilitet)
+  Future<void> loadTodaysMeals() async {
+    await loadMealsForDate(DateTime.now());
+  }
+
   Future<void> logFood(UserFoodLogModel foodLog) async {
     try {
       await FoodLoggingService.logFood(foodLog);
-      // Reload meals after logging
-      await loadTodaysMeals();
+      // Reload meals after logging for the selected date
+      await loadMealsForDate(state.selectedDate);
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
@@ -67,8 +88,8 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
   Future<void> deleteFood(int logEntryId) async {
     try {
       await FoodLoggingService.deleteFood(logEntryId);
-      // Reload meals after deleting
-      await loadTodaysMeals();
+      // Reload meals after deleting for the selected date
+      await loadMealsForDate(state.selectedDate);
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
@@ -77,19 +98,37 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
   Future<void> updateFood(UserFoodLogModel foodLog) async {
     try {
       await FoodLoggingService.updateFood(foodLog);
-      // Reload meals after updating
-      await loadTodaysMeals();
+      // Reload meals after updating for the selected date
+      await loadMealsForDate(state.selectedDate);
     } catch (e) {
       state = state.copyWith(error: e.toString());
     }
   }
 
   Future<void> refresh() async {
-    await loadTodaysMeals();
+    await loadMealsForDate(state.selectedDate);
   }
 
   void clearError() {
     state = state.copyWith(error: null);
+  }
+
+  /// Henter total kalorier for den valgte dato
+  int get totalCaloriesForSelectedDate {
+    return state.mealsForDate.fold(0, (sum, meal) => sum + meal.calories);
+  }
+
+  /// Henter måltider for valgt dato fordelt på måltidstyper
+  Map<MealType, List<UserFoodLogModel>> get mealsByType {
+    final Map<MealType, List<UserFoodLogModel>> result = {};
+    
+    for (final mealType in MealType.values) {
+      result[mealType] = state.mealsForDate
+          .where((meal) => meal.mealType == mealType)
+          .toList();
+    }
+    
+    return result;
   }
 }
 
@@ -98,9 +137,14 @@ final foodLoggingProvider = StateNotifierProvider<FoodLoggingNotifier, FoodLoggi
   return FoodLoggingNotifier();
 });
 
-// Helper providers
+// Helper providers - opdateret til at arbejde med valgt dato
+final mealsForSelectedDateProvider = Provider<List<UserFoodLogModel>>((ref) {
+  return ref.watch(foodLoggingProvider).mealsForDate;
+});
+
+// Legacy provider for bagudkompatibilitet
 final todaysMealsProvider = Provider<List<UserFoodLogModel>>((ref) {
-  return ref.watch(foodLoggingProvider).todaysMeals;
+  return ref.watch(foodLoggingProvider).mealsForDate;
 });
 
 final isLoadingMealsProvider = Provider<bool>((ref) {
@@ -109,6 +153,22 @@ final isLoadingMealsProvider = Provider<bool>((ref) {
 
 final mealsErrorProvider = Provider<String?>((ref) {
   return ref.watch(foodLoggingProvider).error;
+});
+
+// Provider for total calories for the selected date
+final totalCaloriesForSelectedDateProvider = Provider<double>((ref) {
+  final meals = ref.watch(mealsForSelectedDateProvider);
+  return meals.fold(0.0, (sum, meal) => sum + meal.calories);
+});
+
+// Legacy provider for total calories (today)
+final totalCaloriesProvider = Provider<double>((ref) {
+  return ref.watch(totalCaloriesForSelectedDateProvider);
+});
+
+// Provider for selected date in food logging
+final selectedFoodDateProvider = Provider<DateTime>((ref) {
+  return ref.watch(foodLoggingProvider).selectedDate;
 });
 
 // Daily nutrition calculation providers
@@ -133,10 +193,6 @@ final dailyNutritionProvider = Provider<Map<String, double>>((ref) {
     'fat': totalFat,
     'carbs': totalCarbs,
   };
-});
-
-final totalCaloriesProvider = Provider<double>((ref) {
-  return ref.watch(dailyNutritionProvider)['calories'] ?? 0.0;
 });
 
 final totalProteinProvider = Provider<double>((ref) {

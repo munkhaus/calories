@@ -10,6 +10,7 @@ class ActivityNotifier extends ChangeNotifier {
   final IActivityService _service;
   ActivityState _state = ActivityState.initial();
   double? _currentBmr; // Track if we're using BMR calculation
+  DateTime _selectedDate = DateTime.now(); // Track selected date
   
   // Callback to refresh activity calories
   void Function()? onActivityChanged;
@@ -20,19 +21,26 @@ class ActivityNotifier extends ChangeNotifier {
   }) : _service = service ?? ActivityService();
 
   ActivityState get state => _state;
+  DateTime get selectedDate => _selectedDate;
 
   void _updateState(ActivityState newState) {
     _state = newState;
     notifyListeners();
   }
 
-  /// Initialize the activity screen by loading common activities and today's data
+  /// Set the selected date and reload activities
+  Future<void> setSelectedDate(DateTime date) async {
+    _selectedDate = date;
+    await loadActivitiesForDate(date);
+  }
+
+  /// Initialize the activity screen by loading common activities and selected date's data
   Future<void> initialize() async {
     _currentBmr = null; // Clear BMR tracking
     await Future.wait([
       loadCommonActivities(),
-      loadTodaysActivities(),
-      loadTodaysCaloriesBurned(),
+      loadActivitiesForDate(_selectedDate),
+      loadCaloriesBurnedForDate(_selectedDate),
     ]);
   }
 
@@ -41,8 +49,8 @@ class ActivityNotifier extends ChangeNotifier {
     _currentBmr = dailyBmr; // Track BMR for future refreshes
     await Future.wait([
       loadCommonActivities(),
-      loadTodaysActivities(),
-      loadTotalCaloriesWithBmr(dailyBmr),
+      loadActivitiesForDate(_selectedDate),
+      loadTotalCaloriesWithBmrForDate(dailyBmr, _selectedDate),
     ]);
   }
 
@@ -92,13 +100,13 @@ class ActivityNotifier extends ChangeNotifier {
     }
   }
 
-  /// Load today's activity logs
-  Future<void> loadTodaysActivities() async {
+  /// Load activities for specific date
+  Future<void> loadActivitiesForDate(DateTime date) async {
     _updateState(_state.copyWith(
       todaysActivitiesState: const DataState.loading(),
     ));
 
-    final result = await _service.getActivityLogsForDate(1, DateTime.now()); // TODO: Get real user ID
+    final result = await _service.getActivityLogsForDate(1, date); // TODO: Get real user ID
     
     if (result.isSuccess) {
       _updateState(_state.copyWith(
@@ -106,18 +114,47 @@ class ActivityNotifier extends ChangeNotifier {
       ));
     } else {
       _updateState(_state.copyWith(
-        todaysActivitiesState: const DataState.error('Kunne ikke indlæse dagens aktiviteter'),
+        todaysActivitiesState: const DataState.error('Kunne ikke indlæse aktiviteter'),
       ));
     }
   }
 
-  /// Load today's total calories burned (activities only)
+  /// Load today's activity logs (deprecated - use loadActivitiesForDate)
+  Future<void> loadTodaysActivities() async {
+    await loadActivitiesForDate(DateTime.now());
+  }
+
+  /// Load calories burned for specific date (activities only)
+  Future<void> loadCaloriesBurnedForDate(DateTime date) async {
+    _updateState(_state.copyWith(
+      todaysCaloriesState: const DataState.loading(),
+    ));
+
+    final result = await _service.getCaloriesBurnedForDate(1, date); // TODO: Get real user ID
+    
+    if (result.isSuccess) {
+      _updateState(_state.copyWith(
+        todaysCaloriesState: DataState.success(result.success),
+      ));
+    } else {
+      _updateState(_state.copyWith(
+        todaysCaloriesState: const DataState.error(),
+      ));
+    }
+  }
+
+  /// Load today's total calories burned (activities only) (deprecated - use loadCaloriesBurnedForDate)
   Future<void> loadTodaysCaloriesBurned() async {
+    await loadCaloriesBurnedForDate(DateTime.now());
+  }
+
+  /// Load total calories burned including BMR for specific date
+  Future<void> loadTotalCaloriesWithBmrForDate(double dailyBmr, DateTime date) async {
     _updateState(_state.copyWith(
       todaysCaloriesState: const DataState.loading(),
     ));
 
-    final result = await _service.getTodaysCaloriesBurned(1); // TODO: Get real user ID
+    final result = await _service.getTotalCaloriesBurnedWithBmrForDate(1, dailyBmr, date); // TODO: Get real user ID
     
     if (result.isSuccess) {
       _updateState(_state.copyWith(
@@ -130,23 +167,9 @@ class ActivityNotifier extends ChangeNotifier {
     }
   }
 
-  /// Load today's total calories burned including BMR
+  /// Load today's total calories burned including BMR (deprecated - use loadTotalCaloriesWithBmrForDate)
   Future<void> loadTotalCaloriesWithBmr(double dailyBmr) async {
-    _updateState(_state.copyWith(
-      todaysCaloriesState: const DataState.loading(),
-    ));
-
-    final result = await _service.getTotalCaloriesBurnedWithBmr(1, dailyBmr); // TODO: Get real user ID
-    
-    if (result.isSuccess) {
-      _updateState(_state.copyWith(
-        todaysCaloriesState: DataState.success(result.success),
-      ));
-    } else {
-      _updateState(_state.copyWith(
-        todaysCaloriesState: const DataState.error(),
-      ));
-    }
+    await loadTotalCaloriesWithBmrForDate(dailyBmr, DateTime.now());
   }
 
   /// Log an activity
@@ -160,10 +183,10 @@ class ActivityNotifier extends ChangeNotifier {
     if (result.isSuccess) {
       // Refresh today's data after logging - use BMR if available
       await Future.wait([
-        loadTodaysActivities(),
+        loadActivitiesForDate(_selectedDate),
         _currentBmr != null 
           ? loadTotalCaloriesWithBmr(_currentBmr!)
-          : loadTodaysCaloriesBurned(),
+          : loadCaloriesBurnedForDate(_selectedDate),
       ]);
       
       // Refresh the activity calories provider if ref is available
@@ -201,10 +224,10 @@ class ActivityNotifier extends ChangeNotifier {
     if (result.isSuccess) {
       // Refresh today's data after deletion - use BMR if available
       await Future.wait([
-        loadTodaysActivities(),
+        loadActivitiesForDate(_selectedDate),
         _currentBmr != null 
           ? loadTotalCaloriesWithBmr(_currentBmr!)
-          : loadTodaysCaloriesBurned(),
+          : loadCaloriesBurnedForDate(_selectedDate),
       ]);
       
       // Refresh the activity calories provider if ref is available

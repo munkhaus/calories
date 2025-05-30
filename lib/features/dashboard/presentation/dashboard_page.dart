@@ -10,6 +10,9 @@ import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../widgets/calorie_overview_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../widgets/daily_settings_widget.dart';
+import '../widgets/weight_progress_widget.dart';
+import '../application/selected_date_provider.dart';
+import '../application/date_aware_providers.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
@@ -76,14 +79,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       // Refresh activity data when app comes back into focus
-      _activityNotifier.loadTodaysActivities();
-      _activityNotifier.loadTodaysCaloriesBurned();
+      _refreshDataForSelectedDate();
     }
   }
 
   void refreshActivityData() {
     // Public method to refresh activity data when tab is selected
     print('🔄 Refreshing activity data in DashboardPage');
+    _refreshDataForSelectedDate();
+  }
+
+  void _refreshDataForSelectedDate() {
+    final selectedDate = ref.read(selectedDateProvider);
+    
+    // Refresh food data for selected date
+    ref.read(foodLoggingProvider.notifier).loadMealsForDate(selectedDate);
+    
+    // TODO: Refresh activity data for selected date when activity notifier supports it
     _activityNotifier.loadTodaysActivities();
     _activityNotifier.loadTodaysCaloriesBurned();
   }
@@ -93,6 +105,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     super.build(context); // Required for AutomaticKeepAliveClientMixin
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
+    final selectedDate = ref.watch(selectedDateProvider);
+    final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
+
+    // Watch date-aware providers to trigger data loading for selected date
+    ref.watch(dateAwareFoodProvider);
 
     return Scaffold(
       body: Container(
@@ -102,9 +119,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
         child: SafeArea(
           child: RefreshIndicator(
             onRefresh: () async {
-              // Refresh activity data when user pulls to refresh
-              _activityNotifier.loadTodaysActivities();
-              _activityNotifier.loadTodaysCaloriesBurned();
+              // Refresh data for the currently selected date
+              _refreshDataForSelectedDate();
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -132,13 +148,25 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                     
                     KSizes.spacingVerticalXL,
                     
-                    // Daily settings widget (new)
-                    const DailySettingsWidget(),
+                    // Date navigation info card (only show if not today)
+                    if (!selectedDateNotifier.isToday) ...[
+                      _buildDateInfoCard(context),
+                      KSizes.spacingVerticalXL,
+                    ],
+                    
+                    // Daily settings widget (only show for today)
+                    if (selectedDateNotifier.isToday) ...[
+                      const DailySettingsWidget(),
+                      KSizes.spacingVerticalXL,
+                    ],
+                    
+                    // Calorie overview widget (main card with date functionality)
+                    const CalorieOverviewWidget(),
                     
                     KSizes.spacingVerticalXL,
                     
-                    // Calorie overview widget (main card matching the image)
-                    const CalorieOverviewWidget(),
+                    // Weight progress widget (only show if user has weight goal)
+                    const WeightProgressWidget(),
                     
                     KSizes.spacingVerticalXL,
                     
@@ -167,6 +195,92 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildDateInfoCard(BuildContext context) {
+    final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.info.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin3x),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.info,
+                  AppColors.info.withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.info.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              MdiIcons.calendar,
+              color: Colors.white,
+              size: KSizes.iconL,
+            ),
+          ),
+          const SizedBox(width: KSizes.margin4x),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Viser data for',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                Text(
+                  selectedDateNotifier.formattedDate,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeXL,
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton.icon(
+            onPressed: selectedDateNotifier.goToToday,
+            icon: Icon(
+              MdiIcons.calendarToday,
+              size: KSizes.iconS,
+              color: AppColors.primary,
+            ),
+            label: Text(
+              'Gå til i dag',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: KSizes.fontWeightMedium,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

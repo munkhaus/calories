@@ -255,7 +255,7 @@ class _FoodPortionPageState extends ConsumerState<FoodPortionPage> {
                       Row(
                         children: [
                           Expanded(
-                            flex: 3,
+                            flex: 5,
                             child: TextField(
                               controller: _quantityController,
                               keyboardType: TextInputType.numberWithOptions(decimal: true),
@@ -281,9 +281,10 @@ class _FoodPortionPageState extends ConsumerState<FoodPortionPage> {
                           SizedBox(width: KSizes.margin2x),
                           
                           Expanded(
-                            flex: 2,
+                            flex: 3,
                             child: DropdownButtonFormField<String>(
                               value: _selectedUnit,
+                              isExpanded: true,
                               decoration: InputDecoration(
                                 labelText: 'Enhed',
                                 border: OutlineInputBorder(
@@ -296,17 +297,17 @@ class _FoodPortionPageState extends ConsumerState<FoodPortionPage> {
                                 filled: true,
                                 fillColor: AppColors.surface,
                                 contentPadding: EdgeInsets.symmetric(
-                                  horizontal: KSizes.margin2x,
-                                  vertical: KSizes.margin3x,
+                                  horizontal: KSizes.margin1x,
+                                  vertical: KSizes.margin2x,
                                 ),
                               ),
                               items: [
-                                DropdownMenuItem(value: 'g', child: Text('gram')),
+                                DropdownMenuItem(value: 'g', child: Text('gram', style: TextStyle(fontSize: KSizes.fontSizeS))),
                                 if (widget.foodItem.servingUnit.isNotEmpty &&
                                     widget.foodItem.servingUnit != 'g')
                                   DropdownMenuItem(
                                     value: widget.foodItem.servingUnit,
-                                    child: Text(_getUnitDisplayName(widget.foodItem.servingUnit)),
+                                    child: Text(_getUnitDisplayName(widget.foodItem.servingUnit), style: TextStyle(fontSize: KSizes.fontSizeS)),
                                   ),
                               ],
                               onChanged: (value) {

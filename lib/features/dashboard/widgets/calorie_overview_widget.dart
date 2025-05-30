@@ -7,6 +7,7 @@ import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/domain/user_profile_model.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../activity/application/activity_calories_notifier.dart';
+import '../application/selected_date_provider.dart';
 
 /// Widget showing daily calorie intake vs goal with circular progress and stats
 class CalorieOverviewWidget extends ConsumerWidget {
@@ -16,6 +17,10 @@ class CalorieOverviewWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
+    final selectedDate = ref.watch(selectedDateProvider);
+    final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
+    
+    // For now we'll use existing providers, but these should be updated to work with selected date
     final consumedCalories = ref.watch(totalCaloriesProvider);
     final activityCaloriesAsync = ref.watch(activityCaloriesProvider);
 
@@ -61,7 +66,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          // Header with title and info icon only
+          // Header with title, date selector and info icon
           Row(
             children: [
               Container(
@@ -101,19 +106,79 @@ class CalorieOverviewWidget extends ConsumerWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    Text(
-                      hasExceededGoal 
-                          ? 'Du har overskredet dit mål i dag'
-                          : 'Hold styr på dit kalorie indtag',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: hasExceededGoal ? AppColors.error : AppColors.textSecondary,
-                        height: 1.3,
+                    // Date selector button
+                    GestureDetector(
+                      onTap: () => _showDatePicker(context, ref),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KSizes.margin2x,
+                          vertical: KSizes.margin1x,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(KSizes.radiusS),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              MdiIcons.calendar,
+                              size: KSizes.iconXS,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: KSizes.margin1x),
+                            Text(
+                              selectedDateNotifier.formattedDate,
+                              style: TextStyle(
+                                fontSize: KSizes.fontSizeM,
+                                color: AppColors.primary,
+                                fontWeight: KSizes.fontWeightMedium,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              // Navigation arrows
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: selectedDateNotifier.previousDay,
+                    child: Container(
+                      padding: const EdgeInsets.all(KSizes.margin1x),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(KSizes.radiusS),
+                      ),
+                      child: Icon(
+                        MdiIcons.chevronLeft,
+                        size: KSizes.iconS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: KSizes.margin1x),
+                  GestureDetector(
+                    onTap: selectedDateNotifier.nextDay,
+                    child: Container(
+                      padding: const EdgeInsets.all(KSizes.margin1x),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(KSizes.radiusS),
+                      ),
+                      child: Icon(
+                        MdiIcons.chevronRight,
+                        size: KSizes.iconS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: KSizes.margin2x),
               GestureDetector(
                 onTap: () => _showCalorieDetails(context, userProfile),
                 child: Container(
@@ -237,6 +302,33 @@ class CalorieOverviewWidget extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  void _showDatePicker(BuildContext context, WidgetRef ref) async {
+    final selectedDate = ref.read(selectedDateProvider);
+    final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
+    
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime.now().subtract(const Duration(days: 365)), // 1 year back
+      lastDate: DateTime.now().add(const Duration(days: 30)), // 30 days forward
+      locale: const Locale('da', 'DK'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppColors.primary,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (pickedDate != null) {
+      selectedDateNotifier.selectDate(pickedDate);
+    }
   }
 
   double _calculateTargetCalories(UserProfileModel profile) {
