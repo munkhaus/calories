@@ -629,6 +629,21 @@ class CalorieOverviewWidget extends ConsumerWidget {
     }
   }
 
+  String _getGoalAdjustmentText(GoalType? goalType, double weeklyGoalKg) {
+    switch (goalType) {
+      case GoalType.weightLoss:
+        return 'Underskud for ${weeklyGoalKg}kg/uge vægttab';
+      case GoalType.weightGain:
+        return 'Overskud for ${weeklyGoalKg}kg/uge vægtøgning';
+      case GoalType.muscleGain:
+        return 'Overskud for ${weeklyGoalKg}kg/uge muskelvækst';
+      case GoalType.weightMaintenance:
+        return 'Ingen justering - vedligehold vægt';
+      default:
+        return 'Ingen justering';
+    }
+  }
+
   double _calculateTargetCalories(UserProfileModel profile) {
     // Use the pre-calculated target calories from user profile
     // This is already calculated during onboarding with proper goal adjustments

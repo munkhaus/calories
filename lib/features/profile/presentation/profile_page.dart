@@ -451,9 +451,17 @@ class ProfilePage extends ConsumerWidget {
               onTap: () => _editProfile(context, ref),
             ),
           
+          // DEBUG: Force recalculate calories
           ProfileOptionCard(
-            title: 'App information',
-            subtitle: 'Om appen, version og support',
+            title: '🧪 Genberegn kalorier (DEBUG)',
+            subtitle: 'Tvinger genberegning af kaloriemål (fikser gamle beregninger)',
+            icon: MdiIcons.calculator,
+            onTap: () => _forceRecalculateCalories(context, ref),
+          ),
+          
+          ProfileOptionCard(
+            title: 'Information',
+            subtitle: 'Om appen, version og vilkår',
             icon: MdiIcons.informationOutline,
             onTap: () => _navigateToInfo(context),
           ),
@@ -694,6 +702,136 @@ class ProfilePage extends ConsumerWidget {
               ),
               child: Text(
                 'Genstart',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _forceRecalculateCalories(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusXL),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Icon(
+                  MdiIcons.calculator,
+                  color: Colors.white,
+                  size: KSizes.iconS,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin3x),
+              Text(
+                'Genberegn kalorier',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeL,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(KSizes.radiusL),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Vil du genberegne dit kaloriemål med de opdaterede beregninger?',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: KSizes.margin2x),
+                Text(
+                  'Dette vil rette eventuelle gamle fejlberegninger.',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin4x,
+                  vertical: KSizes.margin2x,
+                ),
+              ),
+              child: Text(
+                'Annuller',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                // Show loading
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (context) => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+                
+                // Force recalculate
+                await ref.read(onboardingProvider.notifier).forceRecalculateTargets();
+                
+                if (context.mounted) {
+                  Navigator.of(context).pop(); // Close loading
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('✅ Kalorier genberegnet!'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin4x,
+                  vertical: KSizes.margin2x,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                ),
+              ),
+              child: Text(
+                'Genberegn',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                 ),

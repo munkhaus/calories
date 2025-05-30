@@ -373,13 +373,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   /// Calculate target calories based on user profile
   int _calculateTargetCalories(UserProfileModel profile) {
-    print('🔍 _calculateTargetCalories called');
     if (profile.dateOfBirth == null || 
         profile.currentWeightKg <= 0 || 
         profile.heightCm <= 0 ||
         profile.gender == null ||
         profile.goalType == null) {
-      print('🔍 Missing basic data, returning 0');
       return 0;
     }
 
@@ -393,7 +391,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
     if (age <= 0) return 0;
 
-    // Calculate BMR using Mifflin-St Jeor equation (more precise calculation)
+    // Calculate BMR using Mifflin-St Jeor equation
     double bmr;
     if (profile.gender == Gender.male) {
       bmr = (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) + 5.0;
@@ -401,47 +399,65 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       bmr = (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) - 161.0;
     }
     
-    print('🔍 BMR calculated: ${bmr.toInt()}');
+    // Calculate TDEE based on activity levels
+    double tdee = _calculateTdee(profile, bmr);
 
-    double tdee;
+    // Apply goal-based calorie adjustment
+    double targetCalories = tdee;
     
+    if (profile.goalType == GoalType.weightLoss) {
+      // Weight loss: create caloric deficit
+      final weeklyDeficitKcal = profile.weeklyGoalKg * 7700.0; // 1 kg fat ≈ 7700 kcal
+      final dailyDeficitKcal = weeklyDeficitKcal / 7.0;
+      targetCalories = tdee - dailyDeficitKcal;
+    } else if (profile.goalType == GoalType.weightGain || profile.goalType == GoalType.muscleGain) {
+      // Weight gain: create caloric surplus
+      final weeklySurplusKcal = profile.weeklyGoalKg * 7700.0;
+      final dailySurplusKcal = weeklySurplusKcal / 7.0;
+      targetCalories = tdee + dailySurplusKcal;
+    } else if (profile.goalType == GoalType.weightMaintenance) {
+      // For weight maintenance, target calories = tdee (no change)
+    }
+
+    // Safety bounds
+    return targetCalories.clamp(800.0, 4000.0).round();
+  }
+
+  /// Calculate TDEE (Total Daily Energy Expenditure) from BMR and activity levels
+  double _calculateTdee(UserProfileModel profile, double bmr) {
     // Use new activity system if available, otherwise fall back to legacy
     if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
-      print('🔍 Using new activity system');
       // Calculate work activity multiplier based on current day
       double workMultiplier = 1.2; // Default sedentary baseline
       if (profile.isCurrentlyWorkDay) {
         workMultiplier = switch (profile.workActivityLevel!) {
           WorkActivityLevel.sedentary => 1.2,
           WorkActivityLevel.light => 1.375,
-          WorkActivityLevel.moderate => 1.55,
+          WorkActivityLevel.moderate => 1.5, // Fixed: was 1.55
           WorkActivityLevel.heavy => 1.725,
           WorkActivityLevel.veryHeavy => 1.9,
         };
       }
       
-      print('🔍 Work multiplier: $workMultiplier (isCurrentlyWorkDay: ${profile.isCurrentlyWorkDay})');
-      
       // Calculate leisure activity addition - only if NOT manual tracking
       double leisureAddition = 0.0;
       if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
           profile.isLeisureActivityEnabledToday) {
-        leisureAddition = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 0.0,
-          LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
-          LeisureActivityLevel.moderatelyActive => 0.35, // ~350 calories
-          LeisureActivityLevel.veryActive => 0.525, // ~525 calories
-          LeisureActivityLevel.extraActive => 0.7, // ~700 calories
+        final leisureMultiplier = switch (profile.leisureActivityLevel!) {
+          LeisureActivityLevel.sedentary => 1.0,
+          LeisureActivityLevel.lightlyActive => 1.1, // Fixed: proper multiplier
+          LeisureActivityLevel.moderatelyActive => 1.2,
+          LeisureActivityLevel.veryActive => 1.3,
+          LeisureActivityLevel.extraActive => 1.4,
         };
+        leisureAddition = leisureMultiplier - 1.0; // Convert to addition factor
       }
       
-      print('🔍 Leisure addition: $leisureAddition (manual: ${profile.activityTrackingPreference == ActivityTrackingPreference.manual}, enabled: ${profile.isLeisureActivityEnabledToday})');
-      
-      tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
+      final totalMultiplier = workMultiplier + leisureAddition;
+      return bmr * totalMultiplier.clamp(1.0, 2.5); // Safety bounds
     } else {
-      print('🔍 Using legacy activity system');
       // Fall back to legacy activity level system
-      if (profile.activityLevel == null) return 0;
+      if (profile.activityLevel == null) return bmr * 1.2; // Default sedentary
       
       final activityMultiplier = switch (profile.activityLevel!) {
         ActivityLevel.sedentary => 1.2,
@@ -451,41 +467,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         ActivityLevel.extraActive => 1.9,
       };
       
-      print('🔍 Activity multiplier: $activityMultiplier');
-      tdee = bmr * activityMultiplier;
+      return bmr * activityMultiplier;
     }
-
-    print('🔍 TDEE before goal adjustment: ${tdee.toInt()}');
-
-    // Adjust for goal type with consistent calculation
-    switch (profile.goalType!) {
-      case GoalType.weightLoss:
-        // Create caloric deficit: 1 kg fat = 7700 kcal
-        final weeklyDeficit = profile.weeklyGoalKg * 7700.0;
-        final dailyDeficit = weeklyDeficit / 7.0;
-        print('🔍 Weight loss: weeklyGoalKg=${profile.weeklyGoalKg}, weeklyDeficit=${weeklyDeficit.toInt()}, dailyDeficit=${dailyDeficit.toInt()}');
-        tdee = tdee - dailyDeficit;
-        break;
-      case GoalType.weightGain:
-      case GoalType.muscleGain:
-        // Create caloric surplus: 1 kg gain = 7700 kcal
-        final weeklySurplus = profile.weeklyGoalKg * 7700.0;
-        final dailySurplus = weeklySurplus / 7.0;
-        tdee = tdee + dailySurplus;
-        break;
-      case GoalType.weightMaintenance:
-        // No adjustment needed - maintain current TDEE
-        break;
-    }
-
-    print('🔍 TDEE after goal adjustment: ${tdee.toInt()}');
-
-    // Ensure minimum calories (never go below 1200 for safety)
-    tdee = tdee.clamp(1200.0, 4000.0);
-    
-    print('🔍 Final target calories: ${tdee.round()}');
-
-    return tdee.round();
   }
 
   /// Calculate macronutrient targets
@@ -561,6 +544,23 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     );
     
     print('✅ Onboarding flow restarted for editing (data preserved)');
+  }
+
+  /// Force recalculate targets for existing users (fixes old calculations)
+  Future<void> forceRecalculateTargets() async {
+    print('🔄 Force recalculating targets for existing user...');
+    
+    // Force recalculation
+    _calculateTargets();
+    
+    // Save the updated profile to permanent storage
+    if (state.userProfile.isOnboardingCompleted) {
+      await _saveCompletedUserUpdate();
+      print('✅ Targets recalculated and saved!');
+      print('- New Target Calories: ${state.userProfile.targetCalories} kcal');
+      print('- BMR: ${state.userProfile.bmr.toInt()} kcal');
+      print('- TDEE: ${state.userProfile.tdee.toInt()} kcal');
+    }
   }
 }
 
