@@ -13,9 +13,7 @@ import '../widgets/daily_settings_widget.dart';
 import '../widgets/weight_progress_widget.dart';
 import '../application/selected_date_provider.dart';
 import '../application/date_aware_providers.dart';
-import '../../onboarding/presentation/onboarding_page.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
-import '../../food_logging/domain/user_food_log_model.dart';
 import '../../info/presentation/info_page.dart';
 
 /// Main dashboard page showing daily overview
@@ -48,6 +46,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     
     WidgetsBinding.instance.addObserver(this);
     _activityNotifier = ActivityNotifier();
+    
     // Initialize activity data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(onboardingProvider);

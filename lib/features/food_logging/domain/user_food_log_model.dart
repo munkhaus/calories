@@ -1,4 +1,5 @@
 enum MealType {
+  none,
   morgenmad,
   frokost,
   aftensmad,
@@ -97,6 +98,8 @@ class UserFoodLogModel {
 
   static MealType _mealTypeFromString(String value) {
     switch (value.toLowerCase()) {
+      case 'none':
+        return MealType.none;
       case 'frokost':
         return MealType.frokost;
       case 'aftensmad':
@@ -110,6 +113,8 @@ class UserFoodLogModel {
 
   static String _mealTypeToString(MealType type) {
     switch (type) {
+      case MealType.none:
+        return 'none';
       case MealType.morgenmad:
         return 'morgenmad';
       case MealType.frokost:
@@ -198,6 +203,8 @@ class UserFoodLogModel {
 
   String get mealTypeDisplayName {
     switch (mealType) {
+      case MealType.none:
+        return 'Ingen kategori';
       case MealType.morgenmad:
         return 'Morgenmad';
       case MealType.frokost:
@@ -211,6 +218,8 @@ class UserFoodLogModel {
 
   static String mealTypeToString(MealType type) {
     switch (type) {
+      case MealType.none:
+        return 'none';
       case MealType.morgenmad:
         return 'morgenmad';
       case MealType.frokost:
@@ -227,6 +236,8 @@ class UserFoodLogModel {
 extension MealTypeExtension on MealType {
   String get mealTypeDisplayName {
     switch (this) {
+      case MealType.none:
+        return 'Ingen kategori';
       case MealType.morgenmad:
         return 'Morgenmad';
       case MealType.frokost:

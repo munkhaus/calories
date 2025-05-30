@@ -8,6 +8,9 @@ import '../../activity/application/activity_notifier.dart';
 import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../../dashboard/widgets/recent_meals_widget.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
+import '../../dashboard/widgets/pending_foods_widget.dart';
+import '../../food_logging/application/pending_food_cubit.dart';
+import '../../food_logging/infrastructure/pending_food_service.dart';
 
 /// Main home page of the app after onboarding
 class HomePage extends ConsumerStatefulWidget {
@@ -24,10 +27,17 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     _activityNotifier = ActivityNotifier();
+    
+    // Add test data for pending foods
+    PendingFoodService.addTestData();
+    
     // Initialize activity data with BMR calculation
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(onboardingProvider);
       final userProfile = state.userProfile;
+      
+      // Initialize pending foods
+      ref.read(pendingFoodProvider.notifier).initialize();
       
       if (userProfile.isCompleteForCalculations) {
         // Use BMR calculation for total calories
@@ -132,6 +142,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               
               KSizes.spacingVerticalL,
               
+              // Pending food items section
+              const PendingFoodsWidget(),
+              
+              KSizes.spacingVerticalL,
+              
               // TEST WIDGET - Dette skal ALTID vises
               Container(
                 height: 100,
@@ -168,6 +183,16 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _captureQuickFood(context),
+        backgroundColor: AppColors.warning,
+        foregroundColor: Colors.white,
+        child: Icon(
+          MdiIcons.cameraPlus,
+          size: KSizes.iconL,
+        ),
+        tooltip: 'Tag hurtigt billede af mad',
       ),
     );
   }
@@ -550,5 +575,80 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
     );
+  }
+
+  void _captureQuickFood(BuildContext context) async {
+    final cubit = ref.read(pendingFoodProvider.notifier);
+    
+    try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: KSizes.margin3x),
+              Text('Tager billede...'),
+            ],
+          ),
+          backgroundColor: AppColors.warning,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      
+      await cubit.captureFood();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Text('Billede taget! Kategoriser det når du er klar.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            action: SnackBarAction(
+              label: 'Se afventende',
+              textColor: Colors.white,
+              onPressed: () {
+                // Scroll to pending foods widget if it exists
+                // For now, just show a message
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.alertCircle, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Text('Kunne ikke tage billede'),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            action: SnackBarAction(
+              label: 'Prøv igen',
+              textColor: Colors.white,
+              onPressed: () => _captureQuickFood(context),
+            ),
+          ),
+        );
+      }
+    }
   }
 } 

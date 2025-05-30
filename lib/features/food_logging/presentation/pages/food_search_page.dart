@@ -41,7 +41,7 @@ class _FoodSearchPageState extends State<FoodSearchPage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _selectedMealType = widget.initialMealType ?? MealType.morgenmad;
+    _selectedMealType = widget.initialMealType ?? MealType.none;
     _loadInitialData();
   }
 

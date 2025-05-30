@@ -117,6 +117,8 @@ class LoggingPage extends ConsumerWidget {
 
   IconData _getIconForMealType(MealType mealType) {
     switch (mealType) {
+      case MealType.none:
+        return MdiIcons.help;
       case MealType.morgenmad:
         return MdiIcons.weatherSunny;
       case MealType.frokost:
@@ -130,6 +132,8 @@ class LoggingPage extends ConsumerWidget {
 
   Color _getColorForMealType(MealType mealType) {
     switch (mealType) {
+      case MealType.none:
+        return AppColors.textSecondary;
       case MealType.morgenmad:
         return AppColors.warning;
       case MealType.frokost:
@@ -143,6 +147,8 @@ class LoggingPage extends ConsumerWidget {
 
   String _getTitleForMealType(MealType mealType) {
     switch (mealType) {
+      case MealType.none:
+        return 'Ingen kategori';
       case MealType.morgenmad:
         return 'Morgenmad';
       case MealType.frokost:
@@ -156,6 +162,8 @@ class LoggingPage extends ConsumerWidget {
 
   String _getSubtitleForMealType(MealType mealType) {
     switch (mealType) {
+      case MealType.none:
+        return 'Vælg en kategori senere';
       case MealType.morgenmad:
         return 'Start dagen godt med en nærrende morgenmad';
       case MealType.frokost:
