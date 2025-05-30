@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../food_logging/application/pending_food_cubit.dart';
 import '../../food_logging/domain/pending_food_model.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
+import 'dart:io';
 
 /// Widget showing pending food items that need categorization
 class PendingFoodsWidget extends ConsumerWidget {
@@ -214,23 +215,70 @@ class PendingFoodsWidget extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // Image placeholder
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(KSizes.radiusS),
-              border: Border.all(
-                color: AppColors.border.withOpacity(0.3),
-                width: 1,
+          // Image placeholder with image count indicator
+          Stack(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: food.hasValidImage && !food.primaryImagePath.startsWith('mock_')
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(KSizes.radiusS),
+                        child: Image.file(
+                          File(food.primaryImagePath),
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              MdiIcons.imageOff,
+                              color: AppColors.textSecondary,
+                              size: KSizes.iconM,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        MdiIcons.image,
+                        color: AppColors.textSecondary,
+                        size: KSizes.iconM,
+                      ),
               ),
-            ),
-            child: Icon(
-              MdiIcons.image,
-              color: AppColors.textSecondary,
-              size: KSizes.iconM,
-            ),
+              
+              // Image count indicator
+              if (food.imageCount > 1)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${food.imageCount}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           
           const SizedBox(width: KSizes.margin3x),
@@ -240,7 +288,7 @@ class PendingFoodsWidget extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Mad-billede',
+                  food.imageCount > 1 ? 'Måltid (${food.imageCount} billeder)' : 'Mad-billede',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
                     fontWeight: KSizes.fontWeightMedium,

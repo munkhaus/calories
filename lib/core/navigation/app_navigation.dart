@@ -16,6 +16,16 @@ import '../../features/weight_tracking/application/weight_tracking_notifier.dart
 import '../../features/weight_tracking/domain/weight_entry_model.dart';
 import '../../features/food_logging/application/food_logging_notifier.dart';
 import '../../features/dashboard/application/date_aware_providers.dart';
+import '../../features/planning/presentation/planning_page.dart';
+import '../../features/activity/presentation/activity_page.dart';
+import '../../features/info/presentation/info_page.dart';
+import '../../features/food_logging/presentation/pages/multi_photo_meal_page.dart';
+import '../../features/food_logging/application/meal_session_cubit.dart';
+import '../../features/food_logging/presentation/pages/food_favorites_page.dart';
+import '../../features/activity/presentation/pages/activity_favorites_page.dart';
+import '../../features/activity/presentation/pages/detailed_activity_registration_page.dart';
+import '../../features/food_logging/presentation/pages/quick_photo_session_page.dart';
+import '../../features/food_logging/presentation/pages/quick_favorites_page.dart';
 
 /// Main app navigation with bottom navigation bar
 class AppNavigation extends ConsumerStatefulWidget {
@@ -62,14 +72,55 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
 
   /// Refresh all providers to update dashboard after registrations
   void _refreshProviders() {
-    // Refresh food logging
-    ProviderScope.containerOf(context).read(foodLoggingProvider.notifier).refresh();
+    if (!mounted) return;
     
-    // Refresh activity data
-    ProviderScope.containerOf(context).read(activityNotifierProvider).loadTodaysActivities();
+    print('🔄 AppNavigation: Starting provider refresh...');
     
-    // Refresh weight tracking
-    ProviderScope.containerOf(context).read(weightTrackingProvider.notifier).refresh();
+    try {
+      final container = ProviderScope.containerOf(context);
+      
+      // Always refresh pending foods first - this is stable
+      try {
+        container.read(pendingFoodProvider.notifier).loadPendingFoods();
+        print('🔄 AppNavigation: Pending foods refreshed');
+      } catch (e) {
+        print('🔄 AppNavigation: Pending food refresh failed: $e');
+      }
+      
+      // Only refresh other providers if we're on the home tab to avoid unnecessary work
+      if (_currentIndex == 0) {
+        // Use a small delay to allow navigation to complete
+        Future.delayed(Duration(milliseconds: 50), () {
+          if (!mounted) return;
+          
+          try {
+            // Trigger activity data refresh by calling a method on the provider
+            // This is safer than invalidating which causes dispose issues
+            final activityNotifier = container.read(activityNotifierProvider);
+            activityNotifier.refresh();
+            
+            print('🔄 AppNavigation: Activity provider refreshed');
+          } catch (e) {
+            print('🔄 AppNavigation: Activity provider refresh failed: $e');
+          }
+          
+          try {
+            // Force refresh of date-aware providers
+            container.invalidate(dateAwareActivityProvider);
+            container.invalidate(activityCaloriesForSelectedDateProvider);
+            container.invalidate(totalCaloriesForSelectedDateProvider);
+            
+            print('🔄 AppNavigation: Date-aware providers invalidated');
+          } catch (e) {
+            print('🔄 AppNavigation: Date-aware provider invalidation failed: $e');
+          }
+        });
+      }
+      
+      print('🔄 AppNavigation: Provider refresh completed');
+    } catch (e) {
+      print('🔄 AppNavigation: Provider refresh failed: $e');
+    }
   }
 
   @override
@@ -93,7 +144,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
         )).toList(),
       ),
       floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
-        onPressed: () => _showRegistrationOptions(context),
+        onPressed: () => _showMainCategoryDialog(context),
         backgroundColor: AppColors.warning,
         foregroundColor: Colors.white,
         child: Icon(
@@ -190,126 +241,88 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     }
   }
 
-  void _showRegistrationOptions(BuildContext context) {
-    showModalBottomSheet(
+  void _showMainCategoryDialog(BuildContext context) {
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.8,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
         ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(KSizes.radiusXL),
-            topRight: Radius.circular(KSizes.radiusXL),
-          ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.plus, color: AppColors.primary),
+            SizedBox(width: KSizes.margin2x),
+            Text('Hvad vil du registrere?'),
+          ],
         ),
-        child: Padding(
-          padding: EdgeInsets.all(KSizes.margin4x),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Handle indicator
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.border.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                
-                SizedBox(height: KSizes.margin3x),
-                
-                // Header
-                Text(
-                  'Hvad vil du registrere?',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXXL,
-                    fontWeight: KSizes.fontWeightBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                
-                SizedBox(height: KSizes.margin1x),
-                
-                Text(
-                  'Vælg hvad du vil logge i dag',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                
-                SizedBox(height: KSizes.margin6x),
-                
-                // Quick food registration option
-                _buildRegistrationOption(
-                  context: context,
-                  title: 'Hurtig mad',
-                  subtitle: 'Tag et billede og kategoriser senere',
-                  icon: MdiIcons.cameraPlus,
-                  iconColor: AppColors.warning,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _captureQuickFood(context);
-                  },
-                ),
-                
-                SizedBox(height: KSizes.margin2x),
-                
-                // Detailed food registration option
-                _buildRegistrationOption(
-                  context: context,
-                  title: 'Detaljeret mad',
-                  subtitle: 'Søg og log mad med alle detaljer',
-                  icon: MdiIcons.silverwareForkKnife,
-                  iconColor: AppColors.primary,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _navigateToDetailedRegistration(context);
-                  },
-                ),
-                
-                SizedBox(height: KSizes.margin2x),
-                
-                // Activity registration option
-                _buildRegistrationOption(
-                  context: context,
-                  title: 'Aktivitet',
-                  subtitle: 'Log træning og aktiviteter',
-                  icon: MdiIcons.runFast,
-                  iconColor: AppColors.secondary,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _navigateToActivityRegistration(context);
-                  },
-                ),
-                
-                SizedBox(height: KSizes.margin2x),
-                
-                // Weight registration option
-                _buildRegistrationOption(
-                  context: context,
-                  title: 'Vægt',
-                  subtitle: 'Registrer din nuværende vægt',
-                  icon: MdiIcons.scale,
-                  iconColor: AppColors.info,
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _navigateToWeightRegistration(context);
-                  },
-                ),
-                
-                SizedBox(height: KSizes.margin4x),
-              ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Hurtig Billeder - DIRECT on first level
+            _buildMainCategoryOption(
+              context: context,
+              icon: MdiIcons.cameraPlus,
+              title: 'Hurtig Billeder',
+              subtitle: 'Tag flere billeder af samme måltid',
+              color: AppColors.warning,
+              onTap: () {
+                Navigator.of(context).pop();
+                _startMultiPhotoWithCapture(context);
+              },
             ),
-          ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Food category
+            _buildMainCategoryOption(
+              context: context,
+              icon: MdiIcons.foodApple,
+              title: 'Mad & Drikke',
+              subtitle: 'Registrer måltider og snacks',
+              color: AppColors.success,
+              onTap: () {
+                Navigator.of(context).pop();
+                _showFoodSubmenu(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Activity category
+            _buildMainCategoryOption(
+              context: context,
+              icon: MdiIcons.runFast,
+              title: 'Aktivitet & Motion',
+              subtitle: 'Log træning og aktiviteter',
+              color: AppColors.secondary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _showActivitySubmenu(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Weight registration - ADDED BACK!
+            _buildMainCategoryOption(
+              context: context,
+              icon: MdiIcons.scaleBalance,
+              title: 'Vægt Registrering',
+              subtitle: 'Registrer din nuværende vægt',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToWeightRegistration(context);
+              },
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
       ),
     );
   }
@@ -398,7 +411,10 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
           initialMealType: null,
         ),
       ),
-    );
+    ).then((_) {
+      // Refresh providers when returning from detailed registration
+      _refreshProviders();
+    });
   }
 
   void _navigateToActivityRegistration(BuildContext context) {
@@ -406,7 +422,10 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
       MaterialPageRoute(
         builder: (context) => QuickActivityRegistrationPage(),
       ),
-    );
+    ).then((_) {
+      // Refresh providers when returning from activity registration
+      _refreshProviders();
+    });
   }
 
   void _navigateToWeightRegistration(BuildContext context) {
@@ -584,12 +603,333 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     }
   }
 
+  void _navigateToMultiPhotoMeal(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MultiPhotoMealPage(),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
     
     // No longer adding test data - service starts clean
     // PendingFoodService.addTestData() - removed since method no longer exists
+  }
+
+  Widget _buildMainCategoryOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        child: Container(
+          padding: EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                color.withOpacity(0.1),
+                color.withOpacity(0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              
+              SizedBox(width: KSizes.margin4x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin1x),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              Icon(
+                MdiIcons.chevronRight,
+                color: color,
+                size: KSizes.iconM,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showFoodSubmenu(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.foodApple, color: AppColors.warning),
+            SizedBox(width: KSizes.margin2x),
+            Text('Mad & Drikke'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Favorites option - FIRST
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.star,
+              title: 'Fra Favoritter',
+              subtitle: 'Vælg fra gemte mad-favoritter',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToFoodFavorites(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Detailed registration - SECOND
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.formTextbox,
+              title: 'Detaljeret Registrering',
+              subtitle: 'Søg og log mad med alle detaljer',
+              color: AppColors.info,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToDetailedRegistration(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showActivitySubmenu(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.runFast, color: AppColors.secondary),
+            SizedBox(width: KSizes.margin2x),
+            Text('Aktivitet & Motion'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Favorites option - FIRST
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.star,
+              title: 'Fra Favoritter',
+              subtitle: 'Vælg fra gemte aktiviteter',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToActivityFavorites(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Detailed registration - SECOND
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.formTextbox,
+              title: 'Detaljeret Registrering',
+              subtitle: 'Søg og log aktiviteter med alle detaljer',
+              color: AppColors.info,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToDetailedActivity(context);
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubmenuOption({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        child: Container(
+          padding: EdgeInsets.all(KSizes.margin3x),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: KSizes.iconM,
+                ),
+              ),
+              
+              SizedBox(width: KSizes.margin3x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin1x),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToActivityFavorites(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuickFavoritesPage(initialTab: 1), // Activity tab
+      ),
+    ).then((_) {
+      // Refresh providers when returning from activity favorites
+      _refreshProviders();
+    });
+  }
+
+  void _navigateToDetailedActivity(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DetailedActivityRegistrationPage(),
+      ),
+    ).then((_) {
+      // Refresh providers when returning from detailed activity registration
+      _refreshProviders();
+    });
+  }
+
+  void _navigateToFoodFavorites(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuickFavoritesPage(initialTab: 0), // Food tab
+      ),
+    ).then((_) {
+      // Refresh providers when returning from food favorites
+      _refreshProviders();
+    });
+  }
+
+  void _startMultiPhotoWithCapture(BuildContext context) async {
+    // Navigate directly to multi-photo session - it will handle the first capture
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuickPhotoSessionPage(),
+      ),
+    ).then((_) {
+      // Refresh providers when returning from photo session
+      _refreshProviders();
+    });
   }
 }
 

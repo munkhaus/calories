@@ -6,10 +6,10 @@ import 'pending_food_state.dart';
 
 /// Cubit for managing pending food items
 class PendingFoodCubit extends StateNotifier<PendingFoodState> {
-  final IPendingFoodService _service;
+  final PendingFoodService _service;
 
   PendingFoodCubit({
-    IPendingFoodService? service,
+    PendingFoodService? service,
   })  : _service = service ?? PendingFoodService(),
         super(PendingFoodState.initial());
 
@@ -42,6 +42,68 @@ class PendingFoodCubit extends StateNotifier<PendingFoodState> {
       print('🍎 PendingFoodCubit: captureFood() failed: ${result.failure}');
       state = state.copyWith(
         captureState: const DataState.error('Kunne ikke tage billede'),
+        isCapturing: false,
+      );
+    }
+  }
+
+  /// NEW: Add image to most recent pending food (for multi-image meals)
+  Future<void> addImageToRecentPendingFood() async {
+    print('🍎 PendingFoodCubit: addImageToRecentPendingFood() called');
+    
+    // Get most recent pending food
+    final recentResult = await _service.getMostRecentPendingFood();
+    if (recentResult.isFailure || recentResult.success == null) {
+      // No pending food found, create new one instead
+      await captureFood();
+      return;
+    }
+
+    state = state.copyWith(
+      captureState: const DataState.loading(),
+      isCapturing: true,
+    );
+
+    final result = await _service.addImageToPendingFood(recentResult.success!.id);
+
+    if (result.isSuccess) {
+      print('🍎 PendingFoodCubit: addImageToRecentPendingFood() success - now has ${result.success.imageCount} images');
+      state = state.copyWith(
+        captureState: DataState.success(result.success),
+        isCapturing: false,
+      );
+      
+      // Reload pending foods to show updated item
+      await loadPendingFoods();
+    } else {
+      print('🍎 PendingFoodCubit: addImageToRecentPendingFood() failed: ${result.failure}');
+      state = state.copyWith(
+        captureState: const DataState.error('Kunne ikke tilføje billede'),
+        isCapturing: false,
+      );
+    }
+  }
+
+  /// NEW: Add image to specific pending food
+  Future<void> addImageToPendingFood(String pendingFoodId) async {
+    state = state.copyWith(
+      captureState: const DataState.loading(),
+      isCapturing: true,
+    );
+
+    final result = await _service.addImageToPendingFood(pendingFoodId);
+
+    if (result.isSuccess) {
+      state = state.copyWith(
+        captureState: DataState.success(result.success),
+        isCapturing: false,
+      );
+      
+      // Reload pending foods to show updated item
+      await loadPendingFoods();
+    } else {
+      state = state.copyWith(
+        captureState: const DataState.error('Kunne ikke tilføje billede'),
         isCapturing: false,
       );
     }
@@ -132,6 +194,18 @@ class PendingFoodCubit extends StateNotifier<PendingFoodState> {
     }
     
     return false;
+  }
+
+  /// Add a new pending food element directly
+  Future<void> addNewPendingFood(dynamic pendingFood) async {
+    final result = await _service.addPendingFood(pendingFood);
+    
+    if (result.isSuccess) {
+      // Reload pending foods to include the new item
+      await loadPendingFoods();
+    } else {
+      throw Exception('Kunne ikke tilføje pending food: ${result.failure}');
+    }
   }
 
   /// Retry loading pending foods after error

@@ -4,17 +4,19 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
-import '../../activity/application/activity_notifier.dart';
 import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../../dashboard/widgets/recent_meals_widget.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../dashboard/widgets/pending_foods_widget.dart';
 import '../../food_logging/application/pending_food_cubit.dart';
+import '../../food_logging/application/meal_session_cubit.dart';
 import '../../food_logging/infrastructure/pending_food_service.dart';
 import '../../food_logging/infrastructure/favorite_food_service.dart';
 import '../../activity/infrastructure/favorite_activity_service.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 import '../../food_logging/presentation/pages/quick_favorites_page.dart';
+import '../../food_logging/presentation/pages/multi_photo_meal_page.dart';
+import '../../dashboard/application/date_aware_providers.dart';
 
 /// Main home page of the app after onboarding
 class HomePage extends ConsumerStatefulWidget {
@@ -25,14 +27,12 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
-  late ActivityNotifier _activityNotifier;
-
+  
   @override
   void initState() {
     super.initState();
-    _activityNotifier = ActivityNotifier();
     
-    // Initialize activity data with BMR calculation
+    // Initialize activity data with BMR calculation using provider system
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = ref.read(onboardingProvider);
       final userProfile = state.userProfile;
@@ -40,28 +40,25 @@ class _HomePageState extends ConsumerState<HomePage> {
       // Initialize pending foods
       ref.read(pendingFoodProvider.notifier).initialize();
       
+      // Use the provider-based ActivityNotifier for consistency
+      final activityNotifier = ref.read(activityNotifierProvider);
+      
       if (userProfile.isCompleteForCalculations) {
         // Use BMR calculation for total calories
-        _activityNotifier.initializeWithBmr(userProfile.bmr);
+        activityNotifier.initializeWithBmr(userProfile.bmr);
       } else {
         // Fallback to activity-only calories
-        _activityNotifier.loadTodaysActivities();
-        _activityNotifier.loadTodaysCaloriesBurned();
+        activityNotifier.loadTodaysActivities();
+        activityNotifier.loadTodaysCaloriesBurned();
       }
     });
-  }
-
-  @override
-  void dispose() {
-    _activityNotifier.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     print('🔍 HomePage - build method called');
     final state = ref.watch(onboardingProvider);
-    final notifier = ref.read(onboardingProvider.notifier);
+    final activityNotifier = ref.watch(activityNotifierProvider);
     
     print('🔍 HomePage - state: ${state.userProfile.activityTrackingPreference}');
 
@@ -73,7 +70,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         foregroundColor: AppColors.textPrimary,
         actions: [
           IconButton(
-            onPressed: () => _showRestartOnboardingDialog(context, notifier),
+            onPressed: () => _showRestartOnboardingDialog(context, ref.read(onboardingProvider.notifier)),
             icon: Icon(
               MdiIcons.accountCog,
               color: AppColors.textPrimary,
@@ -170,7 +167,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               
               // Today's activities section - ALWAYS SHOW
               TodaysActivitiesWidget(
-                notifier: _activityNotifier,
+                notifier: activityNotifier,
                 onDeleteActivity: _onDeleteActivity,
                 activityTrackingPreference: state.userProfile.activityTrackingPreference,
               ),
@@ -199,7 +196,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   void _onDeleteActivity(dynamic activity) async {
-    final success = await _activityNotifier.deleteActivity(activity.logEntryId);
+    final activityNotifier = ref.read(activityNotifierProvider);
+    final success = await activityNotifier.deleteActivity(activity.logEntryId);
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -297,19 +295,24 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               KSizes.spacingHorizontalM,
               Expanded(
-                child: AnimatedBuilder(
-                  animation: _activityNotifier,
-                  builder: (context, child) {
-                    final activityState = _activityNotifier.state;
-                    final caloriesBurned = activityState?.todaysCaloriesBurned ?? 0;
-                    
-                    return _buildStatCard(
-                      context,
-                      'Kalorier forbrændt',
-                      '$caloriesBurned',
-                      'kcal',
-                      MdiIcons.fireCircle,
-                      AppColors.secondary,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final activityNotifier = ref.watch(activityNotifierProvider);
+                    return AnimatedBuilder(
+                      animation: activityNotifier,
+                      builder: (context, child) {
+                        final activityState = activityNotifier.state;
+                        final caloriesBurned = activityState?.todaysCaloriesBurned ?? 0;
+                        
+                        return _buildStatCard(
+                          context,
+                          'Kalorier forbrændt',
+                          '$caloriesBurned',
+                          'kcal',
+                          MdiIcons.fireCircle,
+                          AppColors.secondary,
+                        );
+                      },
                     );
                   },
                 ),
@@ -663,11 +666,26 @@ class _HomePageState extends ConsumerState<HomePage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Multi-photo meal option - NEW FIRST
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.cameraPlus,
+              title: 'Flere Billeder Måltid',
+              subtitle: 'Tag flere billeder af samme måltid',
+              color: AppColors.secondary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToMultiPhotoMeal(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
             // Quick photo option
             _buildSubmenuOption(
               context: context,
               icon: MdiIcons.camera,
-              title: 'Tag billede',
+              title: 'Tag Billede',
               subtitle: 'Hurtig fotografering af mad',
               color: AppColors.warning,
               onTap: () {
@@ -676,35 +694,9 @@ class _HomePageState extends ConsumerState<HomePage> {
               },
             ),
             
-            if (hasFoodFavorites) ...[
-              SizedBox(height: KSizes.margin3x),
-              _buildSubmenuOption(
-                context: context,
-                icon: MdiIcons.star,
-                title: 'Fra Favoritter',
-                subtitle: 'Vælg fra gemte mad-favoritter',
-                color: AppColors.primary,
-                onTap: () {
-                  Navigator.of(context).pop();
-                  _navigateToFoodFavorites(context);
-                },
-              ),
-            ],
-            
             SizedBox(height: KSizes.margin3x),
-            _buildSubmenuOption(
-              context: context,
-              icon: MdiIcons.formTextbox,
-              title: 'Detaljeret Registrering',
-              subtitle: 'Manuel indtastning af mad',
-              color: AppColors.info,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToDetailedFood(context);
-              },
-            ),
             
-            SizedBox(height: KSizes.margin3x),
+            // Gallery option
             _buildSubmenuOption(
               context: context,
               icon: MdiIcons.image,
@@ -714,6 +706,47 @@ class _HomePageState extends ConsumerState<HomePage> {
               onTap: () {
                 Navigator.of(context).pop();
                 _captureFromGallery(context);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Favorites option - ALWAYS show but indicate if empty
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.star,
+              title: 'Fra Favoritter',
+              subtitle: hasFoodFavorites 
+                  ? 'Vælg fra gemte mad-favoritter'
+                  : 'Ingen favoritter endnu',
+              color: hasFoodFavorites ? AppColors.primary : AppColors.textSecondary,
+              onTap: () {
+                Navigator.of(context).pop();
+                if (hasFoodFavorites) {
+                  _navigateToFoodFavorites(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Du har ikke gemt nogen mad-favoritter endnu'),
+                      backgroundColor: AppColors.info,
+                    ),
+                  );
+                }
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Detailed registration - ALWAYS show
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.formTextbox,
+              title: 'Detaljeret Registrering',
+              subtitle: 'Manuel indtastning af mad',
+              color: AppColors.info,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToDetailedFood(context);
               },
             ),
           ],
@@ -765,22 +798,33 @@ class _HomePageState extends ConsumerState<HomePage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (hasActivityFavorites) ...[
-              _buildSubmenuOption(
-                context: context,
-                icon: MdiIcons.star,
-                title: 'Fra Favoritter',
-                subtitle: 'Vælg fra gemte aktiviteter',
-                color: AppColors.primary,
-                onTap: () {
-                  Navigator.of(context).pop();
+            // Favorites option - ALWAYS show but indicate if empty
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.star,
+              title: 'Fra Favoritter',
+              subtitle: hasActivityFavorites 
+                  ? 'Vælg fra gemte aktiviteter'
+                  : 'Ingen favoritter endnu',
+              color: hasActivityFavorites ? AppColors.primary : AppColors.textSecondary,
+              onTap: () {
+                Navigator.of(context).pop();
+                if (hasActivityFavorites) {
                   _navigateToActivityFavorites(context);
-                },
-              ),
-              
-              SizedBox(height: KSizes.margin3x),
-            ],
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Du har ikke gemt nogen aktivitets-favoritter endnu'),
+                      backgroundColor: AppColors.info,
+                    ),
+                  );
+                }
+              },
+            ),
             
+            SizedBox(height: KSizes.margin3x),
+            
+            // Detailed registration - ALWAYS show
             _buildSubmenuOption(
               context: context,
               icon: MdiIcons.formTextbox,
@@ -794,6 +838,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             
             SizedBox(height: KSizes.margin3x),
+            
+            // Quick activity - ALWAYS show
             _buildSubmenuOption(
               context: context,
               icon: MdiIcons.timerOutline,
@@ -1022,6 +1068,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       SnackBar(
         content: Text('Hurtig aktivitets-registrering kommer snart!'),
         backgroundColor: AppColors.info,
+      ),
+    );
+  }
+
+  void _navigateToMultiPhotoMeal(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => MultiPhotoMealPage(),
       ),
     );
   }

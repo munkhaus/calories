@@ -8,12 +8,9 @@ class PendingFoodService implements IPendingFoodService {
   // Static list to simulate database storage
   static final List<PendingFoodModel> _pendingFoods = [];
 
-  // Constructor - no longer adds test data automatically
+  // Constructor - no longer clears data automatically
   PendingFoodService() {
-    print('🍎 PendingFoodService: Service initialized without test data');
-    // Clear ALL existing data to start completely fresh
-    _pendingFoods.clear();
-    print('🍎 PendingFoodService: Cleared all existing data, total items: ${_pendingFoods.length}');
+    print('🍎 PendingFoodService: Service initialized, current items: ${_pendingFoods.length}');
   }
 
   @override
@@ -39,10 +36,10 @@ class PendingFoodService implements IPendingFoodService {
         }
       }
 
-      // Create pending food with real image path
+      // Create pending food with real image path (now as a list)
       final pendingFood = PendingFoodModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePath: cameraResult.success,
+        imagePaths: [cameraResult.success], // Put single image in list
         capturedAt: DateTime.now(),
         notes: '',
       );
@@ -77,10 +74,10 @@ class PendingFoodService implements IPendingFoodService {
         }
       }
 
-      // Create pending food with real image path
+      // Create pending food with real image path (now as a list)
       final pendingFood = PendingFoodModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePath: cameraResult.success,
+        imagePaths: [cameraResult.success], // Put single image in list
         capturedAt: DateTime.now(),
         notes: '',
       );
@@ -91,6 +88,65 @@ class PendingFoodService implements IPendingFoodService {
       return Success(pendingFood);
     } catch (e) {
       return Failure(PendingFoodError.unknown);
+    }
+  }
+
+  /// NEW: Add image to existing pending food
+  Future<Result<PendingFoodModel, PendingFoodError>> addImageToPendingFood(String pendingFoodId) async {
+    try {
+      // Take photo first
+      final cameraResult = await CameraService.capturePhoto();
+      
+      if (cameraResult.isFailure) {
+        switch (cameraResult.failure) {
+          case CameraError.userCancelled:
+            return Failure(PendingFoodError.userCancelled);
+          case CameraError.permissionDenied:
+            return Failure(PendingFoodError.permissionDenied);
+          case CameraError.cameraNotAvailable:
+            return Failure(PendingFoodError.cameraUnavailable);
+          case CameraError.imageSaveFailed:
+            return Failure(PendingFoodError.imageSave);
+          case CameraError.unknown:
+          default:
+            return Failure(PendingFoodError.unknown);
+        }
+      }
+
+      // Find the pending food to add image to
+      final index = _pendingFoods.indexWhere((item) => item.id == pendingFoodId);
+      if (index == -1) {
+        return Failure(PendingFoodError.notFound);
+      }
+
+      // Add the new image to the list
+      final updatedImagePaths = List<String>.from(_pendingFoods[index].imagePaths);
+      updatedImagePaths.add(cameraResult.success);
+
+      // Update the pending food with new image list
+      _pendingFoods[index] = _pendingFoods[index].copyWith(
+        imagePaths: updatedImagePaths,
+      );
+
+      return Success(_pendingFoods[index]);
+    } catch (e) {
+      return Failure(PendingFoodError.unknown);
+    }
+  }
+
+  /// NEW: Get the most recent unprocessed pending food (for adding more images to same meal)
+  Future<Result<PendingFoodModel?, PendingFoodError>> getMostRecentPendingFood() async {
+    try {
+      await Future.delayed(const Duration(milliseconds: 50));
+      
+      final unprocessed = _pendingFoods
+          .where((item) => !item.isProcessed)
+          .toList()
+        ..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
+      
+      return Success(unprocessed.isNotEmpty ? unprocessed.first : null);
+    } catch (e) {
+      return Failure(PendingFoodError.database);
     }
   }
 
@@ -159,9 +215,11 @@ class PendingFoodService implements IPendingFoodService {
 
       final item = _pendingFoods[index];
       
-      // Delete the actual image file
-      if (item.imagePath.isNotEmpty && !item.imagePath.startsWith('mock_')) {
-        await CameraService.deleteImage(item.imagePath);
+      // Delete all image files
+      for (final imagePath in item.imagePaths) {
+        if (imagePath.isNotEmpty && !imagePath.startsWith('mock_')) {
+          await CameraService.deleteImage(imagePath);
+        }
       }
 
       _pendingFoods.removeAt(index);
@@ -171,20 +229,40 @@ class PendingFoodService implements IPendingFoodService {
     }
   }
 
-  @override
+  /// Add notes to pending food item
   Future<Result<PendingFoodModel, PendingFoodError>> addNotes(String id, String notes) async {
     try {
-      await Future.delayed(const Duration(milliseconds: 50));
-      
-      final index = _pendingFoods.indexWhere((item) => item.id == id);
-      if (index == -1) {
-        return Failure(PendingFoodError.notFound);
-      }
+      // Find the item
+      final item = _pendingFoods.firstWhere(
+        (food) => food.id == id,
+        orElse: () => throw Exception('Food not found'),
+      );
 
-      _pendingFoods[index] = _pendingFoods[index].copyWith(notes: notes);
-      return Success(_pendingFoods[index]);
+      // Update notes
+      final updatedItem = item.copyWith(notes: notes);
+      
+      // Replace in list
+      final index = _pendingFoods.indexWhere((food) => food.id == id);
+      _pendingFoods[index] = updatedItem;
+
+      print('🍎 PendingFoodService: Added notes to item $id');
+      return Success(updatedItem);
     } catch (e) {
-      return Failure(PendingFoodError.validation);
+      print('🍎 PendingFoodService: Error adding notes: $e');
+      return Failure(PendingFoodError.notFound);
+    }
+  }
+
+  /// Add a new pending food element directly
+  Future<Result<PendingFoodModel, PendingFoodError>> addPendingFood(PendingFoodModel pendingFood) async {
+    try {
+      // Add to list
+      _pendingFoods.add(pendingFood);
+      print('🍎 PendingFoodService: Added new pending food with ID ${pendingFood.id} and ${pendingFood.imagePaths.length} images');
+      return Success(pendingFood);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error adding pending food: $e');
+      return Failure(PendingFoodError.unknown);
     }
   }
 
@@ -192,8 +270,10 @@ class PendingFoodService implements IPendingFoodService {
   static void clearAll() {
     // Clean up all image files before clearing list
     for (final item in _pendingFoods) {
-      if (item.imagePath.isNotEmpty && !item.imagePath.startsWith('mock_')) {
-        CameraService.deleteImage(item.imagePath);
+      for (final imagePath in item.imagePaths) {
+        if (imagePath.isNotEmpty && !imagePath.startsWith('mock_')) {
+          CameraService.deleteImage(imagePath);
+        }
       }
     }
     _pendingFoods.clear();

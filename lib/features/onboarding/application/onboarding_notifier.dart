@@ -373,11 +373,13 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   /// Calculate target calories based on user profile
   int _calculateTargetCalories(UserProfileModel profile) {
+    print('🔍 _calculateTargetCalories called');
     if (profile.dateOfBirth == null || 
         profile.currentWeightKg <= 0 || 
         profile.heightCm <= 0 ||
         profile.gender == null ||
         profile.goalType == null) {
+      print('🔍 Missing basic data, returning 0');
       return 0;
     }
 
@@ -398,11 +400,14 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     } else {
       bmr = (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) - 161.0;
     }
+    
+    print('🔍 BMR calculated: ${bmr.toInt()}');
 
     double tdee;
     
     // Use new activity system if available, otherwise fall back to legacy
     if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
+      print('🔍 Using new activity system');
       // Calculate work activity multiplier based on current day
       double workMultiplier = 1.2; // Default sedentary baseline
       if (profile.isCurrentlyWorkDay) {
@@ -414,6 +419,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
           WorkActivityLevel.veryHeavy => 1.9,
         };
       }
+      
+      print('🔍 Work multiplier: $workMultiplier (isCurrentlyWorkDay: ${profile.isCurrentlyWorkDay})');
       
       // Calculate leisure activity addition - only if NOT manual tracking
       double leisureAddition = 0.0;
@@ -428,8 +435,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         };
       }
       
+      print('🔍 Leisure addition: $leisureAddition (manual: ${profile.activityTrackingPreference == ActivityTrackingPreference.manual}, enabled: ${profile.isLeisureActivityEnabledToday})');
+      
       tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
     } else {
+      print('🔍 Using legacy activity system');
       // Fall back to legacy activity level system
       if (profile.activityLevel == null) return 0;
       
@@ -441,8 +451,11 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         ActivityLevel.extraActive => 1.9,
       };
       
+      print('🔍 Activity multiplier: $activityMultiplier');
       tdee = bmr * activityMultiplier;
     }
+
+    print('🔍 TDEE before goal adjustment: ${tdee.toInt()}');
 
     // Adjust for goal type with consistent calculation
     switch (profile.goalType!) {
@@ -450,6 +463,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         // Create caloric deficit: 1 kg fat = 7700 kcal
         final weeklyDeficit = profile.weeklyGoalKg * 7700.0;
         final dailyDeficit = weeklyDeficit / 7.0;
+        print('🔍 Weight loss: weeklyGoalKg=${profile.weeklyGoalKg}, weeklyDeficit=${weeklyDeficit.toInt()}, dailyDeficit=${dailyDeficit.toInt()}');
         tdee = tdee - dailyDeficit;
         break;
       case GoalType.weightGain:
@@ -464,8 +478,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
         break;
     }
 
+    print('🔍 TDEE after goal adjustment: ${tdee.toInt()}');
+
     // Ensure minimum calories (never go below 1200 for safety)
     tdee = tdee.clamp(1200.0, 4000.0);
+    
+    print('🔍 Final target calories: ${tdee.round()}');
 
     return tdee.round();
   }

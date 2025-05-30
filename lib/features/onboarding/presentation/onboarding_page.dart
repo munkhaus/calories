@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/navigation/app_navigation.dart';
 import '../application/onboarding_notifier.dart';
 import '../application/onboarding_state.dart';
 import '../domain/onboarding_step.dart';
@@ -172,10 +173,10 @@ class OnboardingPage extends ConsumerWidget {
                             ),
                           );
                         } else {
-                          // Navigate directly to main app (loading state stays true until navigation)
+                          // Navigate directly to main app navigation without splash
                           Navigator.of(context).pushAndRemoveUntil(
                             MaterialPageRoute(
-                              builder: (context) => const AppWrapper(),
+                              builder: (context) => const AppNavigation(),
                             ),
                             (route) => false,
                           );

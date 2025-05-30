@@ -1,7 +1,7 @@
 /// Model for food items that are pending categorization after photo capture
 class PendingFoodModel {
   final String id;
-  final String imagePath;
+  final List<String> imagePaths;
   final String imageUrl;
   final DateTime capturedAt;
   final String notes;
@@ -9,7 +9,7 @@ class PendingFoodModel {
 
   const PendingFoodModel({
     this.id = '',
-    this.imagePath = '',
+    this.imagePaths = const [],
     this.imageUrl = '',
     required this.capturedAt,
     this.notes = '',
@@ -20,7 +20,7 @@ class PendingFoodModel {
   factory PendingFoodModel.fromJson(Map<String, dynamic> json) {
     return PendingFoodModel(
       id: json['id'] ?? '',
-      imagePath: json['imagePath'] ?? '',
+      imagePaths: List<String>.from(json['imagePaths'] ?? []),
       imageUrl: json['imageUrl'] ?? '',
       capturedAt: DateTime.tryParse(json['capturedAt'] ?? '') ?? DateTime.now(),
       notes: json['notes'] ?? '',
@@ -32,7 +32,7 @@ class PendingFoodModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'imagePath': imagePath,
+      'imagePaths': imagePaths,
       'imageUrl': imageUrl,
       'capturedAt': capturedAt.toIso8601String(),
       'notes': notes,
@@ -43,7 +43,7 @@ class PendingFoodModel {
   /// Copy with new values
   PendingFoodModel copyWith({
     String? id,
-    String? imagePath,
+    List<String>? imagePaths,
     String? imageUrl,
     DateTime? capturedAt,
     String? notes,
@@ -51,7 +51,7 @@ class PendingFoodModel {
   }) {
     return PendingFoodModel(
       id: id ?? this.id,
-      imagePath: imagePath ?? this.imagePath,
+      imagePaths: imagePaths ?? this.imagePaths,
       imageUrl: imageUrl ?? this.imageUrl,
       capturedAt: capturedAt ?? this.capturedAt,
       notes: notes ?? this.notes,
@@ -60,7 +60,13 @@ class PendingFoodModel {
   }
 
   /// Check if the pending food item has a valid image
-  bool get hasValidImage => imagePath.isNotEmpty || imageUrl.isNotEmpty;
+  bool get hasValidImage => imagePaths.isNotEmpty || imageUrl.isNotEmpty;
+  
+  /// Get the primary image path (first image)
+  String get primaryImagePath => imagePaths.isNotEmpty ? imagePaths.first : '';
+  
+  /// Get number of images
+  int get imageCount => imagePaths.length;
   
   /// Get display time for the pending food item
   String get displayTime {

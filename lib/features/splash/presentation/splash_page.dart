@@ -250,14 +250,14 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
       _FeatureItem(
         icon: MdiIcons.target,
         title: 'Mål Tracking',
-        subtitle: 'Sæt og opnå dine\nsundhedsmål',
+        subtitle: 'Sæt og følg dine\npersonlige mål',
         color: AppColors.success,
         delay: 800,
       ),
       _FeatureItem(
-        icon: MdiIcons.heartPulse,
-        title: 'Sundhed',
-        subtitle: 'BMR, BMI og\npersonlig coaching',
+        icon: MdiIcons.calculator,
+        title: 'Data & Tal',
+        subtitle: 'BMR, BMI og\npersonlig statistik',
         color: AppColors.error,
         delay: 1000,
       ),

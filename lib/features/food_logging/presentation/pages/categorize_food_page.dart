@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+import 'package:result_type/result_type.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/pending_food_model.dart';
@@ -114,115 +115,112 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   }
 
   Widget _buildImagePreview() {
+    if (widget.pendingFood.imagePaths.isEmpty ||
+        widget.pendingFood.primaryImagePath.startsWith('mock_')) {
+      return Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          border: Border.all(color: AppColors.border.withOpacity(0.3)),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                MdiIcons.imageOff,
+                size: KSizes.iconXL,
+                color: AppColors.textSecondary.withOpacity(0.5),
+              ),
+              SizedBox(height: KSizes.margin2x),
+              Text(
+                'Billede ikke tilgængeligt',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: KSizes.fontSizeM,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
-      width: double.infinity,
       height: 200,
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: BorderRadius.circular(KSizes.radiusL),
-        border: Border.all(
-          color: AppColors.border.withOpacity(0.3),
-          width: 1,
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(KSizes.radiusL),
-        child: _buildImageContent(),
-      ),
-    );
-  }
-
-  Widget _buildImageContent() {
-    // Check if this is a real image file (not mock)
-    if (widget.pendingFood.imagePath.isNotEmpty && 
-        !widget.pendingFood.imagePath.startsWith('mock_')) {
-      
-      final imageFile = File(widget.pendingFood.imagePath);
-      
-      return FutureBuilder<bool>(
-        future: imageFile.exists(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-              ),
-            );
-          }
-          
-          if (snapshot.data == true) {
-            return Image.file(
-              imageFile,
-              fit: BoxFit.cover,
+        child: Stack(
+          children: [
+            // Primary image
+            Image.file(
+              File(widget.pendingFood.primaryImagePath),
               width: double.infinity,
-              height: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-                return _buildErrorPlaceholder();
+                return Container(
+                  height: 200,
+                  color: AppColors.surface,
+                  child: Center(
+                    child: Icon(
+                      MdiIcons.imageOff,
+                      size: KSizes.iconXL,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                );
               },
-            );
-          } else {
-            return _buildErrorPlaceholder();
-          }
-        },
-      );
-    } else {
-      // Mock image - show placeholder
-      return _buildMockPlaceholder();
-    }
-  }
-
-  Widget _buildErrorPlaceholder() {
-    return Container(
-      color: AppColors.surface,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            MdiIcons.imageOff,
-            size: 64,
-            color: AppColors.error,
-          ),
-          SizedBox(height: KSizes.margin2x),
-          Text(
-            'Billede kunne ikke indlæses',
-            style: TextStyle(
-              color: AppColors.error,
-              fontSize: KSizes.fontSizeM,
             ),
-          ),
-          SizedBox(height: KSizes.margin1x),
-          Text(
-            widget.pendingFood.displayTime,
-            style: TextStyle(
-              color: AppColors.textTertiary,
-              fontSize: KSizes.fontSizeS,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMockPlaceholder() {
-    return Container(
-      color: AppColors.surface,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            MdiIcons.imageOutline,
-            size: 64,
-            color: AppColors.textSecondary,
-          ),
-          SizedBox(height: KSizes.margin2x),
-          Text(
-            'Mock billede fra ${widget.pendingFood.displayTime}',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: KSizes.fontSizeM,
-            ),
-          ),
-        ],
+            
+            // Image count indicator if multiple images
+            if (widget.pendingFood.imageCount > 1)
+              Positioned(
+                top: KSizes.margin2x,
+                right: KSizes.margin2x,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: KSizes.margin2x,
+                    vertical: KSizes.margin1x,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        MdiIcons.imageMultiple,
+                        color: Colors.white,
+                        size: KSizes.iconXS,
+                      ),
+                      SizedBox(width: KSizes.margin1x),
+                      Text(
+                        '${widget.pendingFood.imageCount}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: KSizes.fontSizeS,
+                          fontWeight: KSizes.fontWeightBold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -855,68 +853,81 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   }
 
   void _analyzeImage() async {
-    // Only analyze real images, not mock ones
-    if (widget.pendingFood.imagePath.isEmpty || 
-        widget.pendingFood.imagePath.startsWith('mock_')) {
-      print('🤖 CategorizeFoodPage: Skipping analysis for mock image');
+    if (widget.pendingFood.imagePaths.isEmpty ||
+        widget.pendingFood.primaryImagePath.startsWith('mock_')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Kan ikke analysere billede - intet gyldigt billede fundet'),
+          backgroundColor: AppColors.error,
+        ),
+      );
       return;
     }
 
     setState(() {
       _isAnalyzing = true;
-      _analysisError = null;
     });
 
-    print('🤖 CategorizeFoodPage: Starting image analysis...');
-
     try {
-      // Use REAL Gemini API call instead of mock
-      final result = await _geminiService.analyzeFoodImage(widget.pendingFood.imagePath);
-      
+      // Use multiple image analysis if more than one image, otherwise single image
+      Result<FoodAnalysisResult, GeminiError> result;
+      if (widget.pendingFood.imageCount > 1) {
+        result = await _geminiService.analyzeMultipleFoodImages(widget.pendingFood.imagePaths);
+      } else {
+        result = await _geminiService.analyzeFoodImage(widget.pendingFood.primaryImagePath);
+      }
+
       if (result.isSuccess) {
-        print('🤖 CategorizeFoodPage: Analysis successful');
         final analysis = result.success;
         
         setState(() {
           _analysisResult = analysis;
-          _isAnalyzing = false;
-          
-          // Auto-fill form with AI results
           _foodNameController.text = analysis.foodName;
           _caloriesController.text = analysis.estimatedCalories.toString();
-        });
-        
-        print('🤖 CategorizeFoodPage: Form auto-filled with AI results');
-      } else {
-        print('🤖 CategorizeFoodPage: Analysis failed: ${result.failure}');
-        setState(() {
           _isAnalyzing = false;
-          _analysisError = _getErrorMessage(result.failure);
+          _analysisError = null;
         });
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Analyse færdig! ${widget.pendingFood.imageCount > 1 ? "${widget.pendingFood.imageCount} billeder analyseret" : "Billede analyseret"}'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _analysisResult = null;
+            _analysisError = result.failure.toString();
+            _isAnalyzing = false;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Analyse fejlede: ${result.failure}'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     } catch (e) {
-      print('🤖 CategorizeFoodPage: Exception during analysis: $e');
-      setState(() {
-        _isAnalyzing = false;
-        _analysisError = 'Der opstod en uventet fejl under analysen';
-      });
-    }
-  }
-
-  String _getErrorMessage(GeminiError error) {
-    switch (error) {
-      case GeminiError.invalidApiKey:
-        return 'Ugyldig API nøgle til AI analyse';
-      case GeminiError.networkError:
-        return 'Netværksfejl - tjek din internetforbindelse';
-      case GeminiError.imageProcessingError:
-        return 'Kunne ikke behandle billedet';
-      case GeminiError.parseError:
-        return 'Kunne ikke forstå AI\'s svar';
-      case GeminiError.quotaExceeded:
-        return 'AI analyse grænse nået for i dag';
-      case GeminiError.unknown:
-        return 'Ukendt fejl under AI analyse';
+      if (mounted) {
+        setState(() {
+          _analysisResult = null;
+          _analysisError = e.toString();
+          _isAnalyzing = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Uventet fejl under analyse: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 } 

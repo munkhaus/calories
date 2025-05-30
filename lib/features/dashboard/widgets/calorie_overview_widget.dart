@@ -22,17 +22,23 @@ class CalorieOverviewWidget extends ConsumerWidget {
     // Trigger date-aware activity loading
     ref.watch(dateAwareActivityProvider);
     
-    // Get calorie data - recalculate TDEE based on current profile state
-    final baseCalories = _calculateCurrentTdee(userProfile);
+    // Use the pre-calculated target calories from user profile (includes goal adjustments)
+    final targetCalories = userProfile.targetCalories.toDouble();
     final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider).toDouble();
-    final totalAvailableCalories = baseCalories + activityCalories;
+    final totalAvailableCalories = targetCalories + activityCalories;
     
     // Get consumed calories - use provider that will update automatically
     final consumedCalories = ref.watch(totalCaloriesForSelectedDateProvider);
     
     // Calculate remaining calories and progress
     final remainingCalories = totalAvailableCalories - consumedCalories;
-    final progress = consumedCalories / totalAvailableCalories;
+    
+    // Prevent division by zero and invalid progress during initial load
+    double progress = 0.0;
+    if (totalAvailableCalories > 0 && !totalAvailableCalories.isNaN && !consumedCalories.isNaN) {
+      progress = consumedCalories / totalAvailableCalories;
+    }
+    
     final displayProgress = progress.clamp(0.0, 1.2); // Allow overflow visualization
     final hasExceededGoal = consumedCalories > totalAvailableCalories;
     
@@ -186,31 +192,35 @@ class CalorieOverviewWidget extends ConsumerWidget {
             Stack(
               alignment: Alignment.center,
               children: [
-                // Background circle with gradient
+                // Background circle with stronger contrast
                 Container(
                   width: 180,
                   height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.primary.withOpacity(0.05),
-                        AppColors.secondary.withOpacity(0.05),
-                      ],
+                    color: AppColors.surface.withOpacity(0.8),
+                    border: Border.all(
+                      color: AppColors.border.withOpacity(0.2),
+                      width: 2,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.1),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                 ),
                 
-                // Progress indicator with dynamic colors
+                // Progress indicator with stronger contrast
                 SizedBox(
                   width: 160,
                   height: 160,
                   child: CircularProgressIndicator(
                     value: displayProgress,
-                    strokeWidth: 12,
-                    backgroundColor: AppColors.surface.withOpacity(0.3),
+                    strokeWidth: 14,
+                    backgroundColor: AppColors.surface.withOpacity(0.6),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getProgressColor(displayProgress),
                     ),
@@ -218,49 +228,76 @@ class CalorieOverviewWidget extends ConsumerWidget {
                   ),
                 ),
                 
-                // Center content with improved typography
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${consumedCalories.toInt()}',
-                      style: TextStyle(
-                        fontSize: 42,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -1,
+                // Center content with improved contrast and background
+                Container(
+                  width: 140,
+                  height: 140,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.95),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
-                    ),
-                    Text(
-                      'af ${totalAvailableCalories.toInt()} kcal',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
-                    ),
-                    SizedBox(height: KSizes.margin2x),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: KSizes.margin3x,
-                        vertical: KSizes.margin1x,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _getProgressColor(displayProgress).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(KSizes.radiusL),
-                      ),
-                      child: Text(
-                        hasExceededGoal 
-                            ? 'Overskudt!' 
-                            : '${(displayProgress * 100).toInt()}% af målet',
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '${consumedCalories.toInt()}',
                         style: TextStyle(
-                          fontSize: KSizes.fontSizeS,
-                          color: _getProgressColor(displayProgress),
-                          fontWeight: KSizes.fontWeightSemiBold,
+                          fontSize: 44,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -1,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.1),
+                              offset: const Offset(0, 1),
+                              blurRadius: 2,
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                      Text(
+                        'af ${totalAvailableCalories.toInt()} kcal',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          color: AppColors.textSecondary,
+                          fontWeight: KSizes.fontWeightBold,
+                        ),
+                      ),
+                      SizedBox(height: KSizes.margin1x),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KSizes.margin2x,
+                          vertical: KSizes.margin1x,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getProgressColor(displayProgress).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
+                          border: Border.all(
+                            color: _getProgressColor(displayProgress).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          hasExceededGoal 
+                              ? 'Over målet!' 
+                              : '${(displayProgress * 100).toInt()}% af målet',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeXS,
+                            color: _getProgressColor(displayProgress),
+                            fontWeight: KSizes.fontWeightBold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -406,6 +443,11 @@ class CalorieOverviewWidget extends ConsumerWidget {
   }
 
   Color _getProgressColor(double progress) {
+    // Handle invalid progress values during initial load
+    if (progress.isNaN || progress.isInfinite) {
+      return AppColors.primary;
+    }
+    
     if (progress >= 1.0) return AppColors.error;
     if (progress >= 0.8) return AppColors.warning; 
     return AppColors.primary;
@@ -439,12 +481,14 @@ class CalorieOverviewWidget extends ConsumerWidget {
   }
 
   void _showCalorieDetails(BuildContext context, UserProfileModel userProfile) {
+    // Calculate current TDEE for display purposes (this is raw TDEE without goal adjustments)
+    final currentTdee = _calculateCurrentTdee(userProfile);
     final bmr = userProfile.bmr;
-    final tdee = userProfile.tdee;
     
-    // Calculate the missing variables using the same methods as in build
-    final targetCalories = _calculateTargetCalories(userProfile);
-    // For activity calories, we'll use 0 as fallback since we don't have access to the provider here
+    // Use the pre-calculated target calories (this includes goal adjustments)
+    final targetCalories = userProfile.targetCalories;
+    
+    // For activity calories, get the current values from providers
     final activityCalories = 0.0; // This would need to be passed from the build method
     final totalAvailableCalories = targetCalories + activityCalories;
     final consumedCalories = 0.0; // This would need to be passed from the build method
@@ -454,7 +498,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final startOfDay = DateTime(now.year, now.month, now.day);
     final minutesSinceStartOfDay = now.difference(startOfDay).inMinutes;
     final percentOfDayPassed = minutesSinceStartOfDay / (24 * 60);
-    final tdeeCaloriesBurnedSoFar = tdee * percentOfDayPassed;
+    final tdeeCaloriesBurnedSoFar = currentTdee * percentOfDayPassed;
     
     // Determine work day status
     final isWorkDay = userProfile.useAutomaticWeekdayDetection 
@@ -480,7 +524,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                 title: '📊 Grundberegning',
                 items: [
                   _DetailItem('BMR (Grundstofskifte)', '${bmr.toInt()} kcal/dag', 'Din krop forbrænder dette i hvile'),
-                  _DetailItem('TDEE (Total daglig energi)', '${tdee.toInt()} kcal/dag', 'BMR + aktivitetsniveau'),
+                  _DetailItem('TDEE (Total daglig energi)', '${currentTdee.toInt()} kcal/dag', 'BMR + aktivitetsniveau'),
                   _DetailItem('Forbrændt så langt i dag', '${tdeeCaloriesBurnedSoFar.toInt()} kcal', '${(percentOfDayPassed * 100).toInt()}% af dagen er gået'),
                 ],
               ),
@@ -491,6 +535,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                 title: '🎯 Dit Mål',
                 items: [
                   _DetailItem('Dagligt mål', '${targetCalories.toInt()} kcal', _getGoalTypeText(userProfile.goalType)),
+                  _DetailItem('Måljustering', '${(targetCalories - currentTdee).toInt()} kcal', _getGoalAdjustmentText(userProfile.goalType, userProfile.weeklyGoalKg)),
                   _DetailItem('Type dag', isWorkDay ? 'Arbejdsdag' : 'Fridag', _getWorkDayExplanation(userProfile)),
                 ],
               ),
@@ -533,8 +578,8 @@ class CalorieOverviewWidget extends ConsumerWidget {
                     ),
                     SizedBox(height: KSizes.margin2x),
                     Text(
-                      'Cirklen viser spiste kalorier (${consumedCalories.toInt()}) ud af tilgængelige kalorier (${totalAvailableCalories.toInt()}). '
-                      'Tilgængelige = dagligt mål (${targetCalories.toInt()}) + ekstra fra aktivitet (${activityCalories.toInt()}).',
+                      'Din TDEE (${currentTdee.toInt()} kcal) justeres med ${(targetCalories - currentTdee).toInt()} kcal for at nå dit mål. '
+                      'Cirklen viser spiste kalorier (${consumedCalories.toInt()}) ud af tilgængelige kalorier (${totalAvailableCalories.toInt()}).',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeS,
                         color: AppColors.textSecondary,

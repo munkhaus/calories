@@ -20,6 +20,11 @@ class FoodAnalysisResult {
   final String portionSize;
   final int estimatedCalories;
   final double confidence; // 0-1 scale
+  final double quantity;
+  final String servingUnit;
+  final double protein;
+  final double fat;
+  final double carbs;
 
   const FoodAnalysisResult({
     required this.foodName,
@@ -27,6 +32,11 @@ class FoodAnalysisResult {
     required this.portionSize,
     required this.estimatedCalories,
     required this.confidence,
+    this.quantity = 1.0,
+    this.servingUnit = 'portion',
+    this.protein = 0.0,
+    this.fat = 0.0,
+    this.carbs = 0.0,
   });
 }
 
@@ -216,6 +226,11 @@ Hvis billedet ikke viser mad, sæt confidence til 0.
         portionSize: portionSize.isNotEmpty ? portionSize : 'Ukendt størrelse',
         estimatedCalories: estimatedCalories,
         confidence: confidence.clamp(0.0, 1.0),
+        quantity: 1.0,
+        servingUnit: 'portion',
+        protein: 0.0, // Single image analysis doesn't estimate nutrition
+        fat: 0.0,
+        carbs: 0.0,
       ));
 
     } catch (e) {
@@ -288,81 +303,72 @@ Hvis billedet ikke viser mad, sæt confidence til 0.
     ));
   }
 
-  /// Analyze multiple food images of the same meal and extract comprehensive information
+  /// Analyze multiple food images and extract combined information
   Future<Result<FoodAnalysisResult, GeminiError>> analyzeMultipleFoodImages(List<String> imagePaths) async {
-    print('🤖 GeminiService: Starting analyzeMultipleFoodImages');
-    print('🤖 GeminiService: Number of images: ${imagePaths.length}');
-    print('🤖 GeminiService: API key: ${_apiKey.substring(0, 10)}...');
-    
-    if (imagePaths.isEmpty) {
-      print('🤖 GeminiService: No images provided');
-      return Failure(GeminiError.imageProcessingError);
-    }
+    print('🤖 GeminiService: Starting analyzeMultipleFoodImages with ${imagePaths.length} images');
     
     try {
-      // Prepare all images
-      final List<DataPart> imageParts = [];
-      
-      for (int i = 0; i < imagePaths.length; i++) {
-        final imagePath = imagePaths[i];
-        print('🤖 GeminiService: Reading image ${i + 1}: $imagePath');
-        
+      // Read all image files
+      List<Uint8List> allImageBytes = [];
+      for (String imagePath in imagePaths) {
+        print('🤖 GeminiService: Reading image file: $imagePath');
         final imageFile = File(imagePath);
         if (!await imageFile.exists()) {
-          print('🤖 GeminiService: Image file ${i + 1} does not exist!');
-          continue; // Skip missing images rather than failing completely
+          print('🤖 GeminiService: Image file does not exist: $imagePath');
+          return Failure(GeminiError.imageProcessingError);
         }
-
-        final imageBytes = await imageFile.readAsBytes();
-        print('🤖 GeminiService: Image ${i + 1} read successfully, size: ${imageBytes.length} bytes');
         
-        imageParts.add(DataPart('image/jpeg', imageBytes));
+        final imageBytes = await imageFile.readAsBytes();
+        allImageBytes.add(imageBytes);
+        print('🤖 GeminiService: Image $imagePath read successfully, size: ${imageBytes.length} bytes');
       }
       
-      if (imageParts.isEmpty) {
-        print('🤖 GeminiService: No valid images found');
-        return Failure(GeminiError.imageProcessingError);
-      }
-      
-      // Create comprehensive prompt for multiple images
+      // Create enhanced prompt for multiple images
       final prompt = '''
-Analyser disse ${imageParts.length} billeder af det samme måltid og giv samlet information på dansk:
+Analyser disse ${imagePaths.length} billeder af det samme måltid fra forskellige vinkler og giv følgende information på dansk:
 
-Billederne viser forskellige vinkler eller dele af samme måltid. Kombiner informationen fra alle billeder til at give:
+1. Navn på maden/retten (samlet vurdering)
+2. Kort beskrivelse af hvad der er på billederne
+3. Estimeret portion størrelse for hele måltidet (f.eks. "1 mellem pizza", "200g pasta", "1 kop kaffe")
+4. Estimeret kalorier for hele portionen
+5. Estimeret protein i gram
+6. Estimeret fedt i gram
+7. Estimeret kulhydrater i gram
+8. Konfidensniveau (0-100) for hvor sikker du er baseret på alle billeder
 
-1. Navn på maden/retten (baseret på alle billeder)
-2. Samlet beskrivelse af hele måltidet (hvad ses på alle billeder tilsammen)
-3. Estimeret total portion størrelse for hele måltidet (f.eks. "1 mellem pizza", "200g pasta + salat", "1 kop kaffe + kage")
-4. Estimeret samlede kalorier for hele måltidet (sum af alt der ses på billederne)
-5. Konfidensniveau (0-100) for hvor sikker du er på den samlede analyse
+Da du kan se måltidet fra flere vinkler, giv en mere præcis vurdering end ved et enkelt billede.
 
 Formater svaret som JSON:
 {
-  "foodName": "navn på hele måltidet",
-  "description": "beskrivelse af hele måltidet fra alle billeder",
-  "portionSize": "estimeret samlet størrelse",
-  "estimatedCalories": antal_kalorier_som_nummer_for_hele_måltidet,
+  "foodName": "navn på maden",
+  "description": "beskrivelse af hvad der ses",
+  "portionSize": "estimeret størrelse",
+  "estimatedCalories": antal_kalorier_som_nummer,
+  "protein": protein_i_gram_som_nummer,
+  "fat": fedt_i_gram_som_nummer,
+  "carbs": kulhydrater_i_gram_som_nummer,
   "confidence": konfidens_som_nummer_mellem_0_og_100
 }
 
-Hvis billederne ikke viser mad, eller hvis de viser helt forskellige måltider (ikke samme måltid), sæt confidence til 0.
-Hvis nogle billeder er uskarpe eller ubrugelige, fokuser på de bedste billeder.
+Hvis billederne ikke viser mad, sæt confidence til 0.
 ''';
 
-      print('🤖 GeminiService: Prompt created for multiple images, length: ${prompt.length} characters');
+      print('🤖 GeminiService: Multi-image prompt created, length: ${prompt.length} characters');
 
       // Create content with all images and text
-      final contentParts = <Part>[TextPart(prompt)];
-      contentParts.addAll(imageParts);
+      List<Part> parts = [TextPart(prompt)];
+      for (Uint8List imageBytes in allImageBytes) {
+        parts.add(DataPart('image/jpeg', imageBytes));
+      }
       
-      final content = [Content.multi(contentParts)];
+      final content = [Content.multi(parts)];
 
-      print('🤖 GeminiService: Content created with ${imageParts.length} images, calling Gemini API...');
+      print('🤖 GeminiService: Multi-image content created, calling Gemini API...');
 
       // Generate response
       final response = await _model.generateContent(content);
       
-      print('🤖 GeminiService: API call completed');
+      print('🤖 GeminiService: Multi-image API call completed');
       print('🤖 GeminiService: Response text length: ${response.text?.length ?? 0}');
       print('🤖 GeminiService: Raw response: ${response.text}');
       
@@ -371,16 +377,19 @@ Hvis nogle billeder er uskarpe eller ubrugelige, fokuser på de bedste billeder.
         return Failure(GeminiError.parseError);
       }
 
-      // Parse JSON response
-      print('🤖 GeminiService: Parsing response...');
-      final result = _parseGeminiResponse(response.text!);
+      // Parse JSON response with nutrition values
+      print('🤖 GeminiService: Parsing multi-image response...');
+      final result = _parseGeminiMultiImageResponse(response.text!);
       
       if (result.isSuccess) {
         print('🤖 GeminiService: Multi-image parsing successful');
         final analysis = result.success;
-        print('🤖 GeminiService: Combined Food: ${analysis.foodName}');
-        print('🤖 GeminiService: Combined Calories: ${analysis.estimatedCalories}');
-        print('🤖 GeminiService: Combined Confidence: ${analysis.confidence}');
+        print('🤖 GeminiService: Food: ${analysis.foodName}');
+        print('🤖 GeminiService: Calories: ${analysis.estimatedCalories}');
+        print('🤖 GeminiService: Protein: ${analysis.protein}g');
+        print('🤖 GeminiService: Fat: ${analysis.fat}g');
+        print('🤖 GeminiService: Carbs: ${analysis.carbs}g');
+        print('🤖 GeminiService: Confidence: ${analysis.confidence}');
       } else {
         print('🤖 GeminiService: Multi-image parsing failed: ${result.failure}');
       }
@@ -388,22 +397,116 @@ Hvis nogle billeder er uskarpe eller ubrugelige, fokuser på de bedste billeder.
       return result;
 
     } catch (e) {
-      print('🤖 GeminiService: Multi-image exception caught: $e');
-      print('🤖 GeminiService: Exception type: ${e.runtimeType}');
-      print('🤖 GeminiService: Stack trace: ${StackTrace.current}');
-      
-      if (e.toString().contains('API_KEY')) {
-        print('🤖 GeminiService: API key error detected');
-        return Failure(GeminiError.invalidApiKey);
-      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-        print('🤖 GeminiService: Network error detected');
-        return Failure(GeminiError.networkError);
-      } else if (e.toString().contains('quota')) {
-        print('🤖 GeminiService: Quota error detected');
+      print('🤖 GeminiService: Multi-image analysis exception: $e');
+      if (e.toString().contains('quota') || e.toString().contains('limit')) {
         return Failure(GeminiError.quotaExceeded);
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        return Failure(GeminiError.networkError);
       }
-      print('🤖 GeminiService: Unknown error detected');
       return Failure(GeminiError.unknown);
+    }
+  }
+
+  /// Parse Gemini JSON response for multiple images into FoodAnalysisResult with nutrition
+  Result<FoodAnalysisResult, GeminiError> _parseGeminiMultiImageResponse(String response) {
+    print('🤖 GeminiService: _parseGeminiMultiImageResponse called');
+    print('🤖 GeminiService: Raw response length: ${response.length}');
+    print('🤖 GeminiService: First 200 chars: ${response.length > 200 ? response.substring(0, 200) : response}');
+    
+    try {
+      // Clean response (remove markdown code blocks if present)
+      String cleanResponse = response.trim();
+      print('🤖 GeminiService: After trim: ${cleanResponse.substring(0, cleanResponse.length > 100 ? 100 : cleanResponse.length)}...');
+      
+      if (cleanResponse.startsWith('```json')) {
+        cleanResponse = cleanResponse.substring(7);
+        print('🤖 GeminiService: Removed ```json prefix');
+      }
+      if (cleanResponse.endsWith('```')) {
+        cleanResponse = cleanResponse.substring(0, cleanResponse.length - 3);
+        print('🤖 GeminiService: Removed ``` suffix');
+      }
+      cleanResponse = cleanResponse.trim();
+      print('🤖 GeminiService: Final clean response: $cleanResponse');
+
+      // Parse JSON manually
+      final lines = cleanResponse.split('\n');
+      print('🤖 GeminiService: Split into ${lines.length} lines');
+      
+      String foodName = '';
+      String description = '';
+      String portionSize = '';
+      int estimatedCalories = 0;
+      double confidence = 0.0;
+      double protein = 0.0;
+      double fat = 0.0;
+      double carbs = 0.0;
+
+      for (int i = 0; i < lines.length; i++) {
+        String line = lines[i].trim();
+        print('🤖 GeminiService: Processing line $i: $line');
+        
+        if (line.contains('"foodName":')) {
+          foodName = _extractStringValue(line);
+          print('🤖 GeminiService: Extracted foodName: $foodName');
+        } else if (line.contains('"description":')) {
+          description = _extractStringValue(line);
+          print('🤖 GeminiService: Extracted description: $description');
+        } else if (line.contains('"portionSize":')) {
+          portionSize = _extractStringValue(line);
+          print('🤖 GeminiService: Extracted portionSize: $portionSize');
+        } else if (line.contains('"estimatedCalories":')) {
+          estimatedCalories = _extractNumberValue(line);
+          print('🤖 GeminiService: Extracted estimatedCalories: $estimatedCalories');
+        } else if (line.contains('"protein":')) {
+          protein = _extractNumberValue(line).toDouble();
+          print('🤖 GeminiService: Extracted protein: $protein');
+        } else if (line.contains('"fat":')) {
+          fat = _extractNumberValue(line).toDouble();
+          print('🤖 GeminiService: Extracted fat: $fat');
+        } else if (line.contains('"carbs":')) {
+          carbs = _extractNumberValue(line).toDouble();
+          print('🤖 GeminiService: Extracted carbs: $carbs');
+        } else if (line.contains('"confidence":')) {
+          confidence = _extractNumberValue(line).toDouble() / 100.0; // Convert to 0-1 scale
+          print('🤖 GeminiService: Extracted confidence: $confidence');
+        }
+      }
+
+      print('🤖 GeminiService: Final extracted values:');
+      print('🤖 GeminiService: - foodName: "$foodName"');
+      print('🤖 GeminiService: - description: "$description"');
+      print('🤖 GeminiService: - portionSize: "$portionSize"');
+      print('🤖 GeminiService: - estimatedCalories: $estimatedCalories');
+      print('🤖 GeminiService: - protein: $protein');
+      print('🤖 GeminiService: - fat: $fat');
+      print('🤖 GeminiService: - carbs: $carbs');
+      print('🤖 GeminiService: - confidence: $confidence');
+
+      // Validate required fields
+      if (foodName.isEmpty || description.isEmpty) {
+        print('🤖 GeminiService: Validation failed - missing required fields');
+        return Failure(GeminiError.parseError);
+      }
+
+      print('🤖 GeminiService: Validation passed, creating multi-image result');
+      return Success(FoodAnalysisResult(
+        foodName: foodName,
+        description: description,
+        portionSize: portionSize.isNotEmpty ? portionSize : 'Ukendt størrelse',
+        estimatedCalories: estimatedCalories,
+        confidence: confidence.clamp(0.0, 1.0),
+        quantity: 1.0, // Default to 1 portion
+        servingUnit: 'portion',
+        protein: protein,
+        fat: fat,
+        carbs: carbs,
+      ));
+
+    } catch (e) {
+      print('🤖 GeminiService: Multi-image parse exception: $e');
+      print('🤖 GeminiService: Multi-image parse exception type: ${e.runtimeType}');
+      return Failure(GeminiError.parseError);
     }
   }
 } 

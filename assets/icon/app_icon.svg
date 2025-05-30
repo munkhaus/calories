@@ -1,0 +1,69 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#10B981;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded rectangle background -->
+  <rect x="0" y="0" width="1024" height="1024" rx="180" ry="180" fill="url(#grad1)"/>
+  
+  <!-- Main food icon - plate with food -->
+  <circle cx="512" cy="450" r="180" fill="white" opacity="0.9"/>
+  <circle cx="512" cy="450" r="160" fill="none" stroke="white" stroke-width="8"/>
+  
+  <!-- Food items on plate -->
+  <circle cx="480" cy="420" r="25" fill="#F59E0B"/>
+  <circle cx="530" cy="430" r="20" fill="#10B981"/>
+  <circle cx="500" cy="470" r="22" fill="#EF4444"/>
+  <circle cx="540" cy="460" r="18" fill="#F59E0B"/>
+  
+  <!-- Fork and knife -->
+  <rect x="400" y="350" width="8" height="120" fill="white" rx="4"/>
+  <rect x="390" y="350" width="28" height="6" fill="white" rx="3"/>
+  <rect x="390" y="365" width="28" height="6" fill="white" rx="3"/>
+  <rect x="390" y="380" width="28" height="6" fill="white" rx="3"/>
+  
+  <rect x="620" y="350" width="8" height="120" fill="white" rx="4"/>
+  <path d="M 620 350 L 635 350 L 628 370 Z" fill="white"/>
+  
+  <!-- Activity icon - running figure -->
+  <g transform="translate(750, 150) scale(0.8)">
+    <!-- Head -->
+    <circle cx="0" cy="0" r="25" fill="white"/>
+    <!-- Body -->
+    <rect x="-15" y="25" width="30" height="50" fill="white" rx="15"/>
+    <!-- Arms -->
+    <rect x="-35" y="35" width="20" height="8" fill="white" rx="4" transform="rotate(-20)"/>
+    <rect x="15" y="35" width="20" height="8" fill="white" rx="4" transform="rotate(20)"/>
+    <!-- Legs -->
+    <rect x="-20" y="75" width="15" height="30" fill="white" rx="7" transform="rotate(-15)"/>
+    <rect x="5" y="75" width="15" height="30" fill="white" rx="7" transform="rotate(25)"/>
+  </g>
+  
+  <!-- Small camera icon -->
+  <g transform="translate(150, 150) scale(0.6)">
+    <rect x="0" y="20" width="80" height="60" fill="white" rx="10"/>
+    <rect x="20" y="0" width="40" height="20" fill="white" rx="10"/>
+    <circle cx="40" cy="50" r="20" fill="#6366F1"/>
+    <circle cx="40" cy="50" r="12" fill="white"/>
+    <rect x="65" y="35" width="10" height="8" fill="#6366F1" rx="2"/>
+  </g>
+  
+  <!-- Small chart/graph icon -->
+  <g transform="translate(150, 800) scale(0.7)">
+    <rect x="0" y="60" width="12" height="40" fill="white"/>
+    <rect x="20" y="40" width="12" height="60" fill="white"/>
+    <rect x="40" y="20" width="12" height="80" fill="white"/>
+    <rect x="60" y="35" width="12" height="65" fill="white"/>
+  </g>
+  
+  <!-- Calorie text hint -->
+  <text x="512" y="750" text-anchor="middle" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="white" opacity="0.8">KCAL</text>
+</svg> 

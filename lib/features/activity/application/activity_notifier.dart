@@ -310,10 +310,16 @@ class ActivityNotifier extends ChangeNotifier {
 
   /// Refresh all data
   Future<void> refresh() async {
-    if (_currentBmr != null) {
-      await initializeWithBmr(_currentBmr!);
-    } else {
-      await initialize();
+    // Check if disposed before proceeding by catching any errors
+    try {
+      if (_currentBmr != null) {
+        await initializeWithBmr(_currentBmr!);
+      } else {
+        await initialize();
+      }
+    } catch (e) {
+      print('🔍 ActivityNotifier: Refresh failed (possibly disposed): $e');
+      // Don't throw error, just log it
     }
   }
 } 

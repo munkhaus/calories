@@ -4,15 +4,17 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/favorite_food_model.dart';
-import '../../domain/user_food_log_model.dart';
 import '../../infrastructure/favorite_food_service.dart';
-import '../../application/food_logging_notifier.dart';
 import '../../../activity/domain/favorite_activity_model.dart';
-import '../../../activity/domain/user_activity_log_model.dart';
 import '../../../activity/infrastructure/favorite_activity_service.dart';
-import '../../../activity/application/activity_notifier.dart';
+import '../../../dashboard/application/date_aware_providers.dart';
+import '../../application/food_logging_notifier.dart';
+import './food_favorite_detail_page.dart';
+import '../../../activity/presentation/pages/activity_favorite_detail_page.dart';
+import '../../domain/user_food_log_model.dart';
+import '../../../activity/domain/user_activity_log_model.dart';
 
-/// Quick page for selecting and logging favorites from FAB
+/// Page for quick selection and management of food and activity favorites
 class QuickFavoritesPage extends ConsumerStatefulWidget {
   final int initialTab;
   
@@ -25,23 +27,24 @@ class QuickFavoritesPage extends ConsumerStatefulWidget {
   ConsumerState<QuickFavoritesPage> createState() => _QuickFavoritesPageState();
 }
 
-class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with TickerProviderStateMixin {
+class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
+    with SingleTickerProviderStateMixin {
+  
+  late TabController _tabController;
   final FavoriteFoodService _foodService = FavoriteFoodService();
   final FavoriteActivityService _activityService = FavoriteActivityService();
-  late TabController _tabController;
   
   List<FavoriteFoodModel> _foodFavorites = [];
   List<FavoriteActivityModel> _activityFavorites = [];
   bool _isLoading = true;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(
-      length: 2, 
+      length: 2,
       vsync: this,
-      initialIndex: widget.initialTab.clamp(0, 1),
+      initialIndex: widget.initialTab,
     );
     _loadFavorites();
   }
@@ -55,29 +58,27 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
   Future<void> _loadFavorites() async {
     setState(() {
       _isLoading = true;
-      _error = null;
     });
 
     try {
       // Load food favorites
       final foodResult = await _foodService.getFavorites();
-      if (foodResult.isSuccess) {
+      if (foodResult.isSuccess && mounted) {
         _foodFavorites = foodResult.success;
       }
 
       // Load activity favorites
       final activityResult = await _activityService.getFavorites();
-      if (activityResult.isSuccess) {
+      if (activityResult.isSuccess && mounted) {
         _activityFavorites = activityResult.success;
       }
-
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
+      print('🔥 QuickFavoritesPage: Error loading favorites: $e');
+    }
+
+    if (mounted) {
       setState(() {
         _isLoading = false;
-        _error = 'Fejl ved indlæsning af favoritter';
       });
     }
   }
@@ -85,148 +86,73 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Hurtig Favoritter'),
+        title: const Text('Favoritter'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
-        titleTextStyle: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: KSizes.fontSizeXL,
-          fontWeight: KSizes.fontWeightBold,
-        ),
-        leading: IconButton(
-          icon: Icon(MdiIcons.close),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
         bottom: TabBar(
           controller: _tabController,
-          tabs: [
-            Tab(
-              icon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(MdiIcons.silverwareForkKnife),
-                  SizedBox(width: KSizes.margin1x),
-                  Text('Mad'),
-                  if (_foodFavorites.isNotEmpty) ...[
-                    SizedBox(width: KSizes.margin1x),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_foodFavorites.length}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            Tab(
-              icon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(MdiIcons.runFast),
-                  SizedBox(width: KSizes.margin1x),
-                  Text('Aktiviteter'),
-                  if (_activityFavorites.isNotEmpty) ...[
-                    SizedBox(width: KSizes.margin1x),
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${_activityFavorites.length}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+          indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textSecondary,
-          indicatorColor: AppColors.primary,
+          tabs: [
+            Tab(
+              icon: Icon(MdiIcons.silverwareForkKnife),
+              text: 'Mad',
+            ),
+            Tab(
+              icon: Icon(MdiIcons.runFast),
+              text: 'Aktivitet',
+            ),
+          ],
         ),
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Create new food favorite
+          FloatingActionButton(
+            heroTag: "food_fab",
+            onPressed: () => _createNewFoodFavorite(),
+            backgroundColor: AppColors.primary,
+            child: Icon(MdiIcons.plus),
+            tooltip: 'Ny mad favorit',
+          ),
+          SizedBox(height: KSizes.margin2x),
+          // Create new activity favorite
+          FloatingActionButton(
+            heroTag: "activity_fab",
+            onPressed: () => _createNewActivityFavorite(),
+            backgroundColor: AppColors.secondary,
+            child: Icon(MdiIcons.runFast),
+            tooltip: 'Ny aktivitet favorit',
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
         ),
         child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primary,
-                ),
-              )
-            : _error != null
-                ? _buildErrorState()
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildFoodFavoritesTab(),
-                      _buildActivityFavoritesTab(),
-                    ],
-                  ),
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin6x),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              MdiIcons.alertCircle,
-              size: 64,
-              color: AppColors.error,
-            ),
-            SizedBox(height: KSizes.margin4x),
-            Text(
-              _error!,
-              style: TextStyle(
-                fontSize: KSizes.fontSizeL,
-                color: AppColors.error,
-                fontWeight: KSizes.fontWeightBold,
+            ? const Center(child: CircularProgressIndicator())
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildFoodFavorites(),
+                  _buildActivityFavorites(),
+                ],
               ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: KSizes.margin4x),
-            ElevatedButton(
-              onPressed: _loadFavorites,
-              child: Text('Prøv igen'),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Widget _buildFoodFavoritesTab() {
+  Widget _buildFoodFavorites() {
     if (_foodFavorites.isEmpty) {
       return _buildEmptyState(
         icon: MdiIcons.silverwareForkKnife,
         title: 'Ingen mad-favoritter',
-        subtitle: 'Tilføj favoritter ved at markere måltider som favoritter når du kategoriserer dem',
+        subtitle: 'Tryk på + knappen for at oprette din første favorit',
         color: AppColors.primary,
       );
     }
@@ -236,17 +162,17 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
       itemCount: _foodFavorites.length,
       itemBuilder: (context, index) {
         final favorite = _foodFavorites[index];
-        return _buildFoodFavoriteQuickCard(favorite);
+        return _buildFoodFavoriteCard(favorite);
       },
     );
   }
 
-  Widget _buildActivityFavoritesTab() {
+  Widget _buildActivityFavorites() {
     if (_activityFavorites.isEmpty) {
       return _buildEmptyState(
         icon: MdiIcons.runFast,
         title: 'Ingen aktivitets-favoritter',
-        subtitle: 'Tilføj favoritter ved at markere aktiviteter som favoritter når du logger dem',
+        subtitle: 'Tryk på + knappen for at oprette din første favorit',
         color: AppColors.secondary,
       );
     }
@@ -256,7 +182,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
       itemCount: _activityFavorites.length,
       itemBuilder: (context, index) {
         final favorite = _activityFavorites[index];
-        return _buildActivityFavoriteQuickCard(favorite);
+        return _buildActivityFavoriteCard(favorite);
       },
     );
   }
@@ -311,11 +237,12 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
     );
   }
 
-  Widget _buildFoodFavoriteQuickCard(FavoriteFoodModel favorite) {
+  Widget _buildFoodFavoriteCard(FavoriteFoodModel favorite) {
     return Container(
       margin: const EdgeInsets.only(bottom: KSizes.margin3x),
       child: InkWell(
         onTap: () => _useFoodFavorite(favorite),
+        onLongPress: () => _editFoodFavorite(favorite),
         borderRadius: BorderRadius.circular(KSizes.radiusL),
         child: Container(
           padding: const EdgeInsets.all(KSizes.margin4x),
@@ -380,10 +307,23 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
                 ),
               ),
               
-              Icon(
-                MdiIcons.plus,
-                color: AppColors.primary,
-                size: KSizes.iconM,
+              Column(
+                children: [
+                  Icon(
+                    MdiIcons.plus,
+                    color: AppColors.primary,
+                    size: KSizes.iconM,
+                  ),
+                  SizedBox(height: KSizes.margin1x),
+                  Text(
+                    'Tryk: brug\nHold: rediger',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeXS,
+                      color: AppColors.textTertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ],
           ),
@@ -392,11 +332,12 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
     );
   }
 
-  Widget _buildActivityFavoriteQuickCard(FavoriteActivityModel favorite) {
+  Widget _buildActivityFavoriteCard(FavoriteActivityModel favorite) {
     return Container(
       margin: const EdgeInsets.only(bottom: KSizes.margin3x),
       child: InkWell(
         onTap: () => _useActivityFavorite(favorite),
+        onLongPress: () => _editActivityFavorite(favorite),
         borderRadius: BorderRadius.circular(KSizes.radiusL),
         child: Container(
           padding: const EdgeInsets.all(KSizes.margin4x),
@@ -461,10 +402,23 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
                 ),
               ),
               
-              Icon(
-                MdiIcons.plus,
-                color: AppColors.secondary,
-                size: KSizes.iconM,
+              Column(
+                children: [
+                  Icon(
+                    MdiIcons.plus,
+                    color: AppColors.secondary,
+                    size: KSizes.iconM,
+                  ),
+                  SizedBox(height: KSizes.margin1x),
+                  Text(
+                    'Tryk: brug\nHold: rediger',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeXS,
+                      color: AppColors.textTertiary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ],
           ),
@@ -473,11 +427,91 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
     );
   }
 
+  /// Navigate to create new food favorite
+  void _createNewFoodFavorite() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const FoodFavoriteDetailPage(),
+      ),
+    );
+    
+    if (result == true) {
+      _refreshFavorites();
+    }
+  }
+
+  /// Navigate to create new activity favorite
+  void _createNewActivityFavorite() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ActivityFavoriteDetailPage(),
+      ),
+    );
+    
+    if (result == true) {
+      _refreshFavorites();
+    }
+  }
+
+  /// Navigate to edit food favorite
+  void _editFoodFavorite(FavoriteFoodModel favorite) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FoodFavoriteDetailPage(existingFavorite: favorite),
+      ),
+    );
+    
+    if (result == true) {
+      _refreshFavorites();
+    }
+  }
+
+  /// Navigate to edit activity favorite
+  void _editActivityFavorite(FavoriteActivityModel favorite) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ActivityFavoriteDetailPage(existingFavorite: favorite),
+      ),
+    );
+    
+    if (result == true) {
+      _refreshFavorites();
+    }
+  }
+
+  /// Refresh favorites lists
+  void _refreshFavorites() {
+    _loadFavorites();
+  }
+
+  /// Use food favorite
   Future<void> _useFoodFavorite(FavoriteFoodModel favorite) async {
     try {
+      // Show immediate feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: KSizes.margin2x),
+              Expanded(child: Text('Tilføjer ${favorite.foodName}...')),
+            ],
+          ),
+          backgroundColor: AppColors.primary,
+          duration: Duration(seconds: 1),
+        ),
+      );
+
       // Convert favorite to UserFoodLogModel and log directly
       final foodLog = UserFoodLogModel(
-        userId: 1, // TODO: Get real user ID
+        userId: 1,
         foodName: favorite.foodName,
         mealType: favorite.mealType,
         quantity: favorite.quantity,
@@ -492,11 +526,14 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
       // Log the food
       await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
 
-      // Update favorite usage
+      // Update favorite usage in background
       final updatedFavorite = favorite.withUpdatedUsage();
-      await _foodService.updateFavorite(updatedFavorite);
+      _foodService.updateFavorite(updatedFavorite);
 
       if (mounted) {
+        // Clear any existing snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -507,21 +544,20 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
               ],
             ),
             backgroundColor: AppColors.success,
-            action: SnackBarAction(
-              label: 'Luk',
-              textColor: Colors.white,
-              onPressed: () => Navigator.of(context).pop(),
-            ),
+            duration: Duration(milliseconds: 1500),
           ),
         );
         
-        // Close the page after successful logging
-        Future.delayed(Duration(seconds: 2), () {
-          if (mounted) Navigator.of(context).pop();
+        // Navigate back after a short delay
+        Future.delayed(Duration(milliseconds: 800), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
         });
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fejl ved tilføjelse af måltid: $e'),
@@ -532,59 +568,80 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
     }
   }
 
+  /// Use activity favorite
   Future<void> _useActivityFavorite(FavoriteActivityModel favorite) async {
     try {
-      // Convert favorite to UserActivityLogModel and log directly
-      final activityLog = favorite.toUserActivityLog();
-
-      // Create an ActivityNotifier instance to log the activity
-      final activityNotifier = ActivityNotifier();
-      final success = await activityNotifier.logActivity(activityLog);
-
-      if (success) {
-        // Update favorite usage
-        final updatedFavorite = favorite.withUpdatedUsage();
-        await _activityService.updateFavorite(updatedFavorite);
-
-        // Refresh all ActivityNotifier instances globally
-        await ActivityNotifier.refreshAllInstances();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(MdiIcons.check, color: Colors.white),
-                  SizedBox(width: KSizes.margin2x),
-                  Expanded(child: Text('${favorite.activityName} er tilføjet som aktivitet!')),
-                ],
+      // Show immediate feedback
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
               ),
-              backgroundColor: AppColors.success,
-              action: SnackBarAction(
-                label: 'Luk',
-                textColor: Colors.white,
-                onPressed: () => Navigator.of(context).pop(),
-              ),
+              SizedBox(width: KSizes.margin2x),
+              Expanded(child: Text('Tilføjer ${favorite.activityName}...')),
+            ],
+          ),
+          backgroundColor: AppColors.secondary,
+          duration: Duration(seconds: 1),
+        ),
+      );
+
+      // Convert favorite to UserActivityLogModel
+      final activityLog = UserActivityLogModel(
+        userId: 1,
+        activityName: favorite.activityName,
+        inputType: favorite.inputType,
+        durationMinutes: favorite.durationMinutes,
+        distanceKm: favorite.distanceKm,
+        intensity: favorite.intensity,
+        caloriesBurned: favorite.caloriesBurned,
+        loggedAt: DateTime.now().toIso8601String(),
+        notes: favorite.notes,
+      );
+
+      // Create ActivityNotifier and log activity
+      final activityNotifier = ref.read(activityNotifierProvider);
+      await activityNotifier.logActivity(activityLog);
+
+      // Update favorite usage in background
+      final updatedFavorite = favorite.withUpdatedUsage();
+      _activityService.updateFavorite(updatedFavorite);
+
+      if (mounted) {
+        // Clear any existing snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(child: Text('${favorite.activityName} er tilføjet som aktivitet!')),
+              ],
             ),
-          );
-          
-          // Close the page after successful logging
-          Future.delayed(Duration(seconds: 2), () {
-            if (mounted) Navigator.of(context).pop();
-          });
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Kunne ikke tilføje aktivitet'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+            backgroundColor: AppColors.success,
+            duration: Duration(milliseconds: 1500),
+          ),
+        );
+        
+        // Navigate back after a short delay
+        Future.delayed(Duration(milliseconds: 800), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fejl ved tilføjelse af aktivitet: $e'),
@@ -597,6 +654,8 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
 
   String _getMealTypeDisplayName(MealType mealType) {
     switch (mealType) {
+      case MealType.none:
+        return 'Ingen kategori';
       case MealType.morgenmad:
         return 'Morgenmad';
       case MealType.frokost:
@@ -605,8 +664,6 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
         return 'Aftensmad';
       case MealType.snack:
         return 'Snack';
-      default:
-        return 'Ukendt';
     }
   }
 
@@ -622,11 +679,10 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> with Ti
   }
 
   String _getActivityDurationText(FavoriteActivityModel favorite) {
-    if (favorite.inputType == ActivityInputType.varighed && favorite.durationMinutes > 0) {
-      return '${favorite.durationMinutes.round()} minutter';
-    } else if (favorite.inputType == ActivityInputType.distance && favorite.distanceKm > 0) {
+    if (favorite.inputType == ActivityInputType.varighed) {
+      return '${favorite.durationMinutes.toInt()} minutter';
+    } else {
       return '${favorite.distanceKm} km';
     }
-    return 'Ingen specifik varighed';
   }
 } 

@@ -448,7 +448,7 @@ class ProfilePage extends ConsumerWidget {
               title: 'Rediger profil',
               subtitle: 'Opdater personlige oplysninger og mål',
               icon: MdiIcons.pencil,
-              onTap: () => _navigateToOnboarding(context, ref),
+              onTap: () => _editProfile(context, ref),
             ),
           
           ProfileOptionCard(
@@ -546,6 +546,19 @@ class ProfilePage extends ConsumerWidget {
         return 'Tag på i vægt';
       case GoalType.muscleGain:
         return 'Byg muskler';
+    }
+  }
+
+  void _editProfile(BuildContext context, WidgetRef ref) async {
+    // Restart onboarding flow to start from the beginning
+    await ref.read(onboardingProvider.notifier).restartOnboardingFlow();
+    
+    if (context.mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const OnboardingPage(),
+        ),
+      );
     }
   }
 
