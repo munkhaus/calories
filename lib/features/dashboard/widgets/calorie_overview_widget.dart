@@ -17,291 +17,398 @@ class CalorieOverviewWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
-    final selectedDate = ref.watch(selectedDateProvider);
     final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
     
-    // For now we'll use existing providers, but these should be updated to work with selected date
-    final consumedCalories = ref.watch(totalCaloriesProvider);
+    // Get calorie data
+    final baseCalories = userProfile.tdee > 0 ? userProfile.tdee : 2000.0;
     final activityCaloriesAsync = ref.watch(activityCaloriesProvider);
-
-    // Calculate target calories based on user profile
-    final targetCalories = _calculateTargetCalories(userProfile);
-    
-    // Get activity calories safely
     final activityCalories = activityCaloriesAsync.when(
       data: (calories) => calories.toDouble(),
       loading: () => 0.0,
       error: (error, stack) => 0.0,
     );
+    final totalAvailableCalories = baseCalories + activityCalories;
     
-    // Calculate TDEE calories burned so far today
-    final tdeeCalories = _calculateBmrCalories(userProfile);
+    // Get consumed calories
+    final consumedCalories = ref.watch(totalCaloriesProvider);
     
-    // Calculate remaining calories = target goal + extra activity calories - consumed calories
-    // This shows how much you have left to eat considering your goal plus extra calories earned from activities
-    final remainingCalories = targetCalories + activityCalories - consumedCalories;
+    // Calculate remaining calories and progress
+    final remainingCalories = totalAvailableCalories - consumedCalories;
+    final progress = consumedCalories / totalAvailableCalories;
+    final displayProgress = progress.clamp(0.0, 1.2); // Allow overflow visualization
+    final hasExceededGoal = consumedCalories > totalAvailableCalories;
     
-    // Calculate total available calories (target + activity)
-    final totalAvailableCalories = targetCalories + activityCalories;
-    
-    // Calculate progress based on total available calories
-    final progress = totalAvailableCalories > 0 ? (consumedCalories / totalAvailableCalories) : 0.0;
-    final displayProgress = progress.clamp(0.0, 1.0);
-    
-    final hasExceededGoal = remainingCalories < 0;
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.white.withOpacity(0.95),
+          ],
+        ),
         borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
+            blurRadius: KSizes.blurRadiusXL,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.8),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Header with title, date selector and info icon
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.fire,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Dagens kalorier 🔥',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    // Date selector button
-                    GestureDetector(
-                      onTap: () => _showDatePicker(context, ref),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: KSizes.margin2x,
-                          vertical: KSizes.margin1x,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(KSizes.radiusS),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              MdiIcons.calendar,
-                              size: KSizes.iconXS,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: KSizes.margin1x),
-                            Text(
-                              selectedDateNotifier.formattedDate,
-                              style: TextStyle(
-                                fontSize: KSizes.fontSizeM,
-                                color: AppColors.primary,
-                                fontWeight: KSizes.fontWeightMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Navigation arrows
-              Row(
-                children: [
-                  GestureDetector(
-                    onTap: selectedDateNotifier.previousDay,
-                    child: Container(
-                      padding: const EdgeInsets.all(KSizes.margin1x),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(KSizes.radiusS),
-                      ),
-                      child: Icon(
-                        MdiIcons.chevronLeft,
-                        size: KSizes.iconS,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: KSizes.margin1x),
-                  GestureDetector(
-                    onTap: selectedDateNotifier.nextDay,
-                    child: Container(
-                      padding: const EdgeInsets.all(KSizes.margin1x),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(KSizes.radiusS),
-                      ),
-                      child: Icon(
-                        MdiIcons.chevronRight,
-                        size: KSizes.iconS,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: KSizes.margin2x),
-              GestureDetector(
-                onTap: () => _showCalorieDetails(context, userProfile),
-                child: Container(
-                  padding: const EdgeInsets.all(KSizes.margin2x),
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
+        child: Column(
+          children: [
+            // Header section with improved typography
+            Row(
+              children: [
+                // Modern icon container
+                Container(
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.secondary,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: KSizes.blurRadiusL,
+                        offset: KSizes.shadowOffsetM,
+                      ),
+                    ],
                   ),
                   child: Icon(
-                    MdiIcons.informationOutline,
-                    size: KSizes.iconS,
-                    color: AppColors.textSecondary,
+                    MdiIcons.fire,
+                    color: Colors.white,
+                    size: KSizes.iconL,
                   ),
                 ),
-              ),
-            ],
-          ),
-          
-          SizedBox(height: KSizes.margin6x),
-          
-          // Enhanced circular progress indicator
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                width: 160,
-                height: 160,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      AppColors.primary.withOpacity(0.1),
-                      AppColors.secondary.withOpacity(0.1),
+                
+                const SizedBox(width: KSizes.margin4x),
+                
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Main title with better typography
+                      Text(
+                        'Dagens kalorier',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeXXL,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      
+                      const SizedBox(height: KSizes.margin1x),
+                      
+                      // Date selector with modern design
+                      GestureDetector(
+                        onTap: () => _showDatePicker(context, ref),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: KSizes.margin3x,
+                            vertical: KSizes.margin2x,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(KSizes.radiusL),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                MdiIcons.calendar,
+                                size: KSizes.iconS,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: KSizes.margin2x),
+                              Text(
+                                selectedDateNotifier.formattedDate,
+                                style: TextStyle(
+                                  fontSize: KSizes.fontSizeM,
+                                  color: AppColors.primary,
+                                  fontWeight: KSizes.fontWeightSemiBold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
-              ),
-              SizedBox(
-                width: 140,
-                height: 140,
-                child: CircularProgressIndicator(
-                  value: displayProgress,
-                  strokeWidth: 8,
-                  backgroundColor: AppColors.surface.withOpacity(0.3),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    displayProgress >= 1.0 
-                        ? AppColors.error 
-                        : displayProgress >= 0.8 
-                            ? AppColors.warning 
-                            : AppColors.primary,
+                
+                // Navigation and info controls with modern design
+                Row(
+                  children: [
+                    _buildControlButton(
+                      icon: MdiIcons.chevronLeft,
+                      onTap: selectedDateNotifier.previousDay,
+                    ),
+                    const SizedBox(width: KSizes.margin1x),
+                    _buildControlButton(
+                      icon: MdiIcons.chevronRight,
+                      onTap: selectedDateNotifier.nextDay,
+                    ),
+                    const SizedBox(width: KSizes.margin2x),
+                    _buildControlButton(
+                      icon: MdiIcons.informationOutline,
+                      onTap: () => _showCalorieDetails(context, userProfile),
+                      isPrimary: true,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin8x),
+            
+            // Enhanced circular progress with modern design
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                // Background circle with gradient
+                Container(
+                  width: 180,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.primary.withOpacity(0.05),
+                        AppColors.secondary.withOpacity(0.05),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${consumedCalories.toInt()}',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeXXL,
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
+                
+                // Progress indicator with dynamic colors
+                SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: CircularProgressIndicator(
+                    value: displayProgress,
+                    strokeWidth: 12,
+                    backgroundColor: AppColors.surface.withOpacity(0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      _getProgressColor(displayProgress),
                     ),
+                    strokeCap: StrokeCap.round,
                   ),
-                  Text(
-                    'af ${totalAvailableCalories.toInt()} kcal',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeS,
-                      color: AppColors.textSecondary,
-                      fontWeight: KSizes.fontWeightMedium,
+                ),
+                
+                // Center content with improved typography
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${consumedCalories.toInt()}',
+                      style: TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                        letterSpacing: -1,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: KSizes.margin1x),
-                  Text(
-                    hasExceededGoal ? 'Overskudt!' : '${(displayProgress * 100).toInt()}% af målet',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeXS,
-                      color: hasExceededGoal ? AppColors.error : AppColors.primary,
-                      fontWeight: KSizes.fontWeightMedium,
+                    Text(
+                      'af ${totalAvailableCalories.toInt()} kcal',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                        fontWeight: KSizes.fontWeightMedium,
+                      ),
                     ),
+                    SizedBox(height: KSizes.margin2x),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: KSizes.margin3x,
+                        vertical: KSizes.margin1x,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _getProgressColor(displayProgress).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(KSizes.radiusL),
+                      ),
+                      child: Text(
+                        hasExceededGoal 
+                            ? 'Overskudt!' 
+                            : '${(displayProgress * 100).toInt()}% af målet',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: _getProgressColor(displayProgress),
+                          fontWeight: KSizes.fontWeightSemiBold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin8x),
+            
+            // Modern stats cards
+            Row(
+              children: [
+                Expanded(
+                  child: _buildModernStatCard(
+                    label: 'Tilbage',
+                    value: hasExceededGoal 
+                        ? '+${(-remainingCalories).toInt()}'
+                        : '${remainingCalories.toInt()}',
+                    color: hasExceededGoal ? AppColors.error : AppColors.success,
+                    icon: hasExceededGoal ? MdiIcons.trendingUp : MdiIcons.target,
                   ),
-                ],
-              ),
-            ],
+                ),
+                
+                SizedBox(width: KSizes.margin4x),
+                
+                Expanded(
+                  child: _buildModernStatCard(
+                    label: 'Aktivitet',
+                    value: '+${activityCalories.toInt()}',
+                    color: AppColors.secondary,
+                    icon: MdiIcons.runFast,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isPrimary = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: isPrimary 
+              ? LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                )
+              : null,
+          color: isPrimary ? null : AppColors.surface.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+          border: Border.all(
+            color: isPrimary 
+                ? Colors.transparent 
+                : AppColors.border.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: isPrimary ? [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          size: KSizes.iconS,
+          color: isPrimary ? Colors.white : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernStatCard({
+    required String label,
+    required String value,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            color.withOpacity(0.1),
+            color.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(
+          color: color.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin2x),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(KSizes.radiusS),
+            ),
+            child: Icon(
+              icon,
+              color: Colors.white,
+              size: KSizes.iconS,
+            ),
           ),
           
-          SizedBox(height: KSizes.margin6x),
+          SizedBox(height: KSizes.margin3x),
           
-          // Stats row with proper spacing
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  label: 'Tilbage',
-                  value: hasExceededGoal 
-                      ? '+${(-remainingCalories).toInt()}'
-                      : '${remainingCalories.toInt()}',
-                  color: hasExceededGoal ? AppColors.error : AppColors.success,
-                ),
-              ),
-              SizedBox(width: KSizes.margin3x),
-              Expanded(
-                child: _StatCard(
-                  label: 'Spist',
-                  value: '${consumedCalories.toInt()}',
-                  color: AppColors.primary,
-                ),
-              ),
-              SizedBox(width: KSizes.margin3x),
-              Expanded(
-                child: _StatCard(
-                  label: 'Aktivitet',
-                  value: '${activityCalories.toInt()}',
-                  color: AppColors.info,
-                ),
-              ),
-            ],
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeXL,
+              fontWeight: KSizes.fontWeightBold,
+              color: color,
+            ),
+          ),
+          
+          SizedBox(height: KSizes.margin1x),
+          
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeS,
+              color: AppColors.textSecondary,
+              fontWeight: KSizes.fontWeightMedium,
+            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
+  }
+
+  Color _getProgressColor(double progress) {
+    if (progress >= 1.0) return AppColors.error;
+    if (progress >= 0.8) return AppColors.warning; 
+    return AppColors.primary;
   }
 
   void _showDatePicker(BuildContext context, WidgetRef ref) async {
@@ -329,104 +436,6 @@ class CalorieOverviewWidget extends ConsumerWidget {
     if (pickedDate != null) {
       selectedDateNotifier.selectDate(pickedDate);
     }
-  }
-
-  double _calculateTargetCalories(UserProfileModel profile) {
-    // Use the pre-calculated target calories from user profile
-    // This is already calculated during onboarding with proper goal adjustments
-    return profile.targetCalories.toDouble();
-  }
-  
-  double _calculateBmrCalories(UserProfileModel profile) {
-    if (profile.dateOfBirth == null || 
-        profile.heightCm <= 0 || 
-        profile.currentWeightKg <= 0 ||
-        profile.gender == null) {
-      return 0.0;
-    }
-
-    // Calculate age from date of birth
-    final now = DateTime.now();
-    final birthDate = profile.dateOfBirth!;
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || 
-        (now.month == birthDate.month && now.day < birthDate.day)) {
-      age--;
-    }
-
-    // Mifflin-St Jeor Equation for BMR (daily rate)
-    double dailyBmr;
-    if (profile.gender == Gender.male) {
-      dailyBmr = (10 * profile.currentWeightKg) + 
-                 (6.25 * profile.heightCm) - 
-                 (5 * age) + 5;
-    } else {
-      dailyBmr = (10 * profile.currentWeightKg) + 
-                 (6.25 * profile.heightCm) - 
-                 (5 * age) - 161;
-    }
-
-    double dailyTdee;
-    
-    // Use new activity system if available, otherwise fall back to legacy
-    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
-      // Calculate work activity multiplier based on current day
-      double workMultiplier = 1.2; // Default sedentary baseline
-      
-      // Determine if today is a work day
-      final isWorkDay = profile.useAutomaticWeekdayDetection 
-          ? (now.weekday >= 1 && now.weekday <= 5)
-          : profile.isCurrentlyWorkDay;
-      
-      if (isWorkDay) {
-        workMultiplier = switch (profile.workActivityLevel!) {
-          WorkActivityLevel.sedentary => 1.2,
-          WorkActivityLevel.light => 1.375,
-          WorkActivityLevel.moderate => 1.55,
-          WorkActivityLevel.heavy => 1.725,
-          WorkActivityLevel.veryHeavy => 1.9,
-        };
-      }
-      
-      // Calculate leisure activity addition - only if NOT manual tracking
-      double leisureAddition = 0.0;
-      if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
-          profile.isLeisureActivityEnabledToday) {
-        leisureAddition = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 0.0,
-          LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
-          LeisureActivityLevel.moderatelyActive => 0.35, // ~350 calories
-          LeisureActivityLevel.veryActive => 0.525, // ~525 calories
-          LeisureActivityLevel.extraActive => 0.7, // ~700 calories
-        };
-      }
-      
-      dailyTdee = (dailyBmr * workMultiplier) + (dailyBmr * leisureAddition);
-    } else {
-      // Fall back to legacy activity level system
-      if (profile.activityLevel == null) {
-        return 0.0;
-      }
-      
-      final activityMultiplier = switch (profile.activityLevel!) {
-        ActivityLevel.sedentary => 1.2,
-        ActivityLevel.lightlyActive => 1.375,
-        ActivityLevel.moderatelyActive => 1.55,
-        ActivityLevel.veryActive => 1.725,
-        ActivityLevel.extraActive => 1.9,
-      };
-      
-      dailyTdee = dailyBmr * activityMultiplier;
-    }
-
-    // Calculate TDEE calories burned based on time of day
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final minutesSinceStartOfDay = now.difference(startOfDay).inMinutes;
-    final percentOfDayPassed = minutesSinceStartOfDay / (24 * 60);
-    
-    final tdeeCalories = (dailyTdee * percentOfDayPassed);
-
-    return tdeeCalories;
   }
 
   void _showCalorieDetails(BuildContext context, UserProfileModel userProfile) {
@@ -574,54 +583,103 @@ class CalorieOverviewWidget extends ConsumerWidget {
       return 'Manuel indstilling';
     }
   }
-}
 
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+  double _calculateTargetCalories(UserProfileModel profile) {
+    // Use the pre-calculated target calories from user profile
+    // This is already calculated during onboarding with proper goal adjustments
+    return profile.targetCalories.toDouble();
+  }
+  
+  double _calculateBmrCalories(UserProfileModel profile) {
+    if (profile.dateOfBirth == null || 
+        profile.heightCm <= 0 || 
+        profile.currentWeightKg <= 0 ||
+        profile.gender == null) {
+      return 0.0;
+    }
 
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+    // Calculate age from date of birth
+    final now = DateTime.now();
+    final birthDate = profile.dateOfBirth!;
+    int age = now.year - birthDate.year;
+    if (now.month < birthDate.month || 
+        (now.month == birthDate.month && now.day < birthDate.day)) {
+      age--;
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(KSizes.margin3x),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeL,
-              fontWeight: KSizes.fontWeightBold,
-              color: color,
-            ),
-          ),
-          SizedBox(height: KSizes.margin1x),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeXS,
-              color: AppColors.textSecondary,
-              fontWeight: KSizes.fontWeightMedium,
-            ),
-          ),
-        ],
-      ),
-    );
+    // Mifflin-St Jeor Equation for BMR (daily rate)
+    double dailyBmr;
+    if (profile.gender == Gender.male) {
+      dailyBmr = (10 * profile.currentWeightKg) + 
+                 (6.25 * profile.heightCm) - 
+                 (5 * age) + 5;
+    } else {
+      dailyBmr = (10 * profile.currentWeightKg) + 
+                 (6.25 * profile.heightCm) - 
+                 (5 * age) - 161;
+    }
+
+    double dailyTdee;
+    
+    // Use new activity system if available, otherwise fall back to legacy
+    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
+      // Calculate work activity multiplier based on current day
+      double workMultiplier = 1.2; // Default sedentary baseline
+      
+      // Determine if today is a work day
+      final isWorkDay = profile.useAutomaticWeekdayDetection 
+          ? (now.weekday >= 1 && now.weekday <= 5)
+          : profile.isCurrentlyWorkDay;
+      
+      if (isWorkDay) {
+        workMultiplier = switch (profile.workActivityLevel!) {
+          WorkActivityLevel.sedentary => 1.2,
+          WorkActivityLevel.light => 1.375,
+          WorkActivityLevel.moderate => 1.55,
+          WorkActivityLevel.heavy => 1.725,
+          WorkActivityLevel.veryHeavy => 1.9,
+        };
+      }
+      
+      // Calculate leisure activity addition - only if NOT manual tracking
+      double leisureAddition = 0.0;
+      if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
+          profile.isLeisureActivityEnabledToday) {
+        leisureAddition = switch (profile.leisureActivityLevel!) {
+          LeisureActivityLevel.sedentary => 0.0,
+          LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
+          LeisureActivityLevel.moderatelyActive => 0.35, // ~350 calories
+          LeisureActivityLevel.veryActive => 0.525, // ~525 calories
+          LeisureActivityLevel.extraActive => 0.7, // ~700 calories
+        };
+      }
+      
+      dailyTdee = (dailyBmr * workMultiplier) + (dailyBmr * leisureAddition);
+    } else {
+      // Fall back to legacy activity level system
+      if (profile.activityLevel == null) {
+        return 0.0;
+      }
+      
+      final activityMultiplier = switch (profile.activityLevel!) {
+        ActivityLevel.sedentary => 1.2,
+        ActivityLevel.lightlyActive => 1.375,
+        ActivityLevel.moderatelyActive => 1.55,
+        ActivityLevel.veryActive => 1.725,
+        ActivityLevel.extraActive => 1.9,
+      };
+      
+      dailyTdee = dailyBmr * activityMultiplier;
+    }
+
+    // Calculate TDEE calories burned based on time of day
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final minutesSinceStartOfDay = now.difference(startOfDay).inMinutes;
+    final percentOfDayPassed = minutesSinceStartOfDay / (24 * 60);
+    
+    final tdeeCalories = (dailyTdee * percentOfDayPassed);
+
+    return tdeeCalories;
   }
 }
 

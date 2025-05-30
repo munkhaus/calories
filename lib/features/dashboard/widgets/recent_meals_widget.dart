@@ -73,142 +73,221 @@ class RecentMealsWidget extends ConsumerWidget {
   Widget _buildMealsCard(BuildContext context, WidgetRef ref, List<UserFoodLogModel> meals) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.white.withOpacity(0.95),
+          ],
+        ),
         borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
             color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
+            blurRadius: KSizes.blurRadiusXL,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.8),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Modern header
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary,
+                        AppColors.secondary,
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: KSizes.blurRadiusL,
+                        offset: KSizes.shadowOffsetM,
+                      ),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.silverwareForkKnife,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Dagens måltider 🍽️',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      meals.isEmpty 
-                          ? 'Ingen måltider endnu'
-                          : '${meals.length} ${meals.length == 1 ? 'måltid' : 'måltider'} logget',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () => ref.read(foodLoggingProvider.notifier).refresh(),
-                child: Container(
-                  padding: const EdgeInsets.all(KSizes.margin2x),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
                   child: Icon(
-                    MdiIcons.refresh,
-                    color: AppColors.primary,
-                    size: KSizes.iconS,
+                    MdiIcons.silverwareForkKnife,
+                    color: Colors.white,
+                    size: KSizes.iconL,
                   ),
                 ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Meals list
-          if (meals.isEmpty)
-            _buildEmptyState(context)
-          else
-            Column(
-              children: [
-                Column(
-                  children: meals
-                      .take(3) // Show only first 3 meals
-                      .map((meal) => _buildMealCard(context, ref, meal))
-                      .toList(),
+                const SizedBox(width: KSizes.margin4x),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Dagens måltider',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeXXL,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: KSizes.margin1x),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KSizes.margin3x,
+                          vertical: KSizes.margin1x,
+                        ),
+                        decoration: BoxDecoration(
+                          color: meals.isEmpty 
+                              ? AppColors.textTertiary.withOpacity(0.1)
+                              : AppColors.success.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
+                          border: Border.all(
+                            color: meals.isEmpty 
+                                ? AppColors.textTertiary.withOpacity(0.2)
+                                : AppColors.success.withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          meals.isEmpty 
+                              ? 'Ingen måltider endnu'
+                              : '${meals.length} ${meals.length == 1 ? 'måltid' : 'måltider'} logget',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeS,
+                            color: meals.isEmpty 
+                                ? AppColors.textTertiary
+                                : AppColors.success,
+                            fontWeight: KSizes.fontWeightSemiBold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                
-                const SizedBox(height: KSizes.margin3x),
-                
-                // Summary footer
-                _buildSummaryFooter(context, meals),
+                _buildControlButton(
+                  icon: MdiIcons.refresh,
+                  onTap: () => ref.read(foodLoggingProvider.notifier).refresh(),
+                ),
               ],
             ),
-        ],
+            
+            SizedBox(height: KSizes.margin8x),
+            
+            // Meals content
+            if (meals.isEmpty)
+              _buildEmptyState(context)
+            else
+              Column(
+                children: [
+                  Column(
+                    children: meals
+                        .take(3) // Show only first 3 meals
+                        .map((meal) => _buildModernMealCard(context, ref, meal))
+                        .toList(),
+                  ),
+                  
+                  SizedBox(height: KSizes.margin6x),
+                  
+                  // Modern summary footer
+                  _buildModernSummaryFooter(context, meals),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isPrimary = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          gradient: isPrimary 
+              ? LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                )
+              : null,
+          color: isPrimary ? null : AppColors.surface.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+          border: Border.all(
+            color: isPrimary 
+                ? Colors.transparent 
+                : AppColors.border.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: isPrimary ? [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ] : null,
+        ),
+        child: Icon(
+          icon,
+          size: KSizes.iconS,
+          color: isPrimary ? Colors.white : AppColors.primary,
+        ),
       ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(KSizes.margin6x),
+      padding: const EdgeInsets.all(KSizes.margin8x),
       child: Column(
         children: [
-          Icon(
-            MdiIcons.foodOff,
-            size: 48,
-            color: AppColors.textTertiary,
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppColors.textTertiary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              MdiIcons.foodOff,
+              size: 40,
+              color: AppColors.textTertiary,
+            ),
           ),
-          const SizedBox(height: KSizes.margin3x),
+          const SizedBox(height: KSizes.margin4x),
           Text(
             'Ingen måltider logget endnu',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: TextStyle(
+              fontSize: KSizes.fontSizeL,
+              fontWeight: KSizes.fontWeightBold,
               color: AppColors.textSecondary,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: KSizes.margin1x),
+          const SizedBox(height: KSizes.margin2x),
           Text(
-            'Start med at logge dit første måltid!',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            'Start med at logge dit første måltid for at se fremgang her!',
+            style: TextStyle(
+              fontSize: KSizes.fontSizeM,
               color: AppColors.textTertiary,
+              height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
@@ -217,16 +296,18 @@ class RecentMealsWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildMealCard(BuildContext context, WidgetRef ref, UserFoodLogModel meal) {
+  Widget _buildModernMealCard(BuildContext context, WidgetRef ref, UserFoodLogModel meal) {
     return Dismissible(
       key: Key('meal_${meal.logEntryId}'),
       direction: DismissDirection.endToStart,
       background: Container(
         margin: const EdgeInsets.only(bottom: KSizes.margin3x),
-        padding: const EdgeInsets.all(KSizes.margin3x),
+        padding: const EdgeInsets.all(KSizes.margin4x),
         decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(KSizes.radiusM),
+          gradient: LinearGradient(
+            colors: [AppColors.error.withOpacity(0.8), AppColors.error],
+          ),
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
         ),
         alignment: Alignment.centerRight,
         child: Row(
@@ -242,7 +323,8 @@ class RecentMealsWidget extends ConsumerWidget {
               'Slet',
               style: TextStyle(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
+                fontSize: KSizes.fontSizeM,
+                fontWeight: KSizes.fontWeightBold,
               ),
             ),
           ],
@@ -256,147 +338,220 @@ class RecentMealsWidget extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${meal.foodName} er slettet'),
-            backgroundColor: AppColors.error,
+            backgroundColor: AppColors.success,
             action: SnackBarAction(
               label: 'Fortryd',
               textColor: Colors.white,
               onPressed: () {
-                // Re-add the meal (in real app this would be an undo operation)
                 ref.read(foodLoggingProvider.notifier).logFood(meal);
               },
             ),
           ),
         );
       },
-      child: GestureDetector(
-        onLongPress: () => _showMealOptionsMenu(context, ref, meal),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: KSizes.margin3x),
-          padding: const EdgeInsets.all(KSizes.margin3x),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(
-              color: AppColors.border.withOpacity(0.5),
-              width: 1,
-            ),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _getMealColor(meal.mealType).withOpacity(0.05),
+              _getMealColor(meal.mealType).withOpacity(0.02),
+            ],
           ),
-          child: Row(
-            children: [
-              // Meal type icon
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: _getMealTypeColor(meal.mealType).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  _getMealTypeIcon(meal.mealType),
-                  color: _getMealTypeColor(meal.mealType),
-                  size: KSizes.iconS,
-                ),
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          border: Border.all(
+            color: _getMealColor(meal.mealType).withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Meal type icon
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: _getMealColor(meal.mealType),
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
               ),
-              
-              const SizedBox(width: KSizes.margin3x),
-              
-              // Food info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      meal.foodName,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: KSizes.fontWeightMedium,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        Text(
-                          meal.mealType.mealTypeDisplayName,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '•',
-                          style: TextStyle(color: AppColors.textTertiary),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${meal.quantity.toStringAsFixed(meal.quantity % 1 == 0 ? 0 : 1)} ${meal.servingUnit}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+              child: Icon(
+                _getMealIcon(meal.mealType),
+                color: Colors.white,
+                size: KSizes.iconM,
               ),
-              
-              // Calories and actions
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            ),
+            
+            const SizedBox(width: KSizes.margin4x),
+            
+            // Meal info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${meal.calories}',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.primary,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          meal.foodName,
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeM,
+                            fontWeight: KSizes.fontWeightSemiBold,
+                            color: AppColors.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KSizes.margin2x,
+                          vertical: KSizes.margin1x,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getMealColor(meal.mealType),
+                          borderRadius: BorderRadius.circular(KSizes.radiusS),
+                        ),
+                        child: Text(
+                          '${meal.calories} kcal',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeXS,
+                            fontWeight: KSizes.fontWeightBold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'kcal',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  
+                  const SizedBox(height: KSizes.margin1x),
+                  
+                  Row(
+                    children: [
+                      Text(
+                        meal.mealType.mealTypeDisplayName,
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: _getMealColor(meal.mealType),
+                          fontWeight: KSizes.fontWeightMedium,
+                        ),
+                      ),
+                      Text(
+                        ' • ${meal.quantity} ${meal.servingUnit}',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              
-              const SizedBox(width: KSizes.margin2x),
-              
-              // Options button
-              IconButton(
-                onPressed: () => _showMealOptionsMenu(context, ref, meal),
-                icon: Icon(
-                  MdiIcons.dotsVertical,
-                  color: AppColors.textTertiary,
-                  size: KSizes.iconS,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: KSizes.iconM,
-                  minHeight: KSizes.iconM,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  IconData _getMealTypeIcon(MealType mealType) {
-    switch (mealType) {
-      case MealType.morgenmad:
-        return MdiIcons.weatherSunny;
-      case MealType.frokost:
-        return MdiIcons.sunCompass;
-      case MealType.aftensmad:
-        return MdiIcons.weatherNight;
-      case MealType.snack:
-        return MdiIcons.star;
-    }
+  Widget _buildModernSummaryFooter(BuildContext context, List<UserFoodLogModel> meals) {
+    final totalCalories = meals.fold(0, (sum, meal) => sum + meal.calories);
+    final totalProtein = meals.fold(0.0, (sum, meal) => sum + meal.protein);
+    
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary.withOpacity(0.05),
+            AppColors.secondary.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildSummaryItem(
+              'Total kalorier',
+              '$totalCalories kcal',
+              MdiIcons.fire,
+              AppColors.primary,
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 40,
+            color: AppColors.border.withOpacity(0.3),
+          ),
+          Expanded(
+            child: _buildSummaryItem(
+              'Protein',
+              '${totalProtein.toStringAsFixed(1)}g',
+              MdiIcons.dumbbell,
+              AppColors.secondary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Color _getMealTypeColor(MealType mealType) {
+  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: KSizes.margin3x),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin1x),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: KSizes.iconXS,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin2x),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeL,
+                  fontWeight: KSizes.fontWeightBold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: KSizes.margin1x),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeXS,
+              color: AppColors.textSecondary,
+              fontWeight: KSizes.fontWeightMedium,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getMealColor(MealType mealType) {
     switch (mealType) {
       case MealType.morgenmad:
         return AppColors.warning;
@@ -406,6 +561,23 @@ class RecentMealsWidget extends ConsumerWidget {
         return AppColors.secondary;
       case MealType.snack:
         return AppColors.info;
+      default:
+        return AppColors.primary;
+    }
+  }
+
+  IconData _getMealIcon(MealType mealType) {
+    switch (mealType) {
+      case MealType.morgenmad:
+        return MdiIcons.weatherSunny;
+      case MealType.frokost:
+        return MdiIcons.weatherPartlyCloudy;
+      case MealType.aftensmad:
+        return MdiIcons.weatherNight;
+      case MealType.snack:
+        return MdiIcons.cookie;
+      default:
+        return MdiIcons.silverwareForkKnife;
     }
   }
 
@@ -515,51 +687,6 @@ class RecentMealsWidget extends ConsumerWidget {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildSummaryFooter(BuildContext context, List<UserFoodLogModel> meals) {
-    final totalCalories = meals.fold(0, (sum, meal) => sum + meal.calories);
-    
-    return Container(
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(
-                MdiIcons.food,
-                color: AppColors.primary,
-                size: KSizes.iconM,
-              ),
-              const SizedBox(width: KSizes.margin2x),
-              Text(
-                'Total spist i dag',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: KSizes.fontWeightBold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          Text(
-            '$totalCalories kcal',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: KSizes.fontWeightBold,
-              color: AppColors.primary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 } 

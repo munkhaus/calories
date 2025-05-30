@@ -16,274 +16,254 @@ class WeightProgressWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
-    final weightState = ref.watch(weightTrackingProvider);
-    final latestWeight = ref.watch(latestWeightProvider);
-
-    // Don't show if user doesn't have weight goal
-    if (!userProfile.hasWeightGoal) {
+    
+    // Check if user has weight goal
+    if (userProfile.targetWeightKg <= 0) {
       return const SizedBox.shrink();
     }
-
-    if (weightState.isLoading) {
-      return _buildLoadingCard();
-    }
-
-    return _buildWeightCard(context, ref, userProfile, latestWeight);
-  }
-
-  Widget _buildLoadingCard() {
-    return Container(
-      height: 160,
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.success.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Center(
-        child: CircularProgressIndicator(
-          color: AppColors.success,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWeightCard(
-    BuildContext context,
-    WidgetRef ref,
-    UserProfileModel userProfile,
-    WeightEntryModel? latestWeight,
-  ) {
-    final currentWeight = latestWeight?.weightKg ?? userProfile.currentWeightKg;
+    
+    final weightEntries = ref.watch(weightEntriesProvider);
+    final currentWeight = userProfile.currentWeightKg;
     final targetWeight = userProfile.targetWeightKg;
-    final startWeight = userProfile.currentWeightKg; // Original weight from profile
     
-    final totalWeightToLose = (startWeight - targetWeight).abs();
-    final weightLost = (startWeight - currentWeight).abs();
-    final remainingWeight = (currentWeight - targetWeight).abs();
+    // Get latest weight entry if available
+    final latestEntry = weightEntries.isNotEmpty ? weightEntries.first : null;
+    final displayWeight = latestEntry?.weightKg ?? currentWeight;
     
-    final progress = totalWeightToLose > 0 ? (weightLost / totalWeightToLose) : 0.0;
-    final displayProgress = progress.clamp(0.0, 1.0);
+    // Calculate progress
+    final isWeightLoss = currentWeight > targetWeight;
+    final totalWeightToChange = (currentWeight - targetWeight).abs();
+    final weightChanged = (currentWeight - displayWeight).abs();
+    final progress = totalWeightToChange > 0 ? (weightChanged / totalWeightToChange).clamp(0.0, 1.0) : 0.0;
     
-    final isWeightLoss = userProfile.isWeightLossGoal;
-    final isOnTrack = isWeightLoss ? currentWeight <= targetWeight : currentWeight >= targetWeight;
-    final hasReachedGoal = isOnTrack && (currentWeight - targetWeight).abs() < 0.5; // Within 0.5kg
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.white.withOpacity(0.95),
+          ],
+        ),
         borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.success.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
+            color: AppColors.secondary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusXL,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.8),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.success,
-                      AppColors.success.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.success.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.scale,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Vægt fremgang ⚖️',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      hasReachedGoal
-                          ? 'Tillykke! Du har nået dit mål'
-                          : isWeightLoss
-                              ? '${remainingWeight.toStringAsFixed(1)} kg tilbage'
-                              : '${remainingWeight.toStringAsFixed(1)} kg til målet',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: hasReachedGoal ? AppColors.success : AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: () => _showAddWeightDialog(context, ref),
-                child: Container(
-                  padding: const EdgeInsets.all(KSizes.margin2x),
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Modern header
+            Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
                   decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
-                  child: Icon(
-                    MdiIcons.plus,
-                    color: AppColors.success,
-                    size: KSizes.iconS,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Progress section
-          Row(
-            children: [
-              // Progress indicator
-              Expanded(
-                flex: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Fremgang',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeM,
-                            fontWeight: KSizes.fontWeightMedium,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        Text(
-                          '${(displayProgress * 100).toInt()}%',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeM,
-                            fontWeight: KSizes.fontWeightBold,
-                            color: AppColors.success,
-                          ),
-                        ),
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.secondary,
+                        AppColors.info,
                       ],
                     ),
-                    const SizedBox(height: KSizes.margin2x),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(KSizes.radiusS),
-                      child: LinearProgressIndicator(
-                        value: displayProgress,
-                        minHeight: 8,
-                        backgroundColor: AppColors.surface.withOpacity(0.3),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          hasReachedGoal
-                              ? AppColors.success
-                              : displayProgress >= 0.8
-                                  ? AppColors.success
-                                  : AppColors.primary,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.secondary.withOpacity(0.3),
+                        blurRadius: KSizes.blurRadiusL,
+                        offset: KSizes.shadowOffsetM,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    MdiIcons.scale,
+                    color: Colors.white,
+                    size: KSizes.iconL,
+                  ),
+                ),
+                
+                const SizedBox(width: KSizes.margin4x),
+                
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Vægt fremgang',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeXXL,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                    ),
+                      const SizedBox(height: KSizes.margin1x),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KSizes.margin3x,
+                          vertical: KSizes.margin1x,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _getProgressColor(progress).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
+                          border: Border.all(
+                            color: _getProgressColor(progress).withOpacity(0.2),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          '${(progress * 100).toInt()}% af målet',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeS,
+                            color: _getProgressColor(progress),
+                            fontWeight: KSizes.fontWeightSemiBold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                _buildControlButton(
+                  icon: MdiIcons.plus,
+                  onTap: () => _showAddWeightDialog(context, ref),
+                  isPrimary: true,
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin8x),
+            
+            // Progress visualization
+            Container(
+              padding: const EdgeInsets.all(KSizes.margin4x),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    _getProgressColor(progress).withOpacity(0.05),
+                    _getProgressColor(progress).withOpacity(0.02),
                   ],
                 ),
+                borderRadius: BorderRadius.circular(KSizes.radiusL),
+                border: Border.all(
+                  color: _getProgressColor(progress).withOpacity(0.2),
+                  width: 1,
+                ),
               ),
-              
-              const SizedBox(width: KSizes.margin6x),
-              
-              // Current weight display
-              Column(
+              child: Column(
                 children: [
-                  Text(
-                    '${currentWeight.toStringAsFixed(1)}',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeXXL,
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    'kg',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeM,
-                      color: AppColors.textSecondary,
-                      fontWeight: KSizes.fontWeightMedium,
-                    ),
-                  ),
-                  if (latestWeight != null) ...[
-                    const SizedBox(height: KSizes.margin1x),
-                    Text(
-                      latestWeight.formattedDate,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXS,
-                        color: AppColors.textTertiary,
+                  // Current vs target display
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildWeightDisplay(
+                        label: 'Nuværende',
+                        weight: displayWeight,
+                        color: AppColors.textPrimary,
+                        isMain: true,
                       ),
-                    ),
-                  ],
+                      Icon(
+                        isWeightLoss ? MdiIcons.trendingDown : MdiIcons.trendingUp,
+                        color: _getProgressColor(progress),
+                        size: KSizes.iconL,
+                      ),
+                      _buildWeightDisplay(
+                        label: 'Mål',
+                        weight: targetWeight,
+                        color: AppColors.secondary,
+                        isMain: false,
+                      ),
+                    ],
+                  ),
+                  
+                  SizedBox(height: KSizes.margin6x),
+                  
+                  // Progress bar
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Fremgang',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeS,
+                              color: AppColors.textSecondary,
+                              fontWeight: KSizes.fontWeightMedium,
+                            ),
+                          ),
+                          Text(
+                            '${weightChanged.toStringAsFixed(1)} kg af ${totalWeightToChange.toStringAsFixed(1)} kg',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeS,
+                              color: _getProgressColor(progress),
+                              fontWeight: KSizes.fontWeightSemiBold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      SizedBox(height: KSizes.margin2x),
+                      
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: AppColors.surface.withOpacity(0.3),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            _getProgressColor(progress),
+                          ),
+                          minHeight: 8,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
-          
-          const SizedBox(height: KSizes.margin4x),
-          
-          // Stats row
-          Row(
-            children: [
-              Expanded(
-                child: _WeightStatCard(
-                  label: 'Start',
-                  value: '${startWeight.toStringAsFixed(1)} kg',
-                  color: AppColors.textSecondary,
+            ),
+            
+            SizedBox(height: KSizes.margin6x),
+            
+            // Stats row
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    label: 'Tilbage',
+                    value: '${(totalWeightToChange - weightChanged).toStringAsFixed(1)} kg',
+                    icon: MdiIcons.target,
+                    color: AppColors.info,
+                  ),
                 ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Expanded(
-                child: _WeightStatCard(
-                  label: isWeightLoss ? 'Tabt' : 'Opnået',
-                  value: '${weightLost.toStringAsFixed(1)} kg',
-                  color: AppColors.success,
+                SizedBox(width: KSizes.margin4x),
+                Expanded(
+                  child: _buildStatCard(
+                    label: 'Ændring',
+                    value: '${isWeightLoss ? '-' : '+'}${weightChanged.toStringAsFixed(1)} kg',
+                    icon: isWeightLoss ? MdiIcons.trendingDown : MdiIcons.trendingUp,
+                    color: _getProgressColor(progress),
+                  ),
                 ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Expanded(
-                child: _WeightStatCard(
-                  label: 'Mål',
-                  value: '${targetWeight.toStringAsFixed(1)} kg',
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -440,21 +420,80 @@ class WeightProgressWidget extends ConsumerWidget {
       ),
     );
   }
-}
 
-class _WeightStatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
+  Color _getProgressColor(double progress) {
+    if (progress < 0.5) {
+      return AppColors.success;
+    } else {
+      return AppColors.primary;
+    }
+  }
 
-  const _WeightStatCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required bool isPrimary,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(KSizes.margin2x),
+        decoration: BoxDecoration(
+          color: isPrimary ? AppColors.success.withOpacity(0.1) : AppColors.secondary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(KSizes.radiusS),
+        ),
+        child: Icon(
+          icon,
+          color: isPrimary ? AppColors.success : AppColors.secondary,
+          size: KSizes.iconS,
+        ),
+      ),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildWeightDisplay({
+    required String label,
+    required double weight,
+    required Color color,
+    required bool isMain,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: KSizes.fontSizeM,
+            color: color,
+            fontWeight: KSizes.fontWeightMedium,
+          ),
+        ),
+        Text(
+          '${weight.toStringAsFixed(1)}',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeXXL,
+            color: color,
+            fontWeight: KSizes.fontWeightBold,
+          ),
+        ),
+        Text(
+          'kg',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeM,
+            color: color,
+            fontWeight: KSizes.fontWeightMedium,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(KSizes.margin3x),
       decoration: BoxDecoration(
@@ -468,6 +507,12 @@ class _WeightStatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Icon(
+            icon,
+            color: color,
+            size: KSizes.iconS,
+          ),
+          const SizedBox(height: KSizes.margin1x),
           Text(
             value,
             style: TextStyle(
