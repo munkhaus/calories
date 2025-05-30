@@ -168,21 +168,6 @@ class TodaysActivitiesWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              GestureDetector(
-                onTap: () => notifier.loadTodaysActivities(),
-                child: Container(
-                  padding: const EdgeInsets.all(KSizes.margin2x),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
-                  child: Icon(
-                    MdiIcons.refresh,
-                    color: AppColors.secondary,
-                    size: KSizes.iconS,
-                  ),
-                ),
-              ),
             ],
           ),
           
@@ -239,23 +224,6 @@ class TodaysActivitiesWidget extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: KSizes.margin4x),
-          // Add prominent refresh button
-          ElevatedButton.icon(
-            onPressed: () {
-              print('🔄 Manuel opdatering af aktiviteter fra hjem-fanen');
-              notifier.loadTodaysActivities();
-            },
-            icon: Icon(MdiIcons.refresh),
-            label: Text('Opdater aktiviteter'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(
-                horizontal: KSizes.margin4x,
-                vertical: KSizes.margin3x,
-              ),
-            ),
-          ),
         ],
       ),
     );

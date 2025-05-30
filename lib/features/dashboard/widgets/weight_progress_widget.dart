@@ -102,7 +102,7 @@ class WeightProgressWidget extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Vægt fremgang',
+                        'Vægt forløb',
                         style: TextStyle(
                           fontSize: KSizes.fontSizeXXL,
                           fontWeight: KSizes.fontWeightBold,
@@ -135,12 +135,6 @@ class WeightProgressWidget extends ConsumerWidget {
                       ),
                     ],
                   ),
-                ),
-                
-                _buildControlButton(
-                  icon: MdiIcons.plus,
-                  onTap: () => _showAddWeightDialog(context, ref),
-                  isPrimary: true,
                 ),
               ],
             ),

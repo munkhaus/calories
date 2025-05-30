@@ -27,8 +27,8 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider).toDouble();
     final totalAvailableCalories = baseCalories + activityCalories;
     
-    // Get consumed calories
-    final consumedCalories = ref.watch(totalCaloriesProvider);
+    // Get consumed calories - use provider that will update automatically
+    final consumedCalories = ref.watch(totalCaloriesForSelectedDateProvider);
     
     // Calculate remaining calories and progress
     final remainingCalories = totalAvailableCalories - consumedCalories;

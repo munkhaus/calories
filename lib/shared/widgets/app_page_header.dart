@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../core/constants/k_sizes.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/food_logging/application/pending_food_cubit.dart';
 
 /// Universal header widget matching onboarding design pattern
 class AppPageHeader extends StatelessWidget {
@@ -15,6 +17,7 @@ class AppPageHeader extends StatelessWidget {
   final VoidCallback? onNotificationTap;
   final IconData? titleIcon;
   final Color? titleIconColor;
+  final Widget? customAction;
 
   const AppPageHeader({
     super.key,
@@ -28,6 +31,7 @@ class AppPageHeader extends StatelessWidget {
     this.onNotificationTap,
     this.titleIcon,
     this.titleIconColor,
+    this.customAction,
   });
 
   @override
@@ -141,57 +145,62 @@ class AppPageHeader extends StatelessWidget {
                 ),
               ),
               
-              // Action buttons
+              // Action buttons section  
               Row(
                 children: [
-                  if (showInfoButton) ...[
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(KSizes.radiusL),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                  // Custom action takes priority
+                  if (customAction != null) ...[
+                    customAction!,
+                  ] else ...[
+                    if (showInfoButton) ...[
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: onInfoTap,
+                          icon: Icon(
+                            MdiIcons.informationOutline,
+                            color: AppColors.info,
+                            size: KSizes.iconM,
                           ),
-                        ],
-                      ),
-                      child: IconButton(
-                        onPressed: onInfoTap,
-                        icon: Icon(
-                          MdiIcons.informationOutline,
-                          color: AppColors.info,
-                          size: KSizes.iconM,
                         ),
                       ),
-                    ),
+                      if (showNotificationButton)
+                        const SizedBox(width: KSizes.margin2x),
+                    ],
+                    
                     if (showNotificationButton)
-                      const SizedBox(width: KSizes.margin2x),
-                  ],
-                  
-                  if (showNotificationButton)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(KSizes.radiusL),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withOpacity(0.1),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: onNotificationTap,
+                          icon: Icon(
+                            MdiIcons.bellOutline,
+                            color: AppColors.primary,
+                            size: KSizes.iconM,
                           ),
-                        ],
-                      ),
-                      child: IconButton(
-                        onPressed: onNotificationTap,
-                        icon: Icon(
-                          MdiIcons.bellOutline,
-                          color: AppColors.primary,
-                          size: KSizes.iconM,
                         ),
                       ),
-                    ),
+                  ],
                 ],
               ),
             ],
@@ -203,30 +212,103 @@ class AppPageHeader extends StatelessWidget {
 }
 
 /// Header specifically for dashboard with greeting
-class DashboardHeader extends StatelessWidget {
+class DashboardHeader extends ConsumerWidget {
   final String greeting;
   final String userName;
   final VoidCallback? onInfoTap;
-  final VoidCallback? onNotificationTap;
+  final VoidCallback? onRegistrationTap;
 
   const DashboardHeader({
     super.key,
     required this.greeting,
     required this.userName,
     this.onInfoTap,
-    this.onNotificationTap,
+    this.onRegistrationTap,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final pendingCount = ref.watch(pendingFoodsCountProvider);
+    
     return AppPageHeader(
       title: '', // Not used for dashboard
       greeting: greeting,
       userName: userName,
-      showInfoButton: true,
-      showNotificationButton: true,
+      showInfoButton: false, // We'll handle actions with custom action
+      showNotificationButton: false,
       onInfoTap: onInfoTap,
-      onNotificationTap: onNotificationTap,
+      customAction: Row(
+        children: [
+          // Registration button with pending count
+          if (onRegistrationTap != null)
+            GestureDetector(
+              onTap: onRegistrationTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin3x,
+                  vertical: KSizes.margin2x,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.warning.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      pendingCount > 0 ? MdiIcons.camera : MdiIcons.plus,
+                      color: Colors.white,
+                      size: KSizes.iconS,
+                    ),
+                    const SizedBox(width: KSizes.margin1x),
+                    Text(
+                      pendingCount > 0 ? '$pendingCount' : 'Registrer',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: KSizes.fontSizeS,
+                        fontWeight: KSizes.fontWeightBold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          
+          const SizedBox(width: KSizes.margin2x),
+          
+          // Info button
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(KSizes.radiusL),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              onPressed: onInfoTap,
+              icon: Icon(
+                MdiIcons.informationOutline,
+                color: AppColors.info,
+                size: KSizes.iconM,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

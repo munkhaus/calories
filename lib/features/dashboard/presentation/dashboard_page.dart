@@ -15,6 +15,13 @@ import '../application/selected_date_provider.dart';
 import '../application/date_aware_providers.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../info/presentation/info_page.dart';
+import '../../weight_tracking/application/weight_tracking_notifier.dart';
+import '../../weight_tracking/domain/weight_entry_model.dart';
+import '../../activity/presentation/pages/quick_activity_registration_page.dart';
+import '../../food_logging/presentation/pages/food_search_page.dart';
+import '../../food_logging/presentation/pages/categorize_food_page.dart';
+import '../../food_logging/application/pending_food_cubit.dart';
+import '../../food_logging/infrastructure/pending_food_service.dart';
 
 /// Main dashboard page showing daily overview
 class DashboardPage extends ConsumerStatefulWidget {
@@ -33,8 +40,6 @@ class DashboardPage extends ConsumerStatefulWidget {
 }
 
 class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
-  late ActivityNotifier _activityNotifier;
-
   @override
   bool get wantKeepAlive => true;
 
@@ -45,20 +50,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     DashboardPage._currentState = this;
     
     WidgetsBinding.instance.addObserver(this);
-    _activityNotifier = ActivityNotifier();
     
-    // Initialize activity data
+    // Initialize data using providers
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final state = ref.read(onboardingProvider);
-      final userProfile = state.userProfile;
-      
-      if (userProfile.isCompleteForCalculations) {
-        _activityNotifier.initializeWithBmr(userProfile.bmr);
-      } else {
-        _activityNotifier.loadTodaysActivities();
-        _activityNotifier.loadTodaysCaloriesBurned();
-      }
+      _initializeProviders();
     });
+  }
+
+  void _initializeProviders() {
+    // Trigger all providers to load initial data
+    ref.read(foodLoggingProvider.notifier).loadMealsForDate(DateTime.now());
+    ref.read(activityNotifierProvider).loadTodaysActivities();
+    ref.read(weightTrackingProvider.notifier).loadWeightEntries();
   }
 
   @override
@@ -69,7 +72,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     }
     
     WidgetsBinding.instance.removeObserver(this);
-    _activityNotifier.dispose();
     super.dispose();
   }
 
@@ -77,26 +79,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // Refresh activity data when app comes back into focus
+      // Refresh all data when app comes back into focus
       _refreshDataForSelectedDate();
     }
   }
 
   void refreshActivityData() {
-    // Public method to refresh activity data when tab is selected
-    print('🔄 Refreshing activity data in DashboardPage');
+    // Public method to refresh all data when tab is selected
+    print('🔄 Refreshing all data in DashboardPage');
     _refreshDataForSelectedDate();
   }
 
   void _refreshDataForSelectedDate() {
     final selectedDate = ref.read(selectedDateProvider);
     
-    // Refresh food data for selected date
+    // Refresh all data for selected date
     ref.read(foodLoggingProvider.notifier).loadMealsForDate(selectedDate);
-    
-    // TODO: Refresh activity data for selected date when activity notifier supports it
-    _activityNotifier.loadTodaysActivities();
-    _activityNotifier.loadTodaysCaloriesBurned();
+    ref.read(activityNotifierProvider).loadActivitiesForDate(selectedDate);
+    ref.read(weightTrackingProvider.notifier).refresh();
   }
 
   @override
@@ -140,9 +140,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                           ),
                         );
                       },
-                      onNotificationTap: () {
-                        // TODO: Navigate to notifications
-                      },
+                      onRegistrationTap: () => _showRegistrationOptions(context),
                     ),
                     
                     KSizes.spacingVerticalXL,
@@ -164,11 +162,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                     
                     KSizes.spacingVerticalXL,
                     
-                    // Weight progress widget (only show if user has weight goal)
-                    const WeightProgressWidget(),
-                    
-                    KSizes.spacingVerticalXL,
-                    
                     // Recent meals with enhanced design
                     const RecentMealsWidget(),
                     
@@ -176,15 +169,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                     
                     // Today's activities section
                     TodaysActivitiesWidget(
-                      notifier: _activityNotifier,
+                      notifier: ref.read(activityNotifierProvider),
                       onDeleteActivity: _onDeleteActivity,
                       activityTrackingPreference: onboardingState.userProfile.activityTrackingPreference,
                     ),
                     
                     KSizes.spacingVerticalXL,
                     
-                    // Quick actions section with improved design
-                    _buildQuickActionsSection(context, ref),
+                    // Weight progress widget moved to bottom
+                    const WeightProgressWidget(),
                     
                     // Bottom padding for FAB
                     const SizedBox(height: 100),
@@ -285,7 +278,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
   }
 
   void _onDeleteActivity(dynamic activity) async {
-    final success = await _activityNotifier.deleteActivity(activity.logEntryId);
+    final success = await ref.read(activityNotifierProvider).deleteActivity(activity.logEntryId);
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -313,195 +306,487 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     }
   }
 
-  Widget _buildQuickActionsSection(BuildContext context, WidgetRef ref) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
+  void _showRegistrationOptions(BuildContext context) {
+    // Check if there are pending foods to process first
+    final pendingCount = ref.read(pendingFoodsCountProvider);
+    print('🍎 Dashboard: Pending count = $pendingCount');
+    
+    if (pendingCount > 0) {
+      // Navigate directly to categorize pending foods
+      print('🍎 Dashboard: Navigating to pending foods registration');
+      _openPendingFoodsRegistration(context);
+      return;
+    }
+    
+    print('🍎 Dashboard: Showing registration options modal');
+    // Show registration options modal
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(KSizes.radiusXL),
+            topRight: Radius.circular(KSizes.radiusXL),
           ),
-        ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(KSizes.margin4x),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle indicator
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.border.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                
+                SizedBox(height: KSizes.margin3x),
+                
+                // Header
+                Text(
+                  'Hvad vil du registrere?',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeXXL,
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                
+                SizedBox(height: KSizes.margin1x),
+                
+                Text(
+                  'Vælg hvad du vil logge i dag',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                
+                SizedBox(height: KSizes.margin6x),
+                
+                // Quick food registration option
+                _buildRegistrationOption(
+                  context: context,
+                  title: 'Hurtig mad',
+                  subtitle: 'Tag et billede og kategoriser senere',
+                  icon: MdiIcons.cameraPlus,
+                  iconColor: AppColors.warning,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _captureQuickFood(context);
+                  },
+                ),
+                
+                SizedBox(height: KSizes.margin2x),
+                
+                // Detailed food registration option
+                _buildRegistrationOption(
+                  context: context,
+                  title: 'Detaljeret mad',
+                  subtitle: 'Søg og log mad med alle detaljer',
+                  icon: MdiIcons.silverwareForkKnife,
+                  iconColor: AppColors.primary,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToDetailedRegistration(context);
+                  },
+                ),
+                
+                SizedBox(height: KSizes.margin2x),
+                
+                // Activity registration option
+                _buildRegistrationOption(
+                  context: context,
+                  title: 'Aktivitet',
+                  subtitle: 'Log træning og aktiviteter',
+                  icon: MdiIcons.runFast,
+                  iconColor: AppColors.secondary,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToActivityRegistration(context);
+                  },
+                ),
+                
+                SizedBox(height: KSizes.margin2x),
+                
+                // Weight registration option
+                _buildRegistrationOption(
+                  context: context,
+                  title: 'Vægt',
+                  subtitle: 'Registrer din nuværende vægt',
+                  icon: MdiIcons.scale,
+                  iconColor: AppColors.info,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToWeightRegistration(context);
+                  },
+                ),
+                
+                SizedBox(height: KSizes.margin4x),
+              ],
+            ),
+          ),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header section
-          Row(
+    );
+  }
+
+  Widget _buildRegistrationOption({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: AppColors.border.withOpacity(0.2),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+          ),
+          child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
+                padding: EdgeInsets.all(KSizes.margin3x),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
-                    ],
-                  ),
+                  color: iconColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
                 ),
                 child: Icon(
-                  MdiIcons.flash,
-                  color: Colors.white,
+                  icon,
+                  color: iconColor,
                   size: KSizes.iconL,
                 ),
               ),
-              const SizedBox(width: KSizes.margin4x),
+              
+              SizedBox(width: KSizes.margin4x),
+              
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hurtige handlinger',
+                      title,
                       style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
+                        fontSize: KSizes.fontSizeL,
                         fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
                       ),
                     ),
+                    SizedBox(height: KSizes.margin1x),
                     Text(
-                      'Nem adgang til nøglefunktioner',
+                      subtitle,
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
                         color: AppColors.textSecondary,
-                        height: 1.3,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Quick action grid
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: KSizes.margin3x,
-            crossAxisSpacing: KSizes.margin3x,
-            childAspectRatio: 1.2,
-            children: [
-              _buildQuickActionCard(
-                'Log måltid',
-                'Tilføj mad',
-                MdiIcons.silverwareForkKnife,
-                [AppColors.primary, AppColors.primaryLight],
-                () {
-                  // Navigate to meal logging
-                },
-              ),
-              _buildQuickActionCard(
-                'Log aktivitet',
-                'Tilføj træning',
-                MdiIcons.runFast,
-                [AppColors.secondary, AppColors.secondaryLight],
-                () {
-                  // Navigate to activity logging
-                },
-              ),
-              _buildQuickActionCard(
-                'Se fremgang',
-                'Statistik',
-                MdiIcons.chartLine,
-                [AppColors.info, AppColors.info.withOpacity(0.7)],
-                () {
-                  // Navigate to progress
-                },
-              ),
-              _buildQuickActionCard(
-                'Indstillinger',
-                'Profil & mere',
-                MdiIcons.account,
-                [AppColors.success, AppColors.success.withOpacity(0.7)],
-                () {
-                  // Navigate to profile
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard(
-    String title,
-    String subtitle,
-    IconData icon,
-    List<Color> gradient,
-    VoidCallback onTap,
-  ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        child: Container(
-          padding: const EdgeInsets.all(KSizes.margin3x),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: gradient.map((c) => c.withOpacity(0.1)).toList(),
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(
-              color: gradient.first.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: gradient),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: KSizes.iconM,
-                ),
-              ),
-              const SizedBox(height: KSizes.margin2x),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeM,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                  color: AppColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeXS,
-                  color: AppColors.textSecondary,
-                ),
-                textAlign: TextAlign.center,
+              
+              Icon(
+                MdiIcons.chevronRight,
+                color: AppColors.textSecondary,
+                size: KSizes.iconM,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  void _captureQuickFood(BuildContext context) async {
+    final cubit = ref.read(pendingFoodProvider.notifier);
+    
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: KSizes.margin3x),
+              Text('Tager billede...'),
+            ],
+          ),
+          backgroundColor: AppColors.warning,
+          duration: Duration(seconds: 1),
+        ),
+      );
+      
+      await cubit.captureFood();
+      _refreshProviders();
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Text('Billede taget! Kategoriser det når du er klar.'),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.alertCircle, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Text('Kunne ikke tage billede'),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _navigateToDetailedRegistration(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FoodSearchPage(initialMealType: null),
+      ),
+    );
+  }
+
+  void _navigateToActivityRegistration(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => QuickActivityRegistrationPage(),
+      ),
+    );
+  }
+
+  void _navigateToWeightRegistration(BuildContext context) {
+    final weightController = TextEditingController();
+    final notesController = TextEditingController();
+    DateTime selectedDate = DateTime.now();
+
+    showDialog(
+      context: context,
+      builder: (context) => Consumer(
+        builder: (context, ref, child) => StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusL),
+            ),
+            title: Row(
+              children: [
+                Icon(MdiIcons.scale, color: AppColors.info),
+                SizedBox(width: KSizes.margin2x),
+                Text('Registrer vægt'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: weightController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Vægt (kg)',
+                    hintText: 'f.eks. 75.5',
+                    prefixIcon: Icon(MdiIcons.scale),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    ),
+                  ),
+                  autofocus: true,
+                ),
+                SizedBox(height: KSizes.margin4x),
+                GestureDetector(
+                  onTap: () async {
+                    final pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime.now().subtract(Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        selectedDate = pickedDate;
+                      });
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.calendar, color: AppColors.textSecondary),
+                        SizedBox(width: KSizes.margin2x),
+                        Text(
+                          '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}',
+                          style: TextStyle(fontSize: KSizes.fontSizeM),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: KSizes.margin4x),
+                TextField(
+                  controller: notesController,
+                  decoration: InputDecoration(
+                    labelText: 'Noter (valgfrit)',
+                    hintText: 'Eventuelle kommentarer...',
+                    prefixIcon: Icon(MdiIcons.noteText),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    ),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text('Annuller'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final weightText = weightController.text.trim();
+                  if (weightText.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Indtast venligst en vægt'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  final weight = double.tryParse(weightText);
+                  if (weight == null || weight <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Indtast venligst en gyldig vægt'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                    return;
+                  }
+                  
+                  final entry = WeightEntryModel(
+                    userId: 1,
+                    weightKg: weight,
+                    recordedAt: selectedDate,
+                    notes: notesController.text.trim(),
+                  );
+                  
+                  final success = await ref.read(weightTrackingProvider.notifier).addWeightEntry(entry);
+                  
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    
+                    if (success) {
+                      _refreshProviders();
+                    }
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(success ? 'Vægt registreret!' : 'Fejl ved registrering'),
+                        backgroundColor: success ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.info,
+                  foregroundColor: Colors.white,
+                ),
+                child: Text('Gem'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openPendingFoodsRegistration(BuildContext context) {
+    print('🍎 Dashboard: _openPendingFoodsRegistration called');
+    
+    try {
+      final pendingFoods = ref.read(pendingFoodProvider).pendingFoodsState.data ?? [];
+      print('🍎 Dashboard: Found ${pendingFoods.length} pending foods');
+      
+      if (pendingFoods.isNotEmpty) {
+        print('🍎 Dashboard: Navigating to CategorizeFoodPage with food: ${pendingFoods.first.imageUrl}');
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => CategorizeFoodPage(
+              pendingFood: pendingFoods.first,
+            ),
+          ),
+        );
+      } else {
+        print('🍎 Dashboard: No pending foods found, showing error');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ingen ventende mad registreringer fundet'),
+            backgroundColor: AppColors.warning,
+          ),
+        );
+      }
+    } catch (e) {
+      print('🍎 Dashboard: Error in _openPendingFoodsRegistration: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fejl ved åbning af ventende registreringer'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  void _refreshProviders() {
+    ref.read(foodLoggingProvider.notifier).refresh();
+    ref.read(activityNotifierProvider).loadTodaysActivities();
+    ref.read(weightTrackingProvider.notifier).refresh();
   }
 } 

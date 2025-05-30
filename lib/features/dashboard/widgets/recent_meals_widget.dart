@@ -138,49 +138,24 @@ class RecentMealsWidget extends ConsumerWidget {
                       Text(
                         'Dagens måltider',
                         style: TextStyle(
-                          fontSize: KSizes.fontSizeXXL,
+                          fontSize: KSizes.fontSizeXL,
                           fontWeight: KSizes.fontWeightBold,
                           color: AppColors.textPrimary,
-                          letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: KSizes.margin1x),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: KSizes.margin3x,
-                          vertical: KSizes.margin1x,
-                        ),
-                        decoration: BoxDecoration(
-                          color: meals.isEmpty 
-                              ? AppColors.textTertiary.withOpacity(0.1)
-                              : AppColors.success.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(KSizes.radiusL),
-                          border: Border.all(
-                            color: meals.isEmpty 
-                                ? AppColors.textTertiary.withOpacity(0.2)
-                                : AppColors.success.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          meals.isEmpty 
-                              ? 'Ingen måltider endnu'
-                              : '${meals.length} ${meals.length == 1 ? 'måltid' : 'måltider'} logget',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeS,
-                            color: meals.isEmpty 
-                                ? AppColors.textTertiary
-                                : AppColors.success,
-                            fontWeight: KSizes.fontWeightSemiBold,
-                          ),
+                      Text(
+                        meals.isEmpty 
+                            ? 'Ingen måltider endnu'
+                            : '${meals.length} ${meals.length == 1 ? 'måltid' : 'måltider'} logget',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          color: AppColors.textSecondary,
+                          height: 1.3,
                         ),
                       ),
                     ],
                   ),
-                ),
-                _buildControlButton(
-                  icon: MdiIcons.refresh,
-                  onTap: () => ref.read(foodLoggingProvider.notifier).refresh(),
                 ),
               ],
             ),
@@ -204,11 +179,6 @@ class RecentMealsWidget extends ConsumerWidget {
                   
                   // Simple total footer like activities
                   _buildTotalSummaryFooter(context, meals),
-                  
-                  SizedBox(height: KSizes.margin3x),
-                  
-                  // Detailed nutrition summary
-                  _buildModernSummaryFooter(context, meals),
                 ],
               ),
           ],
@@ -354,108 +324,111 @@ class RecentMealsWidget extends ConsumerWidget {
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: KSizes.margin3x),
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _getMealColor(meal.mealType).withOpacity(0.05),
-              _getMealColor(meal.mealType).withOpacity(0.02),
+      child: GestureDetector(
+        onLongPress: () => _showMealOptionsMenu(context, ref, meal),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+          padding: const EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                _getMealColor(meal.mealType).withOpacity(0.05),
+                _getMealColor(meal.mealType).withOpacity(0.02),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+            border: Border.all(
+              color: _getMealColor(meal.mealType).withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Meal type icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: _getMealColor(meal.mealType),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Icon(
+                  _getMealIcon(meal.mealType),
+                  color: Colors.white,
+                  size: KSizes.iconM,
+                ),
+              ),
+              
+              const SizedBox(width: KSizes.margin4x),
+              
+              // Meal info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            meal.foodName,
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeM,
+                              fontWeight: KSizes.fontWeightSemiBold,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: KSizes.margin2x,
+                            vertical: KSizes.margin1x,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getMealColor(meal.mealType),
+                            borderRadius: BorderRadius.circular(KSizes.radiusS),
+                          ),
+                          child: Text(
+                            '${meal.calories} kcal',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeXS,
+                              fontWeight: KSizes.fontWeightBold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: KSizes.margin1x),
+                    
+                    Row(
+                      children: [
+                        Text(
+                          meal.mealType.mealTypeDisplayName,
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeS,
+                            color: _getMealColor(meal.mealType),
+                            fontWeight: KSizes.fontWeightMedium,
+                          ),
+                        ),
+                        Text(
+                          ' • ${meal.quantity} ${meal.servingUnit}',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeS,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(KSizes.radiusL),
-          border: Border.all(
-            color: _getMealColor(meal.mealType).withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            // Meal type icon
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: _getMealColor(meal.mealType),
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-              ),
-              child: Icon(
-                _getMealIcon(meal.mealType),
-                color: Colors.white,
-                size: KSizes.iconM,
-              ),
-            ),
-            
-            const SizedBox(width: KSizes.margin4x),
-            
-            // Meal info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          meal.foodName,
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeM,
-                            fontWeight: KSizes.fontWeightSemiBold,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: KSizes.margin2x,
-                          vertical: KSizes.margin1x,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getMealColor(meal.mealType),
-                          borderRadius: BorderRadius.circular(KSizes.radiusS),
-                        ),
-                        child: Text(
-                          '${meal.calories} kcal',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeXS,
-                            fontWeight: KSizes.fontWeightBold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: KSizes.margin1x),
-                  
-                  Row(
-                    children: [
-                      Text(
-                        meal.mealType.mealTypeDisplayName,
-                        style: TextStyle(
-                          fontSize: KSizes.fontSizeS,
-                          color: _getMealColor(meal.mealType),
-                          fontWeight: KSizes.fontWeightMedium,
-                        ),
-                      ),
-                      Text(
-                        ' • ${meal.quantity} ${meal.servingUnit}',
-                        style: TextStyle(
-                          fontSize: KSizes.fontSizeS,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -500,101 +473,6 @@ class RecentMealsWidget extends ConsumerWidget {
               fontWeight: KSizes.fontWeightBold,
               color: AppColors.primary,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildModernSummaryFooter(BuildContext context, List<UserFoodLogModel> meals) {
-    final totalCalories = meals.fold(0, (sum, meal) => sum + meal.calories);
-    final totalProtein = meals.fold(0.0, (sum, meal) => sum + meal.protein);
-    
-    return Container(
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary.withOpacity(0.05),
-            AppColors.secondary.withOpacity(0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildSummaryItem(
-              'Total kalorier',
-              '$totalCalories kcal',
-              MdiIcons.fire,
-              AppColors.primary,
-            ),
-          ),
-          Container(
-            width: 1,
-            height: 40,
-            color: AppColors.border.withOpacity(0.3),
-          ),
-          Expanded(
-            child: _buildSummaryItem(
-              'Protein',
-              '${totalProtein.toStringAsFixed(1)}g',
-              MdiIcons.dumbbell,
-              AppColors.secondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: KSizes.margin3x),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin1x),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: KSizes.iconXS,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin2x),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: KSizes.fontWeightBold,
-                  color: color,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: KSizes.margin1x),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeXS,
-              color: AppColors.textSecondary,
-              fontWeight: KSizes.fontWeightMedium,
-            ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
