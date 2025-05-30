@@ -22,10 +22,13 @@ class CalorieOverviewWidget extends ConsumerWidget {
     // Trigger date-aware activity loading
     ref.watch(dateAwareActivityProvider);
     
-    // Use the pre-calculated target calories from user profile (includes goal adjustments)
-    final targetCalories = userProfile.targetCalories.toDouble();
+    // Calculate target calories dynamically based on current profile state
+    // This ensures that leisure activity toggle immediately affects calories
+    final currentTdee = _calculateCurrentTdee(userProfile);
+    final dynamicTargetCalories = _calculateDynamicTargetCalories(userProfile, currentTdee);
+    
     final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider).toDouble();
-    final totalAvailableCalories = targetCalories + activityCalories;
+    final totalAvailableCalories = dynamicTargetCalories + activityCalories;
     
     // Get consumed calories - use provider that will update automatically
     final consumedCalories = ref.watch(totalCaloriesForSelectedDateProvider);
@@ -485,12 +488,12 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final currentTdee = _calculateCurrentTdee(userProfile);
     final bmr = userProfile.bmr;
     
-    // Use the pre-calculated target calories (this includes goal adjustments)
-    final targetCalories = userProfile.targetCalories;
+    // Calculate dynamic target calories based on current leisure activity status
+    final dynamicTargetCalories = _calculateDynamicTargetCalories(userProfile, currentTdee);
     
-    // For activity calories, get the current values from providers
+    // For activity calories, get the current values from providers (would be better to pass these)
     final activityCalories = 0.0; // This would need to be passed from the build method
-    final totalAvailableCalories = targetCalories + activityCalories;
+    final totalAvailableCalories = dynamicTargetCalories + activityCalories;
     final consumedCalories = 0.0; // This would need to be passed from the build method
     final remainingCalories = totalAvailableCalories - consumedCalories;
     
@@ -504,6 +507,9 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final isWorkDay = userProfile.useAutomaticWeekdayDetection 
         ? (now.weekday >= 1 && now.weekday <= 5)
         : userProfile.isCurrentlyWorkDay;
+    
+    // Determine leisure activity status
+    final leisureActivityEnabled = userProfile.isLeisureActivityEnabledToday;
     
     showDialog(
       context: context,
@@ -534,9 +540,10 @@ class CalorieOverviewWidget extends ConsumerWidget {
               _DetailSection(
                 title: '🎯 Dit Mål',
                 items: [
-                  _DetailItem('Dagligt mål', '${targetCalories.toInt()} kcal', _getGoalTypeText(userProfile.goalType)),
-                  _DetailItem('Måljustering', '${(targetCalories - currentTdee).toInt()} kcal', _getGoalAdjustmentText(userProfile.goalType, userProfile.weeklyGoalKg)),
+                  _DetailItem('Dagligt mål', '${dynamicTargetCalories.toInt()} kcal', _getGoalTypeText(userProfile.goalType)),
+                  _DetailItem('Måljustering', '${(dynamicTargetCalories - currentTdee).toInt()} kcal', _getGoalAdjustmentText(userProfile.goalType, userProfile.weeklyGoalKg)),
                   _DetailItem('Type dag', isWorkDay ? 'Arbejdsdag' : 'Fridag', _getWorkDayExplanation(userProfile)),
+                  _DetailItem('Fritidsaktivitet', leisureActivityEnabled ? 'Aktiveret' : 'Deaktiveret', leisureActivityEnabled ? 'Fritidsaktivitet tæller med i dagens TDEE' : 'Kun arbejdsaktivitet tæller med'),
                 ],
               ),
               
@@ -578,7 +585,8 @@ class CalorieOverviewWidget extends ConsumerWidget {
                     ),
                     SizedBox(height: KSizes.margin2x),
                     Text(
-                      'Din TDEE (${currentTdee.toInt()} kcal) justeres med ${(targetCalories - currentTdee).toInt()} kcal for at nå dit mål. '
+                      'Din TDEE (${currentTdee.toInt()} kcal) justeres med ${(dynamicTargetCalories - currentTdee).toInt()} kcal for at nå dit mål. '
+                      'Fritidsaktivitet er ${leisureActivityEnabled ? 'aktiveret' : 'deaktiveret'} i dag. '
                       'Cirklen viser spiste kalorier (${consumedCalories.toInt()}) ud af tilgængelige kalorier (${totalAvailableCalories.toInt()}).',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeS,
@@ -735,6 +743,29 @@ class CalorieOverviewWidget extends ConsumerWidget {
 
     // Return raw TDEE (total daily energy expenditure) without goal adjustments
     return tdee;
+  }
+
+  double _calculateDynamicTargetCalories(UserProfileModel profile, double currentTdee) {
+    // Apply goal-based calorie adjustment to current TDEE
+    double targetCalories = currentTdee;
+    
+    if (profile.goalType == GoalType.weightLoss) {
+      // Weight loss: create caloric deficit
+      final weeklyDeficitKcal = profile.weeklyGoalKg * 7700.0; // 1 kg fat ≈ 7700 kcal
+      final dailyDeficitKcal = weeklyDeficitKcal / 7.0;
+      targetCalories = currentTdee - dailyDeficitKcal;
+    } else if (profile.goalType == GoalType.weightGain || profile.goalType == GoalType.muscleGain) {
+      // Weight gain: create caloric surplus
+      final weeklySurplusKcal = profile.weeklyGoalKg * 7700.0;
+      final dailySurplusKcal = weeklySurplusKcal / 7.0;
+      targetCalories = currentTdee + dailySurplusKcal;
+    } else if (profile.goalType == GoalType.weightMaintenance) {
+      // Maintenance: no adjustment needed
+      targetCalories = currentTdee;
+    }
+
+    // Safety bounds
+    return targetCalories.clamp(800.0, 4000.0);
   }
 }
 

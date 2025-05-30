@@ -191,14 +191,28 @@ class UserProfileModel with _$UserProfileModel {
     // On work days: use work factor, on non-work days: use sedentary work factor
     final effectiveWorkFactor = isWorkDay ? workFactor : 1.2; // 1.2 = sedentary baseline for non-work days
     
-    // Add leisure activity factor only if NOT manual tracking
-    final effectiveLeisureFactor = activityTrackingPreference == ActivityTrackingPreference.manual 
-        ? 0.0 // No leisure activity addition for manual tracking
-        : (leisureFactor - 1.0); // Subtract 1.0 since leisure factor includes baseline
+    // CORRECTED LOGIC: For manual tracking, leisure activity is ALWAYS 0
+    // For automatic tracking, it depends on isLeisureActivityEnabledToday
+    final effectiveLeisureFactor = (activityTrackingPreference == ActivityTrackingPreference.manual)
+        ? 0.0 // Manual tracking: no automatic leisure activity
+        : (isLeisureActivityEnabledToday ? (leisureFactor - 1.0) : 0.0); // Automatic tracking: depends on toggle
     
     final totalFactor = effectiveWorkFactor + effectiveLeisureFactor;
+    final result = bmr * totalFactor.clamp(1.0, 2.5);
     
-    return bmr * totalFactor.clamp(1.0, 2.5); // Safety bounds
+    // Debug logging to verify the fix
+    print('🔢 TDEE Calculation:');
+    print('🔢 - BMR: ${bmr.toStringAsFixed(0)} kcal');
+    print('🔢 - Activity tracking: ${activityTrackingPreference.toString().split('.').last}');
+    print('🔢 - Is work day: $isWorkDay');
+    print('🔢 - Work factor: ${effectiveWorkFactor.toStringAsFixed(2)}');
+    print('🔢 - Leisure enabled today: $isLeisureActivityEnabledToday');
+    print('🔢 - Leisure factor (raw): ${leisureFactor.toStringAsFixed(2)}');
+    print('🔢 - Leisure factor (effective): ${effectiveLeisureFactor.toStringAsFixed(2)}');
+    print('🔢 - Total factor: ${totalFactor.toStringAsFixed(2)}');
+    print('🔢 - Final TDEE: ${result.toStringAsFixed(0)} kcal');
+    
+    return result;
   }
 
   /// Get work activity multiplier factor

@@ -14,33 +14,51 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   Future<void> _loadSavedProgress() async {
     print('🔍 Loading saved progress...');
     
-    // Check if onboarding is already completed
-    final completedProfile = await OnboardingStorageService.loadUserProfile();
-    if (completedProfile != null) {
-      print('✅ Onboarding already completed, loading permanent profile...');
-      print('📥 Found completed profile: ${completedProfile.name}');
+    try {
+      final savedProfile = await OnboardingStorageService.loadUserProfile();
       
-      // Initialize work day status if using automatic detection
-      final updatedProfile = _initializeWorkDayStatus(completedProfile);
-      
+      if (savedProfile != null) {
+        print('✅ Onboarding already completed, loading permanent profile...');
+        print('📥 Found completed profile: ${savedProfile.name}');
+        
+        // ALWAYS FORCE RECALCULATION for existing users to fix old calculations
+        final recalculatedTargetCalories = _calculateTargetCalories(savedProfile);
+        
+        print('🔄 FORCING recalculation: old=${savedProfile.targetCalories} -> new=$recalculatedTargetCalories');
+        print('🔍 Current settings:');
+        print('  - Activity tracking: ${savedProfile.activityTrackingPreference}');
+        print('  - Work activity: ${savedProfile.workActivityLevel}');
+        print('  - Leisure activity: ${savedProfile.leisureActivityLevel}');
+        print('  - Leisure enabled today: ${savedProfile.isLeisureActivityEnabledToday}');
+        print('  - BMR: ${savedProfile.bmr.toInt()}');
+        print('  - TDEE: ${savedProfile.tdee.toInt()}');
+        
+        final updatedProfile = savedProfile.copyWith(
+          targetCalories: recalculatedTargetCalories,
+        );
+        
+        // Save the corrected profile
+        await OnboardingStorageService.saveUserProfile(updatedProfile);
+        
+        state = state.copyWith(
+          userProfile: updatedProfile,
+          currentStep: OnboardingStep.summary,
+        );
+        print('✅ Profile FORCE updated with correct target calories: $recalculatedTargetCalories');
+        
+        _calculateTargets();
+        print('✅ Loaded completed profile successfully');
+      } else {
+        print('🔍 No saved profile found, starting fresh onboarding');
+        state = state.copyWith(
+          currentStep: OnboardingStep.basicInfo,
+        );
+      }
+    } catch (e) {
+      print('❌ Error loading saved progress: $e');
       state = state.copyWith(
-        userProfile: updatedProfile,
-        currentStep: OnboardingStep.summary,
+        currentStep: OnboardingStep.basicInfo,
       );
-      
-      _calculateTargets();
-      print('✅ Loaded completed profile successfully');
-      return;
-    }
-    
-    // Otherwise, load partial progress
-    final partialProfile = await OnboardingStorageService.loadPartialProgress();
-    if (partialProfile != null) {
-      print('📥 Found partial progress, continuing from ${partialProfile.name}');
-      state = state.copyWith(userProfile: partialProfile);
-      _calculateTargets();
-    } else {
-      print('📭 No saved progress found, starting fresh');
     }
   }
 
@@ -381,27 +399,9 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       return 0;
     }
 
-    // Calculate age from dateOfBirth directly to avoid Freezed issues
-    final now = DateTime.now();
-    int age = now.year - profile.dateOfBirth!.year;
-    if (now.month < profile.dateOfBirth!.month ||
-        (now.month == profile.dateOfBirth!.month && now.day < profile.dateOfBirth!.day)) {
-      age--;
-    }
-
-    if (age <= 0) return 0;
-
-    // Calculate BMR using Mifflin-St Jeor equation
-    double bmr;
-    if (profile.gender == Gender.male) {
-      bmr = (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) + 5.0;
-    } else {
-      bmr = (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) - 161.0;
-    }
+    // Use the profile's TDEE calculation (which is now fixed)
+    final tdee = profile.tdee;
     
-    // Calculate TDEE based on activity levels
-    double tdee = _calculateTdee(profile, bmr);
-
     // Apply goal-based calorie adjustment
     double targetCalories = tdee;
     
@@ -416,59 +416,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       final dailySurplusKcal = weeklySurplusKcal / 7.0;
       targetCalories = tdee + dailySurplusKcal;
     } else if (profile.goalType == GoalType.weightMaintenance) {
-      // For weight maintenance, target calories = tdee (no change)
+      // Maintenance: no adjustment needed
+      targetCalories = tdee;
     }
 
     // Safety bounds
     return targetCalories.clamp(800.0, 4000.0).round();
-  }
-
-  /// Calculate TDEE (Total Daily Energy Expenditure) from BMR and activity levels
-  double _calculateTdee(UserProfileModel profile, double bmr) {
-    // Use new activity system if available, otherwise fall back to legacy
-    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
-      // Calculate work activity multiplier based on current day
-      double workMultiplier = 1.2; // Default sedentary baseline
-      if (profile.isCurrentlyWorkDay) {
-        workMultiplier = switch (profile.workActivityLevel!) {
-          WorkActivityLevel.sedentary => 1.2,
-          WorkActivityLevel.light => 1.375,
-          WorkActivityLevel.moderate => 1.5, // Fixed: was 1.55
-          WorkActivityLevel.heavy => 1.725,
-          WorkActivityLevel.veryHeavy => 1.9,
-        };
-      }
-      
-      // Calculate leisure activity addition - only if NOT manual tracking
-      double leisureAddition = 0.0;
-      if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
-          profile.isLeisureActivityEnabledToday) {
-        final leisureMultiplier = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 1.0,
-          LeisureActivityLevel.lightlyActive => 1.1, // Fixed: proper multiplier
-          LeisureActivityLevel.moderatelyActive => 1.2,
-          LeisureActivityLevel.veryActive => 1.3,
-          LeisureActivityLevel.extraActive => 1.4,
-        };
-        leisureAddition = leisureMultiplier - 1.0; // Convert to addition factor
-      }
-      
-      final totalMultiplier = workMultiplier + leisureAddition;
-      return bmr * totalMultiplier.clamp(1.0, 2.5); // Safety bounds
-    } else {
-      // Fall back to legacy activity level system
-      if (profile.activityLevel == null) return bmr * 1.2; // Default sedentary
-      
-      final activityMultiplier = switch (profile.activityLevel!) {
-        ActivityLevel.sedentary => 1.2,
-        ActivityLevel.lightlyActive => 1.375,
-        ActivityLevel.moderatelyActive => 1.55,
-        ActivityLevel.veryActive => 1.725,
-        ActivityLevel.extraActive => 1.9,
-      };
-      
-      return bmr * activityMultiplier;
-    }
   }
 
   /// Calculate macronutrient targets
@@ -512,8 +465,13 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       return; // No activity data available
     }
       
+    final oldTargetCalories = profile.targetCalories;
     final targetCalories = _calculateTargetCalories(profile);
     final macros = _calculateMacronutrients(targetCalories);
+    
+    if (oldTargetCalories != targetCalories) {
+      print('🔄 Target calories updated: $oldTargetCalories → $targetCalories (leisure activity: ${profile.isLeisureActivityEnabledToday})');
+    }
     
     final updatedProfile = profile.copyWith(
       targetCalories: targetCalories,
@@ -526,8 +484,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       userProfile: updatedProfile,
     );
     
-    // Only auto-save when targets change for completed users if it's a meaningful change
-    if (state.userProfile.isOnboardingCompleted) {
+    // Always save for completed users when target calories change
+    if (profile.isOnboardingCompleted) {
       _saveCompletedUserUpdate();
     }
   }
