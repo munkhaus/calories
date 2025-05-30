@@ -96,7 +96,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       OnboardingStep.healthInfo => OnboardingStep.workActivity,
       OnboardingStep.workActivity => OnboardingStep.leisureActivity,
       OnboardingStep.leisureActivity => OnboardingStep.goals,
-      OnboardingStep.goals => OnboardingStep.summary,
+      OnboardingStep.goals => OnboardingStep.calorieEducation,
+      OnboardingStep.calorieEducation => OnboardingStep.summary,
       OnboardingStep.summary => OnboardingStep.completed,
       OnboardingStep.completed => OnboardingStep.completed,
     };
@@ -112,7 +113,8 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       OnboardingStep.workActivity => OnboardingStep.healthInfo,
       OnboardingStep.leisureActivity => OnboardingStep.workActivity,
       OnboardingStep.goals => OnboardingStep.leisureActivity,
-      OnboardingStep.summary => OnboardingStep.goals,
+      OnboardingStep.calorieEducation => OnboardingStep.goals,
+      OnboardingStep.summary => OnboardingStep.calorieEducation,
       OnboardingStep.completed => OnboardingStep.summary,
     };
 

@@ -10,6 +10,7 @@ import 'widgets/physical_info_step_widget.dart';
 import 'widgets/work_activity_step_widget.dart';
 import 'widgets/leisure_activity_step_widget.dart';
 import 'widgets/goals_step_widget.dart';
+import 'widgets/calorie_education_step_widget.dart';
 import 'widgets/summary_step_widget.dart';
 import '../../../main.dart';
 
@@ -67,7 +68,7 @@ class OnboardingPage extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Trin ${state.currentStepNumber} af ${state.totalSteps} • ${(state.progress * 100).round()}% færdig',
+                'Trin ${state.currentStepNumber} af ${state.totalSteps}',
                 style: TextStyle(
                   fontSize: KSizes.fontSizeS,
                   color: AppColors.textSecondary,
@@ -128,6 +129,8 @@ class OnboardingPage extends ConsumerWidget {
         return const LeisureActivityStepWidget();
       case OnboardingStep.goals:
         return const GoalsStepWidget();
+      case OnboardingStep.calorieEducation:
+        return const CalorieEducationStepWidget();
       case OnboardingStep.summary:
         return const SummaryStepWidget();
       case OnboardingStep.completed:
@@ -244,6 +247,8 @@ class OnboardingPage extends ConsumerWidget {
         return '🏃‍♂️ Hvor aktiv er du i fritiden?';
       case OnboardingStep.goals:
         return '🎯 Hvad vil du opnå?';
+      case OnboardingStep.calorieEducation:
+        return '📚 Lær om kalorier';
       case OnboardingStep.summary:
         return '✅ Gennemgå dine oplysninger';
       case OnboardingStep.completed:
