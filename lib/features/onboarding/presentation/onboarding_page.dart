@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/k_sizes.dart';
+import '../../../core/theme/app_theme.dart';
 import '../application/onboarding_notifier.dart';
 import '../application/onboarding_state.dart';
 import '../domain/onboarding_step.dart';
@@ -9,7 +10,6 @@ import 'widgets/physical_info_step_widget.dart';
 import 'widgets/work_activity_step_widget.dart';
 import 'widgets/leisure_activity_step_widget.dart';
 import 'widgets/goals_step_widget.dart';
-import 'widgets/calorie_explanation_step_widget.dart';
 import 'widgets/summary_step_widget.dart';
 import '../../../main.dart';
 
@@ -53,42 +53,63 @@ class OnboardingPage extends ConsumerWidget {
   Widget _buildProgressIndicator(OnboardingState state) {
     return Container(
       padding: EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.border.withOpacity(0.1),
+          ),
+        ),
+      ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Trin ${state.currentStepNumber} af ${state.totalSteps}',
+                'Trin ${state.currentStepNumber} af ${state.totalSteps} • ${(state.progress * 100).round()}% færdig',
                 style: TextStyle(
                   fontSize: KSizes.fontSizeS,
-                  color: Colors.grey[600],
-                ),
-              ),
-              Text(
-                '${(state.progress * 100).round()}%',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeS,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
+                  color: AppColors.textSecondary,
+                  fontWeight: KSizes.fontWeightMedium,
                 ),
               ),
             ],
           ),
-          SizedBox(height: KSizes.margin2x),
-          LinearProgressIndicator(
-            value: state.progress,
-            backgroundColor: Colors.grey[300],
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+          
+          KSizes.spacingVerticalM,
+          
+          // Progress bar with better styling
+          Container(
+            height: 6,
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(KSizes.radiusS),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(KSizes.radiusS),
+              child: LinearProgressIndicator(
+                value: state.progress,
+                backgroundColor: Colors.transparent,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+              ),
+            ),
           ),
-          SizedBox(height: KSizes.margin2x),
+          
+          KSizes.spacingVerticalM,
+          
+          // Step description with better typography
           Text(
-            state.stepDescription,
+            _getActionableStepDescription(state.currentStep),
             style: TextStyle(
               fontSize: KSizes.fontSizeM,
-              color: Colors.grey[600],
+              color: AppColors.primary,
+              height: 1.3,
+              fontWeight: KSizes.fontWeightMedium,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -107,8 +128,6 @@ class OnboardingPage extends ConsumerWidget {
         return const LeisureActivityStepWidget();
       case OnboardingStep.goals:
         return const GoalsStepWidget();
-      case OnboardingStep.calorieExplanation:
-        return const CalorieExplanationStepWidget();
       case OnboardingStep.summary:
         return const SummaryStepWidget();
       case OnboardingStep.completed:
@@ -201,8 +220,10 @@ class OnboardingPage extends ConsumerWidget {
                 state.currentStep == OnboardingStep.completed
                     ? 'Start app'
                     : state.currentStep == OnboardingStep.summary
-                        ? 'Afslut'
-                        : 'Næste',
+                        ? 'Fuldfør'
+                        : state.canProceedToNext 
+                            ? 'Fortsæt'
+                            : 'Udfyld felterne',
               ),
             ),
           ),
@@ -210,4 +231,23 @@ class OnboardingPage extends ConsumerWidget {
       ),
     );
   }
-} 
+
+  String _getActionableStepDescription(OnboardingStep step) {
+    switch (step) {
+      case OnboardingStep.basicInfo:
+        return '👋 Fortæl os hvem du er';
+      case OnboardingStep.healthInfo:
+        return '📏 Indtast dine fysiske mål';
+      case OnboardingStep.workActivity:
+        return '💼 Beskriv dit arbejde';
+      case OnboardingStep.leisureActivity:
+        return '🏃‍♂️ Hvor aktiv er du i fritiden?';
+      case OnboardingStep.goals:
+        return '🎯 Hvad vil du opnå?';
+      case OnboardingStep.summary:
+        return '✅ Gennemgå dine oplysninger';
+      case OnboardingStep.completed:
+        return '🎉 Du er klar til at starte!';
+    }
+  }
+}

@@ -96,8 +96,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       OnboardingStep.healthInfo => OnboardingStep.workActivity,
       OnboardingStep.workActivity => OnboardingStep.leisureActivity,
       OnboardingStep.leisureActivity => OnboardingStep.goals,
-      OnboardingStep.goals => OnboardingStep.calorieExplanation,
-      OnboardingStep.calorieExplanation => OnboardingStep.summary,
+      OnboardingStep.goals => OnboardingStep.summary,
       OnboardingStep.summary => OnboardingStep.completed,
       OnboardingStep.completed => OnboardingStep.completed,
     };
@@ -113,8 +112,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
       OnboardingStep.workActivity => OnboardingStep.healthInfo,
       OnboardingStep.leisureActivity => OnboardingStep.workActivity,
       OnboardingStep.goals => OnboardingStep.leisureActivity,
-      OnboardingStep.calorieExplanation => OnboardingStep.goals,
-      OnboardingStep.summary => OnboardingStep.calorieExplanation,
+      OnboardingStep.summary => OnboardingStep.goals,
       OnboardingStep.completed => OnboardingStep.summary,
     };
 
@@ -496,31 +494,41 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   void _calculateTargets() {
     // Only calculate if we have all necessary data
     final profile = state.userProfile;
-    if (profile.heightCm > 0 && 
-        profile.currentWeightKg > 0 && 
-        profile.dateOfBirth != null && 
-        profile.gender != null && 
-        profile.activityLevel != null && 
-        profile.goalType != null) {
+    
+    // Check for required basic data
+    if (profile.heightCm <= 0 || 
+        profile.currentWeightKg <= 0 || 
+        profile.dateOfBirth == null || 
+        profile.gender == null || 
+        profile.goalType == null) {
+      return;
+    }
+    
+    // Check for activity data - either new system or legacy
+    final hasNewActivitySystem = profile.workActivityLevel != null && profile.leisureActivityLevel != null;
+    final hasLegacyActivitySystem = profile.activityLevel != null;
+    
+    if (!hasNewActivitySystem && !hasLegacyActivitySystem) {
+      return; // No activity data available
+    }
       
-      final targetCalories = _calculateTargetCalories(profile);
-      final macros = _calculateMacronutrients(targetCalories);
-      
-      final updatedProfile = profile.copyWith(
-        targetCalories: targetCalories,
-        targetProteinG: macros.protein,
-        targetFatG: macros.fat,
-        targetCarbsG: macros.carbs,
-      );
-      
-      state = state.copyWith(
-        userProfile: updatedProfile,
-      );
-      
-      // Only auto-save when targets change for completed users if it's a meaningful change
-      if (state.userProfile.isOnboardingCompleted) {
-        _saveCompletedUserUpdate();
-      }
+    final targetCalories = _calculateTargetCalories(profile);
+    final macros = _calculateMacronutrients(targetCalories);
+    
+    final updatedProfile = profile.copyWith(
+      targetCalories: targetCalories,
+      targetProteinG: macros.protein,
+      targetFatG: macros.fat,
+      targetCarbsG: macros.carbs,
+    );
+    
+    state = state.copyWith(
+      userProfile: updatedProfile,
+    );
+    
+    // Only auto-save when targets change for completed users if it's a meaningful change
+    if (state.userProfile.isOnboardingCompleted) {
+      _saveCompletedUserUpdate();
     }
   }
 

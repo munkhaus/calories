@@ -24,7 +24,6 @@ class OnboardingState with _$OnboardingState {
   bool get isWorkActivity => currentStep == OnboardingStep.workActivity;
   bool get isLeisureActivity => currentStep == OnboardingStep.leisureActivity;
   bool get isGoals => currentStep == OnboardingStep.goals;
-  bool get isCalorieExplanation => currentStep == OnboardingStep.calorieExplanation;
   bool get isSummary => currentStep == OnboardingStep.summary;
   bool get isCompleted => currentStep == OnboardingStep.completed;
 
@@ -44,9 +43,7 @@ class OnboardingState with _$OnboardingState {
         return userProfile.leisureActivityLevel != null;
       case OnboardingStep.goals:
         return userProfile.goalType != null &&
-            userProfile.targetWeightKg > 0;
-      case OnboardingStep.calorieExplanation:
-        return true;
+            (userProfile.goalType == GoalType.weightMaintenance || userProfile.targetWeightKg > 0);
       case OnboardingStep.summary:
         return true;
       case OnboardingStep.completed:
@@ -58,17 +55,15 @@ class OnboardingState with _$OnboardingState {
   double get progress {
     switch (currentStep) {
       case OnboardingStep.basicInfo:
-        return 0.14;
+        return 0.17;
       case OnboardingStep.healthInfo:
-        return 0.28;
+        return 0.33;
       case OnboardingStep.workActivity:
-        return 0.42;
+        return 0.50;
       case OnboardingStep.leisureActivity:
-        return 0.57;
+        return 0.67;
       case OnboardingStep.goals:
-        return 0.71;
-      case OnboardingStep.calorieExplanation:
-        return 0.85;
+        return 0.83;
       case OnboardingStep.summary:
         return 0.95;
       case OnboardingStep.completed:
@@ -77,7 +72,7 @@ class OnboardingState with _$OnboardingState {
   }
 
   /// Get total number of steps (excluding completed)
-  int get totalSteps => 7;
+  int get totalSteps => 6;
 
   /// Get current step number (1-based)
   int get currentStepNumber {
@@ -92,12 +87,10 @@ class OnboardingState with _$OnboardingState {
         return 4;
       case OnboardingStep.goals:
         return 5;
-      case OnboardingStep.calorieExplanation:
-        return 6;
       case OnboardingStep.summary:
-        return 7;
+        return 6;
       case OnboardingStep.completed:
-        return 7;
+        return 6;
     }
   }
 
@@ -114,8 +107,6 @@ class OnboardingState with _$OnboardingState {
         return 'Din fritid';
       case OnboardingStep.goals:
         return 'Dine mål';
-      case OnboardingStep.calorieExplanation:
-        return 'Dit kaloriemål';
       case OnboardingStep.summary:
         return 'Opsummering';
       case OnboardingStep.completed:
@@ -136,8 +127,6 @@ class OnboardingState with _$OnboardingState {
         return 'Hvor aktiv er du i din fritid?';
       case OnboardingStep.goals:
         return 'Hvad vil du opnå?';
-      case OnboardingStep.calorieExplanation:
-        return 'Sådan har vi beregnet dit daglige kaloriemål';
       case OnboardingStep.summary:
         return 'Lad os gennemgå dine oplysninger';
       case OnboardingStep.completed:

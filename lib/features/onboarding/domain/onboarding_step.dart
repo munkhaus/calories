@@ -4,7 +4,6 @@ enum OnboardingStep {
   workActivity,      // Work activity selection
   leisureActivity,   // Leisure activity selection
   goals,             // Goal selection only
-  calorieExplanation, // Detailed calorie calculation explanation
   summary,
   completed,
 } 

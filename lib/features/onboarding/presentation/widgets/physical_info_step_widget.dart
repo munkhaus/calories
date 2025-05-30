@@ -19,22 +19,18 @@ class PhysicalInfoStepWidget extends ConsumerStatefulWidget {
 class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget> {
   late TextEditingController _heightController;
   late TextEditingController _currentWeightController;
-  late TextEditingController _targetWeightController;
   
   late FocusNode _heightFocus;
   late FocusNode _currentWeightFocus;
-  late FocusNode _targetWeightFocus;
 
   @override
   void initState() {
     super.initState();
     _heightController = TextEditingController();
     _currentWeightController = TextEditingController();
-    _targetWeightController = TextEditingController();
     
     _heightFocus = FocusNode();
     _currentWeightFocus = FocusNode();
-    _targetWeightFocus = FocusNode();
     
     // Auto-focus height field after widget builds
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -48,30 +44,10 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
   void dispose() {
     _heightController.dispose();
     _currentWeightController.dispose();
-    _targetWeightController.dispose();
     
     _heightFocus.dispose();
     _currentWeightFocus.dispose();
-    _targetWeightFocus.dispose();
     super.dispose();
-  }
-
-  void _updateControllers(UserProfileModel profile) {
-    // Only update if the controller text is different from the current value
-    // AND the respective field is not currently focused (user is not typing)
-    final heightText = profile.heightCm > 0 ? profile.heightCm.round().toString() : '';
-    final currentWeightText = profile.currentWeightKg > 0 ? profile.currentWeightKg.toStringAsFixed(1) : '';
-    final targetWeightText = profile.targetWeightKg > 0 ? profile.targetWeightKg.toStringAsFixed(1) : '';
-
-    if (_heightController.text != heightText && !_heightFocus.hasFocus) {
-      _heightController.text = heightText;
-    }
-    if (_currentWeightController.text != currentWeightText && !_currentWeightFocus.hasFocus) {
-      _currentWeightController.text = currentWeightText;
-    }
-    if (_targetWeightController.text != targetWeightText && !_targetWeightFocus.hasFocus) {
-      _targetWeightController.text = targetWeightText;
-    }
   }
 
   @override
@@ -86,11 +62,11 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
     if (_currentWeightController.text.isEmpty && state.userProfile.currentWeightKg > 0) {
       _currentWeightController.text = state.userProfile.currentWeightKg.toStringAsFixed(1);
     }
-    if (_targetWeightController.text.isEmpty && state.userProfile.targetWeightKg > 0) {
-      _targetWeightController.text = state.userProfile.targetWeightKg.toStringAsFixed(1);
-    }
 
     return OnboardingBaseLayout(
+      title: 'Dine fysiske mål',
+      subtitle: 'Højde og vægt hjælper os med at beregne dine kaloriebehov.',
+      titleIcon: Icons.straighten,
       children: [
         // Height section
         OnboardingSection(
@@ -102,13 +78,6 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         // Current weight section  
         OnboardingSection(
           child: _buildCurrentWeightSection(context, state, notifier),
-        ),
-        
-        KSizes.spacingVerticalL,
-        
-        // Target weight section
-        OnboardingSection(
-          child: _buildTargetWeightSection(context, state, notifier),
         ),
         
         // BMI display
@@ -127,15 +96,18 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: MdiIcons.humanMaleHeight,
+          icon: Icons.height,
           title: 'Hvor høj er du?',
-          subtitle: 'Din højde hjælper os med at beregne dine kaloriebehov',
+          subtitle: 'Indtast din højde i centimeter.',
+          iconColor: AppColors.primary,
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
-        // Single Input Field using standardized container
+        // Height input with better styling
         OnboardingInputContainer(
+          color: AppColors.primary,
+          isActive: state.userProfile.heightCm > 0,
           child: TextField(
             controller: _heightController,
             focusNode: _heightFocus,
@@ -153,49 +125,57 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
             },
             onSubmitted: (_) => _currentWeightFocus.requestFocus(),
             decoration: InputDecoration(
-              hintText: 'Højde',
+              hintText: 'Indtast højde',
               suffixText: 'cm',
               suffixIcon: state.userProfile.heightCm > 0 
                   ? Icon(
-                      MdiIcons.check,
+                      Icons.check_circle,
                       color: AppColors.success,
-                      size: KSizes.iconS,
+                      size: KSizes.iconM,
                     )
                   : null,
               border: InputBorder.none,
-              hintStyle: TextStyle(color: AppColors.primary.withOpacity(0.6)),
+              hintStyle: TextStyle(
+                color: AppColors.primary.withOpacity(0.6),
+                fontSize: KSizes.fontSizeL,
+              ),
               suffixStyle: TextStyle(
                 color: AppColors.primary,
                 fontWeight: KSizes.fontWeightMedium,
-                fontSize: 20,
-              ),
-              errorText: _heightController.text.isNotEmpty && state.userProfile.heightCm <= 0 
-                  ? 'Indtast højde mellem 120-220 cm' 
-                  : null,
-              errorStyle: TextStyle(
-                color: AppColors.error,
-                fontSize: KSizes.fontSizeXS,
+                fontSize: KSizes.fontSizeL,
               ),
             ),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.primary,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeXXL,
               fontWeight: KSizes.fontWeightBold,
+              color: AppColors.primary,
             ),
           ),
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
-        // Height Slider using standardized component
+        // Height Slider
         OnboardingSlider(
           value: state.userProfile.heightCm,
           min: 120,
           max: 220,
           divisions: 100,
           onChanged: notifier.updateHeight,
+          color: AppColors.primary,
           minLabel: '120 cm',
           maxLabel: '220 cm',
         ),
+        
+        // Help text for height validation
+        if (_heightController.text.isNotEmpty && state.userProfile.heightCm <= 0) ...[
+          KSizes.spacingVerticalM,
+          OnboardingHelpText(
+            text: 'Indtast en højde mellem 120-220 cm',
+            icon: Icons.warning_outlined,
+            color: AppColors.warning,
+          ),
+        ],
       ],
     );
   }
@@ -205,22 +185,23 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: MdiIcons.scale,
+          icon: Icons.monitor_weight_outlined,
           title: 'Hvad vejer du nu?',
-          subtitle: 'Din nuværende vægt bruges som udgangspunkt for dine mål',
+          subtitle: 'Indtast din nuværende vægt i kilogram.',
           iconColor: AppColors.secondary,
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
-        // Single Input Field using standardized container
+        // Weight input with better styling
         OnboardingInputContainer(
           color: AppColors.secondary,
+          isActive: state.userProfile.currentWeightKg > 0,
           child: TextField(
             controller: _currentWeightController,
             focusNode: _currentWeightFocus,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.next,
+            textInputAction: TextInputAction.done,
             textAlign: TextAlign.center,
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
@@ -231,35 +212,39 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
                 notifier.updateCurrentWeight(weight);
               }
             },
-            onSubmitted: (_) => _targetWeightFocus.requestFocus(),
+            onSubmitted: (_) => FocusScope.of(context).unfocus(),
             decoration: InputDecoration(
-              hintText: 'Nuværende vægt',
+              hintText: 'Indtast vægt',
               suffixText: 'kg',
               suffixIcon: state.userProfile.currentWeightKg > 0 
                   ? Icon(
-                      MdiIcons.check,
+                      Icons.check_circle,
                       color: AppColors.success,
-                      size: KSizes.iconS,
+                      size: KSizes.iconM,
                     )
                   : null,
               border: InputBorder.none,
-              hintStyle: TextStyle(color: AppColors.secondary.withOpacity(0.6)),
+              hintStyle: TextStyle(
+                color: AppColors.secondary.withOpacity(0.6),
+                fontSize: KSizes.fontSizeL,
+              ),
               suffixStyle: TextStyle(
                 color: AppColors.secondary,
                 fontWeight: KSizes.fontWeightMedium,
-                fontSize: 20,
+                fontSize: KSizes.fontSizeL,
               ),
             ),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.secondary,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeXXL,
               fontWeight: KSizes.fontWeightBold,
+              color: AppColors.secondary,
             ),
           ),
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
-        // Current Weight Slider using standardized component
+        // Current Weight Slider
         OnboardingSlider(
           value: state.userProfile.currentWeightKg,
           min: 30,
@@ -270,156 +255,17 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           minLabel: '30 kg',
           maxLabel: '200 kg',
         ),
-      ],
-    );
-  }
-
-  Widget _buildTargetWeightSection(BuildContext context, dynamic state, dynamic notifier) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        OnboardingSectionHeader(
-          icon: MdiIcons.target,
-          title: 'Hvad er din målvægt?',
-          subtitle: 'Den vægt du gerne vil opnå',
-          iconColor: AppColors.success,
-        ),
         
-        KSizes.spacingVerticalM,
-        
-        // Single Input Field using standardized container
-        OnboardingInputContainer(
-          color: AppColors.success,
-          child: TextField(
-            controller: _targetWeightController,
-            focusNode: _targetWeightFocus,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            textAlign: TextAlign.center,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,1}')),
-            ],
-            onChanged: (value) {
-              final weight = double.tryParse(value) ?? 0;
-              if (weight >= 30 && weight <= 200) {
-                notifier.updateTargetWeight(weight);
-              }
-            },
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            decoration: InputDecoration(
-              hintText: 'Målvægt',
-              suffixText: 'kg',
-              suffixIcon: state.userProfile.targetWeightKg > 0 
-                  ? Icon(
-                      MdiIcons.check,
-                      color: AppColors.success,
-                      size: KSizes.iconS,
-                    )
-                  : null,
-              border: InputBorder.none,
-              hintStyle: TextStyle(color: AppColors.success.withOpacity(0.6)),
-              suffixStyle: TextStyle(
-                color: AppColors.success,
-                fontWeight: KSizes.fontWeightMedium,
-                fontSize: 20,
-              ),
-            ),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: AppColors.success,
-              fontWeight: KSizes.fontWeightBold,
-            ),
-          ),
-        ),
-        
-        KSizes.spacingVerticalM,
-        
-        // Target Weight Slider using standardized component
-        OnboardingSlider(
-          value: state.userProfile.targetWeightKg,
-          min: 30,
-          max: 200,
-          divisions: 340,
-          onChanged: notifier.updateTargetWeight,
-          color: AppColors.success,
-          minLabel: '30 kg',
-          maxLabel: '200 kg',
-        ),
-        
-        // Weight Difference Display
-        if (state.userProfile.currentWeightKg > 0 && state.userProfile.targetWeightKg > 0)
-          _buildWeightDifferenceCard(context, state),
-      ],
-    );
-  }
-
-  Widget _buildWeightDifferenceCard(BuildContext context, dynamic state) {
-    final difference = state.userProfile.targetWeightKg - state.userProfile.currentWeightKg;
-    final isWeightLoss = difference < 0;
-    final isWeightGain = difference > 0;
-    final isMaintenance = difference.abs() < 0.5;
-
-    if (isMaintenance) {
-      return Container(
-        margin: const EdgeInsets.only(top: KSizes.margin4x),
-        padding: const EdgeInsets.all(KSizes.margin3x),
-        decoration: BoxDecoration(
-          color: AppColors.info.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(KSizes.radiusS),
-          border: Border.all(color: AppColors.info.withOpacity(0.3)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              MdiIcons.equal,
-              color: AppColors.info,
-              size: KSizes.iconS,
-            ),
-            KSizes.spacingHorizontalS,
-            Text(
-              'Vægtvedligeholdelse',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.info,
-                fontWeight: KSizes.fontWeightMedium,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(top: KSizes.margin4x),
-      padding: const EdgeInsets.all(KSizes.margin3x),
-      decoration: BoxDecoration(
-        color: isWeightLoss 
-            ? AppColors.warning.withOpacity(0.1)
-            : AppColors.success.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusS),
-        border: Border.all(
-          color: isWeightLoss 
-              ? AppColors.warning.withOpacity(0.3)
-              : AppColors.success.withOpacity(0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isWeightLoss ? MdiIcons.trendingDown : MdiIcons.trendingUp,
-            color: isWeightLoss ? AppColors.warning : AppColors.success,
-            size: KSizes.iconS,
-          ),
-          KSizes.spacingHorizontalS,
-          Text(
-            isWeightLoss 
-                ? '${difference.abs().toStringAsFixed(1)} kg vægttab'
-                : '${difference.abs().toStringAsFixed(1)} kg vægtøgning',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: isWeightLoss ? AppColors.warning : AppColors.success,
-              fontWeight: KSizes.fontWeightMedium,
-            ),
+        // Help text for weight validation
+        if (_currentWeightController.text.isNotEmpty && state.userProfile.currentWeightKg <= 0) ...[
+          KSizes.spacingVerticalM,
+          OnboardingHelpText(
+            text: 'Indtast en vægt mellem 30-200 kg',
+            icon: Icons.warning_outlined,
+            color: AppColors.warning,
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -429,76 +275,116 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
     
     Color bmiColor;
     IconData bmiIcon;
+    String explanation;
     
     if (bmi < 18.5) {
       bmiColor = AppColors.info;
-      bmiIcon = MdiIcons.trendingDown;
+      bmiIcon = Icons.trending_down;
+      explanation = 'Undervægt - Overvej at tage på for optimal sundhed';
     } else if (bmi < 25) {
       bmiColor = AppColors.success;
-      bmiIcon = MdiIcons.checkCircle;
+      bmiIcon = Icons.check_circle;
+      explanation = 'Normalvægt - Du har en sund vægt!';
     } else if (bmi < 30) {
       bmiColor = AppColors.warning;
-      bmiIcon = MdiIcons.alertCircle;
+      bmiIcon = Icons.warning_outlined;
+      explanation = 'Overvægt - Overvej vægttab for bedre sundhed';
     } else {
       bmiColor = AppColors.error;
-      bmiIcon = MdiIcons.alert;
+      bmiIcon = Icons.error_outline;
+      explanation = 'Svær overvægt - Vægttab vil forbedre din sundhed betydeligt';
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OnboardingSectionHeader(
-          icon: MdiIcons.calculator,
-          title: 'Dit BMI',
-          subtitle: 'Beregnet ud fra din højde og vægt',
+          icon: Icons.calculate_outlined,
+          title: 'Dit BMI resultat',
+          subtitle: 'BMI viser din vægt i forhold til din højde.',
+          iconColor: bmiColor,
         ),
         
-        KSizes.spacingVerticalM,
+        KSizes.spacingVerticalL,
         
+        // BMI Display Card
         Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
+          padding: EdgeInsets.all(KSizes.margin4x),
           decoration: BoxDecoration(
             color: bmiColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(KSizes.radiusM),
             border: Border.all(color: bmiColor.withOpacity(0.3)),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: bmiColor,
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  bmiIcon,
-                  color: Colors.white,
-                  size: KSizes.iconM,
-                ),
+              // BMI Value
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    bmiIcon,
+                    color: bmiColor,
+                    size: KSizes.iconL,
+                  ),
+                  KSizes.spacingHorizontalM,
+                  Column(
+                    children: [
+                      Text(
+                        bmi.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeXXL,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: bmiColor,
+                        ),
+                      ),
+                      Text(
+                        'BMI',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: bmiColor,
+                          fontWeight: KSizes.fontWeightMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              KSizes.spacingHorizontalM,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'BMI: ${bmi.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: bmiColor,
-                        fontWeight: KSizes.fontWeightBold,
-                      ),
-                    ),
-                    Text(
-                      category,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
+              
+              KSizes.spacingVerticalM,
+              
+              // Category and Explanation
+              Text(
+                category,
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeL,
+                  fontWeight: KSizes.fontWeightSemiBold,
+                  color: bmiColor,
                 ),
+                textAlign: TextAlign.center,
+              ),
+              
+              KSizes.spacingVerticalS,
+              
+              Text(
+                explanation,
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeM,
+                  color: AppColors.textSecondary,
+                  height: 1.3,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
+        ),
+        
+        KSizes.spacingVerticalM,
+        
+        // BMI Information Help Text
+        OnboardingHelpText(
+          text: 'BMI er vejledende og tager ikke højde for muskelmasse.',
+          icon: Icons.info_outline,
+          color: AppColors.info,
         ),
       ],
     );

@@ -614,4 +614,202 @@ class SummaryStepWidget extends ConsumerWidget {
     }
     return age;
   }
+
+  void _showCalorieExplanation(BuildContext context, UserProfileModel userProfile) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              MdiIcons.calculatorVariant,
+              color: AppColors.primary,
+              size: KSizes.iconM,
+            ),
+            KSizes.spacingHorizontalS,
+            Text('Kalorie beregning'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Final result
+              Container(
+                padding: EdgeInsets.all(KSizes.margin4x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.primary.withOpacity(0.1), AppColors.secondary.withOpacity(0.1)],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Dit daglige kaloriemål',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightMedium,
+                      ),
+                    ),
+                    KSizes.spacingVerticalS,
+                    Text(
+                      '${userProfile.targetCalories} kcal',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              KSizes.spacingVerticalL,
+              
+              // Calculation steps
+              Text(
+                'Beregningsgrundlag:',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeM,
+                  fontWeight: KSizes.fontWeightBold,
+                ),
+              ),
+              
+              KSizes.spacingVerticalM,
+              
+              _buildCalculationRow('Grundstofskifte (BMR)', '${_calculateBMR(userProfile).round()} kcal'),
+              _buildCalculationRow('Aktivitetsniveau', '${_calculateTDEE(userProfile).round()} kcal'),
+              _buildCalculationRow('Måljustering', '${_getGoalAdjustmentText(userProfile)}'),
+              
+              KSizes.spacingVerticalM,
+              
+              Container(
+                padding: EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Text(
+                  'Dette er et estimat baseret på standardformler. Din faktiske kalorieforbrug kan variere.',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.info,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Forstået'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: KSizes.margin2x),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: KSizes.fontSizeS),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeS,
+              fontWeight: KSizes.fontWeightMedium,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _calculateBMR(UserProfileModel profile) {
+    if (profile.dateOfBirth == null || profile.currentWeightKg <= 0 || profile.heightCm <= 0 || profile.gender == null) {
+      return 0;
+    }
+
+    final now = DateTime.now();
+    int age = now.year - profile.dateOfBirth!.year;
+    if (now.month < profile.dateOfBirth!.month ||
+        (now.month == profile.dateOfBirth!.month && now.day < profile.dateOfBirth!.day)) {
+      age--;
+    }
+
+    if (profile.gender == Gender.male) {
+      return (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) + 5.0;
+    } else {
+      return (10.0 * profile.currentWeightKg) + (6.25 * profile.heightCm) - (5.0 * age) - 161.0;
+    }
+  }
+
+  double _calculateTDEE(UserProfileModel profile) {
+    final bmr = _calculateBMR(profile);
+    if (bmr <= 0) return 0;
+
+    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
+      double workMultiplier = 1.2;
+      if (profile.isCurrentlyWorkDay) {
+        workMultiplier = switch (profile.workActivityLevel!) {
+          WorkActivityLevel.sedentary => 1.2,
+          WorkActivityLevel.light => 1.375,
+          WorkActivityLevel.moderate => 1.55,
+          WorkActivityLevel.heavy => 1.725,
+          WorkActivityLevel.veryHeavy => 1.9,
+        };
+      }
+      
+      double leisureAddition = 0.0;
+      if (profile.isLeisureActivityEnabledToday) {
+        leisureAddition = switch (profile.leisureActivityLevel!) {
+          LeisureActivityLevel.sedentary => 0.0,
+          LeisureActivityLevel.lightlyActive => 0.155,
+          LeisureActivityLevel.moderatelyActive => 0.35,
+          LeisureActivityLevel.veryActive => 0.525,
+          LeisureActivityLevel.extraActive => 0.7,
+        };
+      }
+      
+      return (bmr * workMultiplier) + (bmr * leisureAddition);
+    }
+
+    if (profile.activityLevel != null) {
+      final multiplier = switch (profile.activityLevel!) {
+        ActivityLevel.sedentary => 1.2,
+        ActivityLevel.lightlyActive => 1.375,
+        ActivityLevel.moderatelyActive => 1.55,
+        ActivityLevel.veryActive => 1.725,
+        ActivityLevel.extraActive => 1.9,
+      };
+      return bmr * multiplier;
+    }
+    
+    return bmr * 1.2;
+  }
+
+  String _getGoalAdjustmentText(UserProfileModel profile) {
+    switch (profile.goalType) {
+      case GoalType.weightLoss:
+        final adjustment = (profile.weeklyGoalKg * 7700) / 7;
+        return '-${adjustment.round()} kcal (underskud)';
+      case GoalType.weightGain:
+      case GoalType.muscleGain:
+        final adjustment = (profile.weeklyGoalKg * 7700) / 7;
+        return '+${adjustment.round()} kcal (overskud)';
+      case GoalType.weightMaintenance:
+        return '0 kcal (vedligehold)';
+      default:
+        return 'Ikke beregnet';
+    }
+  }
 } 
