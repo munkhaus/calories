@@ -62,6 +62,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     ref.read(foodLoggingProvider.notifier).loadMealsForDate(DateTime.now());
     ref.read(activityNotifierProvider).loadTodaysActivities();
     ref.read(weightTrackingProvider.notifier).loadWeightEntries();
+    
+    // Initialize pending food cubit to load pending items
+    ref.read(pendingFoodProvider.notifier).initialize();
   }
 
   @override
@@ -318,6 +321,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
       return;
     }
     
+    // Only show the modal if no pending foods exist
     print('🍎 Dashboard: Showing registration options modal');
     // Show registration options modal
     showModalBottomSheet(
@@ -520,65 +524,253 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
   }
 
   void _captureQuickFood(BuildContext context) async {
-    final cubit = ref.read(pendingFoodProvider.notifier);
+    // Show choice dialog for camera or gallery
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.camera, color: AppColors.warning),
+            SizedBox(width: KSizes.margin2x),
+            Text('Hurtig mad'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Hvordan vil du tilføje billedet?',
+              style: TextStyle(fontSize: KSizes.fontSizeM),
+            ),
+            SizedBox(height: KSizes.margin4x),
+            
+            // Camera option
+            _buildImageSourceOption(
+              title: 'Tag nyt billede',
+              subtitle: 'Brug kameraet til at tage et billede',
+              icon: MdiIcons.camera,
+              onTap: () => Navigator.of(context).pop('camera'),
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Gallery option
+            _buildImageSourceOption(
+              title: 'Vælg fra galleri',
+              subtitle: 'Vælg et eksisterende billede',
+              icon: MdiIcons.image,
+              onTap: () => Navigator.of(context).pop('gallery'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+
+    if (choice == null) return; // User cancelled
+
+    // Show loading indicator
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            SizedBox(width: KSizes.margin3x),
+            Text(choice == 'camera' ? 'Åbner kamera...' : 'Åbner galleri...'),
+          ],
+        ),
+        backgroundColor: AppColors.info,
+        duration: Duration(seconds: 2),
+      ),
+    );
     
     try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              SizedBox(width: KSizes.margin3x),
-              Text('Tager billede...'),
-            ],
-          ),
-          backgroundColor: AppColors.warning,
-          duration: Duration(seconds: 1),
-        ),
-      );
+      final cubit = ref.read(pendingFoodProvider.notifier);
       
-      await cubit.captureFood();
-      _refreshProviders();
+      if (choice == 'camera') {
+        await cubit.captureFood();
+      } else {
+        // Use gallery picker
+        await _pickFromGallery();
+      }
       
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(MdiIcons.check, color: Colors.white),
-                SizedBox(width: KSizes.margin2x),
-                Text('Billede taget! Kategoriser det når du er klar.'),
-              ],
+        
+        // Check if capture was successful by checking state
+        final state = ref.read(pendingFoodProvider);
+        
+        if (state.captureState.isSuccess) {
+          _refreshProviders();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(MdiIcons.check, color: Colors.white),
+                  SizedBox(width: KSizes.margin2x),
+                  Text('Billede tilføjet! Kategoriser det når du er klar.'),
+                ],
+              ),
+              backgroundColor: AppColors.success,
             ),
-            backgroundColor: AppColors.success,
-          ),
-        );
+          );
+        } else if (state.captureState.hasError) {
+          // Show specific error message
+          _showCameraErrorMessage(context, state.captureState.error ?? 'Ukendt fejl');
+        }
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(MdiIcons.alertCircle, color: Colors.white),
-                SizedBox(width: KSizes.margin2x),
-                Text('Kunne ikke tage billede'),
-              ],
-            ),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        _showCameraErrorMessage(context, 'Uventet fejl: $e');
       }
     }
+  }
+
+  Widget _buildImageSourceOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(KSizes.margin3x),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: AppColors.border.withOpacity(0.3),
+              width: 1,
+            ),
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppColors.warning,
+                  size: KSizes.iconM,
+                ),
+              ),
+              
+              SizedBox(width: KSizes.margin3x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightSemiBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin1x),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              Icon(
+                MdiIcons.chevronRight,
+                color: AppColors.textSecondary,
+                size: KSizes.iconS,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickFromGallery() async {
+    // Call the gallery picker method from cubit
+    await ref.read(pendingFoodProvider.notifier).captureFromGallery();
+  }
+
+  void _showCameraErrorMessage(BuildContext context, String error) {
+    String userMessage;
+    Color backgroundColor;
+    IconData icon;
+
+    // Map technical errors to user-friendly messages
+    if (error.contains('userCancelled') || error.toLowerCase().contains('cancel')) {
+      userMessage = 'Billede annulleret';
+      backgroundColor = AppColors.info;
+      icon = MdiIcons.close;
+    } else if (error.contains('permissionDenied') || error.toLowerCase().contains('permission')) {
+      userMessage = 'Kamera tilladelse nægtet. Tjek app indstillinger.';
+      backgroundColor = AppColors.error;
+      icon = MdiIcons.security;
+    } else if (error.contains('cameraUnavailable') || error.toLowerCase().contains('camera')) {
+      userMessage = 'Kamera ikke tilgængeligt. Prøv igen senere.';
+      backgroundColor = AppColors.error;
+      icon = MdiIcons.cameraOff;
+    } else if (error.contains('imageSave') || error.toLowerCase().contains('save')) {
+      userMessage = 'Kunne ikke gemme billedet. Tjek lagerplads.';
+      backgroundColor = AppColors.error;
+      icon = MdiIcons.contentSave;
+    } else {
+      userMessage = 'Kunne ikke tage billede. Prøv igen.';
+      backgroundColor = AppColors.error;
+      icon = MdiIcons.alertCircle;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            SizedBox(width: KSizes.margin2x),
+            Expanded(child: Text(userMessage)),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: Duration(seconds: 3),
+        action: error.contains('permissionDenied') 
+            ? SnackBarAction(
+                label: 'Indstillinger',
+                textColor: Colors.white,
+                onPressed: () {
+                  // TODO: Open app settings
+                },
+              )
+            : null,
+      ),
+    );
   }
 
   void _navigateToDetailedRegistration(BuildContext context) {
@@ -788,5 +980,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     ref.read(foodLoggingProvider.notifier).refresh();
     ref.read(activityNotifierProvider).loadTodaysActivities();
     ref.read(weightTrackingProvider.notifier).refresh();
+    ref.read(pendingFoodProvider.notifier).loadPendingFoods();
   }
 } 

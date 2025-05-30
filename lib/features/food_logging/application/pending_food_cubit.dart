@@ -15,17 +15,47 @@ class PendingFoodCubit extends StateNotifier<PendingFoodState> {
 
   /// Initialize pending foods by loading them
   Future<void> initialize() async {
+    print('🍎 PendingFoodCubit: initialize() called');
     await loadPendingFoods();
   }
 
   /// Capture new food photo
   Future<void> captureFood() async {
+    print('🍎 PendingFoodCubit: captureFood() called');
     state = state.copyWith(
       captureState: const DataState.loading(),
       isCapturing: true,
     );
 
     final result = await _service.captureFood();
+
+    if (result.isSuccess) {
+      print('🍎 PendingFoodCubit: captureFood() success');
+      state = state.copyWith(
+        captureState: DataState.success(result.success),
+        isCapturing: false,
+      );
+      
+      // Reload pending foods to include the new item
+      await loadPendingFoods();
+    } else {
+      print('🍎 PendingFoodCubit: captureFood() failed: ${result.failure}');
+      state = state.copyWith(
+        captureState: const DataState.error('Kunne ikke tage billede'),
+        isCapturing: false,
+      );
+    }
+  }
+
+  /// Capture food photo from gallery
+  Future<void> captureFromGallery() async {
+    state = state.copyWith(
+      captureState: const DataState.loading(),
+      isCapturing: true,
+    );
+
+    // Use the pickFromGallery method from service
+    final result = await _service.pickFromGallery();
 
     if (result.isSuccess) {
       state = state.copyWith(
@@ -37,7 +67,7 @@ class PendingFoodCubit extends StateNotifier<PendingFoodState> {
       await loadPendingFoods();
     } else {
       state = state.copyWith(
-        captureState: const DataState.error('Kunne ikke tage billede'),
+        captureState: const DataState.error('Kunne ikke vælge billede'),
         isCapturing: false,
       );
     }
@@ -45,6 +75,7 @@ class PendingFoodCubit extends StateNotifier<PendingFoodState> {
 
   /// Load all pending food items
   Future<void> loadPendingFoods() async {
+    print('🍎 PendingFoodCubit: loadPendingFoods() called');
     state = state.copyWith(
       pendingFoodsState: const DataState.loading(),
     );
@@ -52,10 +83,12 @@ class PendingFoodCubit extends StateNotifier<PendingFoodState> {
     final result = await _service.getPendingFoods();
 
     if (result.isSuccess) {
+      print('🍎 PendingFoodCubit: loadPendingFoods() success - found ${result.success.length} items');
       state = state.copyWith(
         pendingFoodsState: DataState.success(result.success),
       );
     } else {
+      print('🍎 PendingFoodCubit: loadPendingFoods() failed: ${result.failure}');
       state = state.copyWith(
         pendingFoodsState: const DataState.error('Kunne ikke indlæse afventende mad'),
       );

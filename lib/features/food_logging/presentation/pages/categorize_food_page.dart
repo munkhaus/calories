@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -97,6 +98,87 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           width: 1,
         ),
       ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        child: _buildImageContent(),
+      ),
+    );
+  }
+
+  Widget _buildImageContent() {
+    // Check if this is a real image file (not mock)
+    if (widget.pendingFood.imagePath.isNotEmpty && 
+        !widget.pendingFood.imagePath.startsWith('mock_')) {
+      
+      final imageFile = File(widget.pendingFood.imagePath);
+      
+      return FutureBuilder<bool>(
+        future: imageFile.exists(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+              ),
+            );
+          }
+          
+          if (snapshot.data == true) {
+            return Image.file(
+              imageFile,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildErrorPlaceholder();
+              },
+            );
+          } else {
+            return _buildErrorPlaceholder();
+          }
+        },
+      );
+    } else {
+      // Mock image - show placeholder
+      return _buildMockPlaceholder();
+    }
+  }
+
+  Widget _buildErrorPlaceholder() {
+    return Container(
+      color: AppColors.surface,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            MdiIcons.imageOff,
+            size: 64,
+            color: AppColors.error,
+          ),
+          SizedBox(height: KSizes.margin2x),
+          Text(
+            'Billede kunne ikke indlæses',
+            style: TextStyle(
+              color: AppColors.error,
+              fontSize: KSizes.fontSizeM,
+            ),
+          ),
+          SizedBox(height: KSizes.margin1x),
+          Text(
+            widget.pendingFood.displayTime,
+            style: TextStyle(
+              color: AppColors.textTertiary,
+              fontSize: KSizes.fontSizeS,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMockPlaceholder() {
+    return Container(
+      color: AppColors.surface,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -107,7 +189,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           ),
           SizedBox(height: KSizes.margin2x),
           Text(
-            'Billede fra ${widget.pendingFood.displayTime}',
+            'Mock billede fra ${widget.pendingFood.displayTime}',
             style: TextStyle(
               color: AppColors.textSecondary,
               fontSize: KSizes.fontSizeM,

@@ -8,6 +8,9 @@ enum PendingFoodError {
   imageCapture,
   imageSave,
   database,
+  userCancelled,
+  permissionDenied,
+  cameraUnavailable,
   unknown,
 }
 
@@ -17,7 +20,17 @@ abstract class IPendingFoodService {
   /// 
   /// Returns [Result.failure] with [PendingFoodError.imageCapture] if camera fails.
   /// Returns [Result.failure] with [PendingFoodError.imageSave] if saving fails.
+  /// Returns [Result.failure] with [PendingFoodError.userCancelled] if user cancels.
+  /// Returns [Result.failure] with [PendingFoodError.permissionDenied] if camera permission denied.
+  /// Returns [Result.failure] with [PendingFoodError.cameraUnavailable] if camera not available.
   Future<Result<PendingFoodModel, PendingFoodError>> captureFood();
+
+  /// Pick image from gallery and create pending food item
+  /// 
+  /// Returns [Result.failure] with [PendingFoodError.userCancelled] if user cancels.
+  /// Returns [Result.failure] with [PendingFoodError.permissionDenied] if gallery permission denied.
+  /// Returns [Result.failure] with [PendingFoodError.imageSave] if saving fails.
+  Future<Result<PendingFoodModel, PendingFoodError>> pickFromGallery();
 
   /// Get all pending food items
   /// 

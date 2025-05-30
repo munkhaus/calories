@@ -230,6 +230,9 @@ class DashboardHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final pendingCount = ref.watch(pendingFoodsCountProvider);
     
+    // Debug: Print the pending count
+    print('🎯 DashboardHeader: pendingCount = $pendingCount');
+    
     return AppPageHeader(
       title: '', // Not used for dashboard
       greeting: greeting,
@@ -250,12 +253,14 @@ class DashboardHeader extends ConsumerWidget {
                 ),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                    colors: pendingCount > 0 
+                        ? [AppColors.warning, AppColors.warning.withOpacity(0.8)]
+                        : [AppColors.primary, AppColors.primary.withOpacity(0.8)],
                   ),
                   borderRadius: BorderRadius.circular(KSizes.radiusL),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.warning.withOpacity(0.3),
+                      color: (pendingCount > 0 ? AppColors.warning : AppColors.primary).withOpacity(0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -270,14 +275,37 @@ class DashboardHeader extends ConsumerWidget {
                       size: KSizes.iconS,
                     ),
                     const SizedBox(width: KSizes.margin1x),
-                    Text(
-                      pendingCount > 0 ? '$pendingCount' : 'Registrer',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: KSizes.fontSizeS,
-                        fontWeight: KSizes.fontWeightBold,
+                    if (pendingCount > 0) ...[
+                      // Show count badge when there are pending items
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: KSizes.margin2x,
+                          vertical: KSizes.margin1x,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(KSizes.radiusS),
+                        ),
+                        child: Text(
+                          '$pendingCount',
+                          style: TextStyle(
+                            color: AppColors.warning,
+                            fontSize: KSizes.fontSizeS,
+                            fontWeight: KSizes.fontWeightBold,
+                          ),
+                        ),
                       ),
-                    ),
+                    ] else ...[
+                      // Show "Registrer" text when no pending items
+                      Text(
+                        'Registrer',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: KSizes.fontSizeS,
+                          fontWeight: KSizes.fontWeightBold,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

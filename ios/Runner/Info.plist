@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Camera and Photo Library permissions -->
+	<key>NSCameraUsageDescription</key>
+	<string>Denne app har brug for adgang til kameraet for at tage billeder af mad til registrering.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Denne app har brug for adgang til fotobiblioteket for at vælge billeder af mad til registrering.</string>
 </dict>
 </plist>
