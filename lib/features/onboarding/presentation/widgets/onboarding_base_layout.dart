@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 
@@ -176,7 +175,7 @@ class OnboardingInputContainer extends StatelessWidget {
   }
 }
 
-/// Simplified slider - only primary color
+/// Simplified slider - only primary color with value indicators
 class OnboardingSlider extends StatelessWidget {
   final double value;
   final double min;
@@ -185,6 +184,7 @@ class OnboardingSlider extends StatelessWidget {
   final ValueChanged<double> onChanged;
   final String? minLabel;
   final String? maxLabel;
+  final String? unit; // Add unit parameter for better formatting
 
   const OnboardingSlider({
     super.key,
@@ -195,7 +195,25 @@ class OnboardingSlider extends StatelessWidget {
     this.divisions,
     this.minLabel,
     this.maxLabel,
+    this.unit,
   });
+
+  String _formatValue(double value) {
+    if (unit != null) {
+      if (unit == 'kg' || unit == 'cm') {
+        return '${value.round()} $unit';
+      } else if (unit == 'kg/uge') {
+        return '${value.toStringAsFixed(1)} $unit';
+      }
+    }
+    
+    // Default formatting
+    if (value % 1 == 0) {
+      return value.round().toString();
+    } else {
+      return value.toStringAsFixed(1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -213,6 +231,7 @@ class OnboardingSlider extends StatelessWidget {
               fontSize: KSizes.fontSizeS,
               fontWeight: KSizes.fontWeightMedium,
             ),
+            showValueIndicator: ShowValueIndicator.always,
           ),
           child: Slider(
             value: value.clamp(min, max),
@@ -220,7 +239,7 @@ class OnboardingSlider extends StatelessWidget {
             max: max,
             divisions: divisions,
             onChanged: onChanged,
-            label: value > 0 ? value.round().toString() : null,
+            label: _formatValue(value),
           ),
         ),
         if (minLabel != null || maxLabel != null)
@@ -249,32 +268,70 @@ class OnboardingSlider extends StatelessWidget {
   }
 }
 
-/// Simplified help text - less prominent styling
+/// Simplified help text - with color categorization based on function
 class OnboardingHelpText extends StatelessWidget {
   final String text;
+  final OnboardingHelpType type;
 
   const OnboardingHelpText({
     super.key,
     required this.text,
+    this.type = OnboardingHelpType.neutral,
   });
 
   @override
   Widget build(BuildContext context) {
+    Color backgroundColor;
+    Color textColor;
+    
+    switch (type) {
+      case OnboardingHelpType.neutral:
+        // Blue - professional and trustworthy (factual explanations)
+        backgroundColor = const Color(0xFF2196F3).withOpacity(0.1);
+        textColor = const Color(0xFF1565C0);
+        break;
+      case OnboardingHelpType.positive:
+        // Green - health and natural (positive health messages)
+        backgroundColor = const Color(0xFF4CAF50).withOpacity(0.1);
+        textColor = const Color(0xFF2E7D32);
+        break;
+      case OnboardingHelpType.motivational:
+        // Orange - energetic and motivating (goals and recommendations)
+        backgroundColor = const Color(0xFFFF9800).withOpacity(0.1);
+        textColor = const Color(0xFFE65100);
+        break;
+      case OnboardingHelpType.warning:
+        // Red-Orange - important warnings, disclaimers, medical notices
+        backgroundColor = const Color(0xFFFF5722).withOpacity(0.15);
+        textColor = const Color(0xFFD84315);
+        break;
+    }
+
     return Container(
+      width: double.infinity, // Full width for symmetry
       padding: EdgeInsets.all(KSizes.margin3x),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(KSizes.radiusS),
       ),
       child: Text(
         text,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: AppColors.textSecondary,
+          color: textColor,
           height: 1.3,
+          fontWeight: KSizes.fontWeightMedium,
         ),
       ),
     );
   }
+}
+
+/// Types of help text based on function
+enum OnboardingHelpType {
+  neutral,      // Blue - factual explanations, technical info
+  positive,     // Green - health benefits, positive outcomes
+  motivational, // Orange - goals, motivation, recommendations
+  warning,      // Red/Orange - disclaimers, important warnings, medical notices
 }
 
 /// Simplified option card - cleaner design, less visual noise

@@ -109,7 +109,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
 
     return OnboardingBaseLayout(
       title: 'Lad os lære dig at kende',
-      subtitle: 'Fortæl os lidt om dig selv, så vi kan personalisere din oplevelse.',
+      subtitle: 'Grundlæggende oplysninger til beregninger.',
       children: [
         // Name section
         OnboardingSection(
@@ -139,7 +139,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
       children: [
         OnboardingSectionHeader(
           title: 'Hvad hedder du?',
-          subtitle: 'Dit navn gør appen mere personlig.',
+          subtitle: 'Dit navn gør appen mere personlig og hjælper os med at skræddersy din oplevelse.',
         ),
         
         KSizes.spacingVerticalL,
@@ -271,6 +271,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
           KSizes.spacingVerticalM,
           OnboardingHelpText(
             text: 'Du er $age år gammel. Dette bruges til præcise beregninger.',
+            type: OnboardingHelpType.neutral,
           ),
         ],
       ],

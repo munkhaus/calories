@@ -121,6 +121,7 @@ class LeisureActivityStepWidget extends ConsumerWidget {
           text: isLeisureActivityEnabled 
               ? 'Dit aktivitetsniveau kombineres med dit arbejde for det samlede kalorieforbrug.'
               : 'Du kan registrere aktiviteter dag for dag i appen.',
+          type: OnboardingHelpType.neutral,
         ),
       ],
     );

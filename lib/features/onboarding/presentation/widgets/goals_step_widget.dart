@@ -94,7 +94,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
               // Weight Gain Goal
               OnboardingOptionCard(
                 title: 'Tage på',
-                description: 'Sund vægtøgning og opbygning af masse.',
+                description: 'Vægtøgning og opbygning af masse.',
                 isSelected: state.userProfile.goalType == GoalType.weightGain,
                 onTap: () => notifier.updateGoalType(GoalType.weightGain),
               ),
@@ -173,9 +173,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
           OnboardingInputContainer(
             isActive: state.userProfile.targetWeightKg > 0,
             child: TextFormField(
-              initialValue: state.userProfile.targetWeightKg > 0 
-                  ? state.userProfile.targetWeightKg.toStringAsFixed(1)
-                  : '',
+              controller: _targetWeightController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               onChanged: (value) {
@@ -214,9 +212,13 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             min: minWeight,
             max: maxWeight,
             divisions: ((maxWeight - minWeight) * 2).round(),
-            onChanged: notifier.updateTargetWeight,
+            onChanged: (value) {
+              notifier.updateTargetWeight(value);
+              _targetWeightController.text = value.toStringAsFixed(1);
+            },
             minLabel: '${minWeight.round()} kg',
             maxLabel: '${maxWeight.round()} kg',
+            unit: 'kg',
           ),
           
           // Weight difference help text
@@ -224,6 +226,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             KSizes.spacingVerticalM,
             OnboardingHelpText(
               text: _getWeightDifferenceText(goalType, currentWeight, state.userProfile.targetWeightKg),
+              type: OnboardingHelpType.motivational,
             ),
           ],
         ],
@@ -276,9 +279,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
           OnboardingInputContainer(
             isActive: state.userProfile.weeklyGoalKg > 0,
             child: TextFormField(
-              initialValue: state.userProfile.weeklyGoalKg > 0
-                  ? state.userProfile.weeklyGoalKg.toStringAsFixed(1)
-                  : '',
+              controller: _weeklyGoalController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               onChanged: (value) {
@@ -317,15 +318,20 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             min: min,
             max: max,
             divisions: ((max - min) * 10).round(),
-            onChanged: notifier.updateWeeklyGoal,
+            onChanged: (value) {
+              notifier.updateWeeklyGoal(value);
+              _weeklyGoalController.text = value.toStringAsFixed(1);
+            },
             minLabel: '${min.toStringAsFixed(1)} kg',
             maxLabel: '${max.toStringAsFixed(1)} kg',
+            unit: 'kg/uge',
           ),
           
           // Weekly goal recommendation
           KSizes.spacingVerticalM,
           OnboardingHelpText(
             text: _getWeeklyGoalRecommendation(goalType, weeklyGoal),
+            type: OnboardingHelpType.motivational,
           ),
         ],
       ),
@@ -337,20 +343,23 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
     
     switch (goalType) {
       case GoalType.weightLoss:
-        explanation = 'Vægttab kræver et kalorieunderskud. Vi beregner dine kalorier så du når dit mål på en sund måde.';
+        explanation = 'Vægttab kræver et kalorieunderskud. Dit kaloriemål beregnes til at understøtte vægttab.';
         break;
       case GoalType.weightMaintenance:
-        explanation = 'For at holde vægten stabil matcher vi dit kalorieforbrug med dit indtag.';
+        explanation = 'For at holde vægten stabil skal kalorieforbrug og indtag være i balance.';
         break;
       case GoalType.weightGain:
-        explanation = 'Vægtøgning kræver et kalorieoverskud. Vi sørger for du får nok kalorier til sund vækst.';
+        explanation = 'Vægtøgning kræver et kalorieoverskud. Dit kaloriemål tilpasses til vægtøgning.';
         break;
       case GoalType.muscleGain:
-        explanation = 'Muskelopbygning kræver både kalorier og protein. Vi optimerer dit indtag til maksimal muskelvækst.';
+        explanation = 'Muskelopbygning kræver både kalorier og protein. Dit indtag beregnes til muskeludvikling.';
         break;
     }
 
-    return OnboardingHelpText(text: explanation);
+    return OnboardingHelpText(
+      text: explanation,
+      type: OnboardingHelpType.positive,
+    );
   }
 
   String _getWeightDifferenceText(GoalType goalType, double currentWeight, double targetWeight) {

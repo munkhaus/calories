@@ -157,9 +157,13 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           min: 120,
           max: 220,
           divisions: 100,
-          onChanged: notifier.updateHeight,
+          onChanged: (value) {
+            notifier.updateHeight(value);
+            _heightController.text = value.round().toString();
+          },
           minLabel: '120 cm',
           maxLabel: '220 cm',
+          unit: 'cm',
         ),
         
         // Help text for height validation
@@ -167,6 +171,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           KSizes.spacingVerticalM,
           OnboardingHelpText(
             text: 'Indtast en højde mellem 120-220 cm',
+            type: OnboardingHelpType.neutral,
           ),
         ],
       ],
@@ -240,9 +245,13 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           min: 30,
           max: 300,
           divisions: 270,
-          onChanged: notifier.updateCurrentWeight,
+          onChanged: (value) {
+            notifier.updateCurrentWeight(value);
+            _currentWeightController.text = value.toStringAsFixed(1);
+          },
           minLabel: '30 kg',
           maxLabel: '300 kg',
+          unit: 'kg',
         ),
         
         // Help text for weight validation
@@ -250,6 +259,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
           KSizes.spacingVerticalM,
           OnboardingHelpText(
             text: 'Indtast en vægt mellem 30-300 kg',
+            type: OnboardingHelpType.neutral,
           ),
         ],
       ],

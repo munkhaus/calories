@@ -27,6 +27,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
         // Educational note
         OnboardingHelpText(
           text: 'Dette er din personlige udregning - se hvordan vi kommer frem til tallet:',
+          type: OnboardingHelpType.neutral,
         ),
         
         KSizes.spacingVerticalL,
@@ -134,6 +135,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           // Simple explanation
           OnboardingHelpText(
             text: 'Dette er din personlige kalorie-anbefaling baseret på alle dine oplysninger og mål.',
+            type: OnboardingHelpType.positive,
           ),
         ],
       ),
@@ -180,6 +182,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           // Explanation
           OnboardingHelpText(
             text: explanation,
+            type: OnboardingHelpType.neutral,
           ),
           
           // Result value
@@ -236,7 +239,7 @@ class CalorieEducationStepWidget extends ConsumerWidget {
           KSizes.spacingVerticalM,
           
           Text(
-            'Vi starter med at beregne hvor mange kalorier din krop bruger i hvile, lægger til for din daglige aktivitet, og justerer så op eller ned baseret på dit mål. På den måde får du et realistisk kaloriemål der passer til dit liv.',
+            'Beregningen starter med at finde hvor mange kalorier din krop bruger i hvile, lægger til for din daglige aktivitet, og justerer så op eller ned baseret på dit mål. På den måde får du et realistisk kaloriemål der passer til dit liv.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppColors.textPrimary,
               height: 1.5,
@@ -258,35 +261,6 @@ class CalorieEducationStepWidget extends ConsumerWidget {
   }
 
   Widget _buildMedicalDisclaimers(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Vigtige forbehold',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: KSizes.fontWeightSemiBold,
-            ),
-          ),
-          
-          KSizes.spacingVerticalM,
-          
-          ..._buildDisclaimerPoints(context),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildDisclaimerPoints(BuildContext context) {
     final disclaimers = [
       'Disse beregninger er vejledende og dit faktiske behov kan variere',
       'Rådfør dig altid med en læge før større ændringer i dit kostmønster',
@@ -295,33 +269,28 @@ class CalorieEducationStepWidget extends ConsumerWidget {
       'Start med mindre ændringer og justér gradvist baseret på dine resultater'
     ];
 
-    return disclaimers.map((disclaimer) => Padding(
-      padding: EdgeInsets.only(bottom: KSizes.margin2x),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            margin: EdgeInsets.only(top: 6),
-            width: 4,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Vigtige forbehold',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: const Color(0xFFD84315), // Same as warning text color
+            fontWeight: KSizes.fontWeightSemiBold,
           ),
-          KSizes.spacingHorizontalS,
-          Expanded(
-            child: Text(
-              disclaimer,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.4,
-              ),
-            ),
+        ),
+        
+        KSizes.spacingVerticalM,
+        
+        ...disclaimers.map((disclaimer) => Padding(
+          padding: EdgeInsets.only(bottom: KSizes.margin2x),
+          child: OnboardingHelpText(
+            text: disclaimer,
+            type: OnboardingHelpType.warning,
           ),
-        ],
-      ),
-    )).toList();
+        )).toList(),
+      ],
+    );
   }
 
   // Calculation methods (same as summary widget)
@@ -421,13 +390,13 @@ class CalorieEducationStepWidget extends ConsumerWidget {
   String _getGoalExplanation(GoalType? goalType) {
     switch (goalType) {
       case GoalType.weightLoss:
-        return 'For at tabe vægt skal du spise lidt færre kalorier end du forbrænder. Vi laver et moderat underskud som gør det lettere at følge.';
+        return 'For at tabe vægt beregnes et moderat kalorieunderskud som gør det lettere at følge planen.';
       case GoalType.weightGain:
-        return 'For at tage på skal du spise lidt flere kalorier end du forbrænder. Vi giver dig ekstra kalorier til at bygge vægt på.';
+        return 'For at tage på beregnes ekstra kalorier til at bygge vægt på en kontrolleret måde.';
       case GoalType.muscleGain:
-        return 'For at bygge muskler skal du have lidt flere kalorier end du forbrænder, plus træning. Vi giver dig det der skal til.';
+        return 'For at bygge muskler beregnes et kalorieoverskud plus protein til muskelvækst.';
       case GoalType.weightMaintenance:
-        return 'For at holde din vægt skal du spise cirka lige så mange kalorier som du forbrænder hver dag.';
+        return 'For at holde din vægt matches kalorieforbrug og indtag så tæt som muligt.';
       default:
         return 'Dit kaloriemål er tilpasset til dit specifikke mål.';
     }

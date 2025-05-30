@@ -67,13 +67,6 @@ class WorkActivityStepWidget extends ConsumerWidget {
             ],
           ),
         ),
-        
-        KSizes.spacingVerticalL,
-        
-        // Simplified information help text
-        OnboardingHelpText(
-          text: 'Dit arbejdsniveau påvirker dit daglige kalorieforbrug.',
-        ),
       ],
     );
   }

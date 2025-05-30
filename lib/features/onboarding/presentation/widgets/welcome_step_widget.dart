@@ -80,7 +80,7 @@ class WelcomeStepWidget extends ConsumerWidget {
                         
                         // Welcome text
                         Text(
-                          'Velkommen til din\nsunde rejse! 🎯',
+                          'Velkommen til din\nrejse! 🎯',
                           style: TextStyle(
                             fontSize: KSizes.fontSizeXXL,
                             fontWeight: KSizes.fontWeightBold,

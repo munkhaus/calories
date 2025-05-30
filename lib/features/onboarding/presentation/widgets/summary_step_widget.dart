@@ -100,6 +100,7 @@ class SummaryStepWidget extends ConsumerWidget {
           // Simple explanation
           OnboardingHelpText(
             text: 'Dette er din personlige kalorie-anbefaling baseret på alle dine oplysninger og mål.',
+            type: OnboardingHelpType.positive,
           ),
         ],
       ),
