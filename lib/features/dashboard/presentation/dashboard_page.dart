@@ -4,8 +4,9 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
+import '../../activity/application/activity_notifier.dart';
+import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../widgets/calorie_overview_widget.dart';
-import '../widgets/daily_nutrition_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
@@ -13,11 +14,81 @@ import '../../food_logging/domain/user_food_log_model.dart';
 import '../../info/presentation/info_page.dart';
 
 /// Main dashboard page showing daily overview
-class DashboardPage extends ConsumerWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
+  // Static reference to current dashboard state for external refresh
+  static _DashboardPageState? _currentState;
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+
+  // Static method to refresh dashboard data from outside
+  static void refreshActivityData() {
+    _currentState?.refreshActivityData();
+  }
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  late ActivityNotifier _activityNotifier;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Register this instance for static access
+    DashboardPage._currentState = this;
+    
+    WidgetsBinding.instance.addObserver(this);
+    _activityNotifier = ActivityNotifier();
+    // Initialize activity data
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = ref.read(onboardingProvider);
+      final userProfile = state.userProfile;
+      
+      if (userProfile.isCompleteForCalculations) {
+        _activityNotifier.initializeWithBmr(userProfile.bmr);
+      } else {
+        _activityNotifier.loadTodaysActivities();
+        _activityNotifier.loadTodaysCaloriesBurned();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // Clear static reference
+    if (DashboardPage._currentState == this) {
+      DashboardPage._currentState = null;
+    }
+    
+    WidgetsBinding.instance.removeObserver(this);
+    _activityNotifier.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // Refresh activity data when app comes back into focus
+      _activityNotifier.loadTodaysActivities();
+      _activityNotifier.loadTodaysCaloriesBurned();
+    }
+  }
+
+  void refreshActivityData() {
+    // Public method to refresh activity data when tab is selected
+    print('🔄 Refreshing activity data in DashboardPage');
+    _activityNotifier.loadTodaysActivities();
+    _activityNotifier.loadTodaysCaloriesBurned();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
 
@@ -27,160 +98,174 @@ class DashboardPage extends ConsumerWidget {
           gradient: AppDesign.backgroundGradient,
         ),
         child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Custom App Bar
-              SliverToBoxAdapter(
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(
-                    KSizes.margin4x,
-                    KSizes.margin2x,
-                    KSizes.margin4x,
-                    KSizes.margin6x,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header with greeting and notification
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              // Refresh activity data when user pulls to refresh
+              _activityNotifier.loadTodaysActivities();
+              _activityNotifier.loadTodaysCaloriesBurned();
+            },
+            child: CustomScrollView(
+              slivers: [
+                // Custom App Bar
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(
+                      KSizes.margin4x,
+                      KSizes.margin2x,
+                      KSizes.margin4x,
+                      KSizes.margin6x,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header with greeting and notification
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _getGreeting(),
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeS,
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  KSizes.spacingVerticalXS,
+                                  Text(
+                                    userProfile.name.isNotEmpty 
+                                        ? userProfile.name.split(' ').first 
+                                        : 'der',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeXXL,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
                               children: [
-                                Text(
-                                  _getGreeting(),
-                                  style: TextStyle(
-                                    fontSize: KSizes.fontSizeS,
-                                    color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.w500,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(KSizes.radiusL),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => const InfoPage(),
+                                        ),
+                                      );
+                                    },
+                                    icon: Icon(
+                                      MdiIcons.informationOutline,
+                                      color: AppColors.info,
+                                      size: KSizes.iconM,
+                                    ),
                                   ),
                                 ),
-                                KSizes.spacingVerticalXS,
-                                Text(
-                                  userProfile.name.isNotEmpty 
-                                      ? userProfile.name.split(' ').first 
-                                      : 'der',
-                                  style: TextStyle(
-                                    fontSize: KSizes.fontSizeXXL,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
+                                KSizes.spacingHorizontalS,
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(KSizes.radiusL),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primary.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: IconButton(
+                                    onPressed: () {
+                                      // TODO: Navigate to notifications
+                                    },
+                                    icon: Icon(
+                                      MdiIcons.bellOutline,
+                                      color: AppColors.primary,
+                                      size: KSizes.iconM,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                        builder: (context) => const InfoPage(),
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(
-                                    MdiIcons.informationOutline,
-                                    color: AppColors.info,
-                                    size: KSizes.iconM,
-                                  ),
-                                ),
-                              ),
-                              KSizes.spacingHorizontalS,
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    // TODO: Navigate to notifications
-                                  },
-                                  icon: Icon(
-                                    MdiIcons.bellOutline,
-                                    color: AppColors.primary,
-                                    size: KSizes.iconM,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Main content
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // Calorie overview widget (main card matching the image)
-                    const CalorieOverviewWidget(),
-                    
-                    KSizes.spacingVerticalXL,
-                    
-                    // Daily nutrition widget
-                    const DailyNutritionWidget(),
-                    
-                    KSizes.spacingVerticalXL,
-                    
-                    // Recent meals with enhanced design
-                    const RecentMealsWidget(),
-                    
-                    KSizes.spacingVerticalXL,
-                    
-                    // Water tracking and streak section
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildWaterTrackingCard(),
-                        ),
-                        KSizes.spacingHorizontalM,
-                        Expanded(
-                          child: _buildStreakCard(),
+                          ],
                         ),
                       ],
                     ),
-                    
-                    KSizes.spacingVerticalXL,
-                    
-                    // Quick actions section
-                    _buildQuickActions(context, ref),
-                    
-                    // Bottom padding for FAB
-                    const SizedBox(height: 100),
-                  ]),
+                  ),
                 ),
-              ),
-            ],
+
+                // Main content
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Calorie overview widget (main card matching the image)
+                      const CalorieOverviewWidget(),
+                      
+                      KSizes.spacingVerticalXL,
+                      
+                      // Recent meals with enhanced design
+                      const RecentMealsWidget(),
+                      
+                      KSizes.spacingVerticalXL,
+                      
+                      // Today's activities section
+                      TodaysActivitiesWidget(
+                        notifier: _activityNotifier,
+                        onDeleteActivity: _onDeleteActivity,
+                        activityTrackingPreference: onboardingState.userProfile.activityTrackingPreference,
+                      ),
+                      
+                      KSizes.spacingVerticalXL,
+                      
+                      // Quick actions section
+                      _buildQuickActions(context, ref),
+                      
+                      // Bottom padding for FAB
+                      const SizedBox(height: 100),
+                    ]),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  void _onDeleteActivity(dynamic activity) async {
+    final success = await _activityNotifier.deleteActivity(activity.logEntryId);
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(success 
+                ? 'Aktivitet slettet' 
+                : 'Kunne ikke slette aktivitet'),
+              backgroundColor: success ? AppColors.success : AppColors.error,
+            ),
+          );
+        }
+      });
+    }
   }
 
   String _getGreeting() {
@@ -377,170 +462,6 @@ class DashboardPage extends ConsumerWidget {
                     ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildWaterTrackingCard() {
-    // TODO: Get actual water data from database
-    const currentGlasses = 4;
-    const targetGlasses = 8;
-    final progress = (currentGlasses / targetGlasses).clamp(0.0, 1.0);
-
-    return Container(
-      height: KSizes.cardHeightL,
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin2x),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Container(
-              padding: EdgeInsets.all(KSizes.margin1x),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
-                ),
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-              ),
-              child: Icon(
-                MdiIcons.water,
-                color: Colors.white,
-                size: KSizes.iconS,
-              ),
-            ),
-            Text(
-              'Vand',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeS,
-                fontWeight: KSizes.fontWeightBold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Column(
-              children: [
-                Text(
-                  '$currentGlasses / $targetGlasses',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeL,
-                    fontWeight: KSizes.fontWeightBold,
-                    color: AppColors.info,
-                  ),
-                ),
-                Text(
-                  'glas',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXS,
-                    color: AppColors.textSecondary,
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              height: 6,
-              decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(KSizes.radiusS),
-              ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: progress,
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.info, AppColors.info.withOpacity(0.8)],
-                    ),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStreakCard() {
-    // TODO: Get actual streak data from database
-    const currentStreak = 7;
-    const bestStreak = 23;
-
-    return Container(
-      height: KSizes.cardHeightL,
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin2x),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Container(
-              padding: EdgeInsets.all(KSizes.margin1x),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
-                ),
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-              ),
-              child: Icon(
-                MdiIcons.fire,
-                color: Colors.white,
-                size: KSizes.iconS,
-              ),
-            ),
-            Text(
-              'Streak',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeS,
-                fontWeight: KSizes.fontWeightBold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            Column(
-              children: [
-                Text(
-                  '$currentStreak',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeL,
-                    fontWeight: KSizes.fontWeightBold,
-                    color: AppColors.warning,
-                  ),
-                ),
-                Text(
-                  'dage',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXS,
-                    color: AppColors.textSecondary,
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: KSizes.margin1x,
-                vertical: 2,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(KSizes.radiusS),
-                border: Border.all(
-                  color: AppColors.warning.withOpacity(0.3),
-                  width: 1,
-                ),
-              ),
-              child: Text(
-                'Bedste: $bestStreak',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeXS,
-                  color: AppColors.warning,
-                  fontWeight: KSizes.fontWeightSemiBold,
-                ),
               ),
             ),
           ],

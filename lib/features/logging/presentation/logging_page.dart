@@ -232,7 +232,7 @@ class LoggingPage extends ConsumerWidget {
   String _getSubtitleForMealType(MealType mealType) {
     switch (mealType) {
       case MealType.morgenmad:
-        return 'Start dagen godt';
+        return 'Start dagen';
       case MealType.frokost:
         return 'Energi til resten af dagen';
       case MealType.aftensmad:

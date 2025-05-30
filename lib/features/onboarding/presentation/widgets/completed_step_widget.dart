@@ -100,7 +100,7 @@ class _CompletedStepWidgetState extends ConsumerState<CompletedStepWidget> {
             KSizes.spacingVerticalS,
             
             Text(
-              'Din personlige sundhedsplan er nu klar!',
+              'Din personlige plan er nu klar!',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AppColors.textSecondary,
                 height: 1.4,

@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import '../../../core/constants/k_sizes.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../../core/constants/k_sizes.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../application/activity_notifier.dart';
 import '../application/activity_calories_notifier.dart';
 import '../domain/activity_item_model.dart';
 import '../domain/user_activity_log_model.dart';
+import '../../onboarding/domain/user_profile_model.dart';
 import 'widgets/activity_search_widget.dart';
 import 'widgets/common_activities_widget.dart';
 import 'widgets/todays_activities_widget.dart';
 import '../../info/presentation/info_page.dart';
+import 'widgets/manual_calorie_entry_widget.dart';
+import 'pages/activity_details_page.dart';
+import 'pages/manual_activity_page.dart';
 
 /// Main activity logging page with full functionality
 class ActivityPage extends ConsumerStatefulWidget {
@@ -135,6 +139,7 @@ class _ActivityPageState extends ConsumerState<ActivityPage> {
                       TodaysActivitiesWidget(
                         notifier: _notifier,
                         onDeleteActivity: _onDeleteActivity,
+                        activityTrackingPreference: ActivityTrackingPreference.manual,
                       ),
                     ],
                   ),

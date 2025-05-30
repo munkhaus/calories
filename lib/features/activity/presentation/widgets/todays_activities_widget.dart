@@ -4,16 +4,19 @@ import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/activity_notifier.dart';
 import '../../domain/user_activity_log_model.dart';
+import '../../../onboarding/domain/user_profile_model.dart';
 
-/// Widget displaying today's logged activities
+/// Widget displaying today's logged activities with enhanced design
 class TodaysActivitiesWidget extends StatelessWidget {
   final ActivityNotifier notifier;
   final void Function(UserActivityLogModel) onDeleteActivity;
+  final ActivityTrackingPreference activityTrackingPreference;
 
   const TodaysActivitiesWidget({
     super.key,
     required this.notifier,
     required this.onDeleteActivity,
+    required this.activityTrackingPreference,
   });
 
   @override
@@ -23,117 +26,66 @@ class TodaysActivitiesWidget extends StatelessWidget {
       builder: (context, child) {
         final state = notifier.state;
         
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with total calories
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Dagens aktivitet',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: KSizes.fontWeightBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                
-                if (state.todaysCaloriesState.isSuccess)
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: KSizes.margin3x,
-                      vertical: KSizes.margin1x,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(KSizes.radiusRound),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          MdiIcons.fire,
-                          color: AppColors.secondary,
-                          size: KSizes.iconS,
-                        ),
-                        SizedBox(width: KSizes.margin1x),
-                        Text(
-                          '${state.todaysCaloriesBurned} kcal',
-                          style: TextStyle(
-                            color: AppColors.secondary,
-                            fontSize: KSizes.fontSizeS,
-                            fontWeight: KSizes.fontWeightMedium,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-            
-            const SizedBox(height: KSizes.margin4x),
-            
-            // Activities list
-            if (state.isLoadingTodaysData)
-              _buildLoadingState()
-            else if (state.todaysActivitiesState.hasError)
-              _buildErrorState(context)
-            else if (state.todaysActivities.isEmpty)
-              _buildEmptyState(context)
-            else
-              _buildActivitiesList(context, state.todaysActivities),
-          ],
-        );
+        // Debug information
+        print('🔍 TodaysActivitiesWidget - State: $state');
+        if (state != null) {
+          print('🔍 Loading: ${state.isLoadingTodaysData}');
+          print('🔍 Activities: ${state.todaysActivities?.length ?? 0}');
+          print('🔍 Error: ${state.todaysActivitiesState?.hasError}');
+          if (state.todaysActivities != null) {
+            for (final activity in state.todaysActivities!) {
+              print('🔍 Activity: ${activity.activityName} - ${activity.caloriesBurned} kcal');
+            }
+          }
+        }
+        
+        if (state == null || state.isLoadingTodaysData) {
+          return _buildLoadingCard();
+        }
+
+        if (state.todaysActivitiesState?.hasError ?? false) {
+          return _buildErrorCard(context);
+        }
+
+        final activities = state.todaysActivities ?? [];
+        return _buildActivitiesCard(context, activities);
       },
     );
   }
 
-  Widget _buildLoadingState() {
-    return Card(
-      elevation: KSizes.cardElevation,
-      child: Container(
-        padding: EdgeInsets.all(KSizes.margin6x),
-        child: Column(
-          children: [
-            CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-            ),
-            SizedBox(height: KSizes.margin3x),
-            Text(
-              'Indlæser dagens aktiviteter...',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: KSizes.fontSizeM,
-              ),
-            ),
-          ],
+  Widget _buildLoadingCard() {
+    return Container(
+      height: 200,
+      decoration: AppDesign.sectionDecoration,
+      child: Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
         ),
       ),
     );
   }
 
-  Widget _buildErrorState(BuildContext context) {
-    return Card(
-      elevation: KSizes.cardElevation,
-      child: Container(
-        padding: EdgeInsets.all(KSizes.margin6x),
+  Widget _buildErrorCard(BuildContext context) {
+    return Container(
+      decoration: AppDesign.sectionDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin4x),
         child: Column(
           children: [
             Icon(
               MdiIcons.alertCircle,
+              size: 48,
               color: AppColors.error,
-              size: KSizes.iconXL,
             ),
-            SizedBox(height: KSizes.margin2x),
+            const SizedBox(height: KSizes.margin3x),
             Text(
-              'Kunne ikke indlæse dagens aktiviteter',
-              style: TextStyle(
+              'Fejl ved indlæsning af aktiviteter',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: AppColors.error,
-                fontSize: KSizes.fontSizeM,
-                fontWeight: KSizes.fontWeightMedium,
               ),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: KSizes.margin3x),
+            const SizedBox(height: KSizes.margin2x),
             ElevatedButton(
               onPressed: () => notifier.loadTodaysActivities(),
               child: Text('Prøv igen'),
@@ -144,66 +96,210 @@ class TodaysActivitiesWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Card(
-      elevation: KSizes.cardElevation,
-      child: Container(
-        padding: EdgeInsets.all(KSizes.margin6x),
+  Widget _buildActivitiesCard(BuildContext context, List<UserActivityLogModel> activities) {
+    return Container(
+      decoration: AppDesign.sectionDecoration,
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin4x),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              MdiIcons.runFast,
-              color: AppColors.textSecondary,
-              size: KSizes.iconXXL,
+            // Header matching meals widget style
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColors.secondary, AppColors.primary],
+                        ),
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
+                      child: Icon(
+                        MdiIcons.runFast,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Dagens aktiviteter',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(KSizes.radiusS),
+                      ),
+                      child: IconButton(
+                        onPressed: () => notifier.loadTodaysActivities(),
+                        icon: Icon(
+                          MdiIcons.refresh,
+                          color: AppColors.primary,
+                          size: KSizes.iconS,
+                        ),
+                        tooltip: 'Opdater aktiviteter',
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Se alle',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.primary,
+                        fontWeight: KSizes.fontWeightSemiBold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            SizedBox(height: KSizes.margin3x),
-            Text(
-              'Ingen aktiviteter i dag',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textSecondary,
-                fontWeight: KSizes.fontWeightMedium,
+            
+            const SizedBox(height: KSizes.margin4x),
+            
+            // Activities list
+            if (activities.isEmpty)
+              _buildEmptyState(context)
+            else
+              Column(
+                children: activities
+                    .take(3) // Show only first 3 activities like meals widget
+                    .map((activity) => _buildActivityCard(context, activity))
+                    .toList(),
               ),
-            ),
-            SizedBox(height: KSizes.margin2x),
-            Text(
-              'Start med at logge din første aktivitet',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActivitiesList(BuildContext context, List<UserActivityLogModel> activities) {
-    return Column(
-      children: activities.map((activity) => _buildActivityItem(context, activity)).toList(),
+  Widget _buildEmptyState(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin6x),
+      child: Column(
+        children: [
+          Icon(
+            MdiIcons.runFast,
+            size: 48,
+            color: AppColors.textTertiary,
+          ),
+          const SizedBox(height: KSizes.margin3x),
+          Text(
+            'Ingen aktiviteter logget endnu',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: KSizes.margin1x),
+          Text(
+            'Gå til Aktivitet-fanen for at logge din første aktivitet!',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: KSizes.margin4x),
+          // Add prominent refresh button
+          ElevatedButton.icon(
+            onPressed: () {
+              print('🔄 Manuel opdatering af aktiviteter fra hjem-fanen');
+              notifier.loadTodaysActivities();
+            },
+            icon: Icon(MdiIcons.refresh),
+            label: Text('Opdater aktiviteter'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(
+                horizontal: KSizes.margin4x,
+                vertical: KSizes.margin3x,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildActivityItem(BuildContext context, UserActivityLogModel activity) {
-    return Card(
-      elevation: KSizes.cardElevation,
-      margin: EdgeInsets.only(bottom: KSizes.margin3x),
-      child: InkWell(
-        onTap: () => _showActivityDetails(context, activity),
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        child: Padding(
-          padding: EdgeInsets.all(KSizes.margin4x),
+  Widget _buildActivityCard(BuildContext context, UserActivityLogModel activity) {
+    return Dismissible(
+      key: Key('activity_${activity.logEntryId}'),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+        padding: const EdgeInsets.all(KSizes.margin3x),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+        ),
+        alignment: Alignment.centerRight,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Icon(
+              MdiIcons.delete,
+              color: Colors.white,
+              size: KSizes.iconM,
+            ),
+            const SizedBox(width: KSizes.margin2x),
+            Text(
+              'Slet',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (direction) async {
+        return await _showDeleteConfirmDialog(context, activity) ?? false;
+      },
+      onDismissed: (direction) {
+        onDeleteActivity(activity);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${activity.activityName} er slettet'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      },
+      child: GestureDetector(
+        onLongPress: () => _showActivityOptionsMenu(context, activity),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+          padding: const EdgeInsets.all(KSizes.margin3x),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+            border: Border.all(
+              color: AppColors.border.withOpacity(0.5),
+              width: 1,
+            ),
+          ),
           child: Row(
             children: [
               // Activity icon
               Container(
-                width: KSizes.iconXL,
-                height: KSizes.iconXL,
+                padding: const EdgeInsets.all(KSizes.margin2x),
                 decoration: BoxDecoration(
                   color: activity.isManualEntry 
                       ? AppColors.secondary.withOpacity(0.1)
                       : AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
                 ),
                 child: Icon(
                   activity.isManualEntry 
@@ -212,13 +308,13 @@ class TodaysActivitiesWidget extends StatelessWidget {
                   color: activity.isManualEntry 
                       ? AppColors.secondary
                       : AppColors.primary,
-                  size: KSizes.iconL,
+                  size: KSizes.iconS,
                 ),
               ),
               
-              SizedBox(width: KSizes.margin4x),
+              const SizedBox(width: KSizes.margin3x),
               
-              // Activity details
+              // Activity info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -227,87 +323,185 @@ class TodaysActivitiesWidget extends StatelessWidget {
                       activity.activityName,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: KSizes.fontWeightMedium,
+                        color: AppColors.textPrimary,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    
-                    SizedBox(height: KSizes.margin1x),
-                    
+                    const SizedBox(height: 2),
                     Row(
                       children: [
-                        if (!activity.isManualEntry && activity.primaryValue > 0) ...[
-                          Icon(
-                            activity.inputType == ActivityInputType.varighed 
-                                ? MdiIcons.clock 
-                                : MdiIcons.mapMarker,
-                            color: AppColors.textSecondary,
-                            size: KSizes.iconXS,
-                          ),
-                          SizedBox(width: KSizes.margin1x),
+                        if (activity.isManualEntry)
                           Text(
-                            activity.inputType == ActivityInputType.varighed
-                                ? activity.formattedDuration
-                                : activity.formattedDistance,
+                            'Manuel registrering',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        else if (activity.durationMinutes > 0) ...[
+                          Text(
+                            '${activity.durationMinutes.round()} min',
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: AppColors.textSecondary,
                             ),
                           ),
-                          SizedBox(width: KSizes.margin3x),
-                        ],
-                        
-                        Icon(
-                          MdiIcons.fire,
-                          color: AppColors.secondary,
-                          size: KSizes.iconXS,
-                        ),
-                        SizedBox(width: KSizes.margin1x),
-                        Text(
-                          '${activity.caloriesBurned} kcal',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.secondary,
-                            fontWeight: KSizes.fontWeightMedium,
+                          const SizedBox(width: 8),
+                          Text(
+                            '•',
+                            style: TextStyle(color: AppColors.textTertiary),
                           ),
-                        ),
-                        
-                        if (activity.intensity != ActivityIntensity.moderat) ...[
-                          SizedBox(width: KSizes.margin3x),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: KSizes.margin2x,
-                              vertical: KSizes.margin1x / 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getIntensityColor(activity.intensity).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(KSizes.radiusS),
-                            ),
-                            child: Text(
-                              activity.intensityDisplayName,
-                              style: TextStyle(
-                                color: _getIntensityColor(activity.intensity),
-                                fontSize: KSizes.fontSizeXS,
-                                fontWeight: KSizes.fontWeightMedium,
-                              ),
+                          const SizedBox(width: 8),
+                          Text(
+                            activity.intensityDisplayName,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
-                        ],
+                        ] else
+                          Text(
+                            activity.intensityDisplayName,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                       ],
                     ),
                   ],
                 ),
               ),
               
-              // Delete button
+              // Calories
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${activity.caloriesBurned}',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: KSizes.fontWeightBold,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                  Text(
+                    'kcal',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(width: KSizes.margin2x),
+              
+              // Options button
               IconButton(
-                onPressed: () => onDeleteActivity(activity),
+                onPressed: () => _showActivityOptionsMenu(context, activity),
                 icon: Icon(
-                  MdiIcons.deleteOutline,
-                  color: AppColors.textSecondary,
-                  size: KSizes.iconM,
+                  MdiIcons.dotsVertical,
+                  color: AppColors.textTertiary,
+                  size: KSizes.iconS,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: BoxConstraints(
+                  minWidth: KSizes.iconM,
+                  minHeight: KSizes.iconM,
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  IconData _getActivityIcon(String activityName) {
+    final name = activityName.toLowerCase();
+    if (name.contains('løb')) return MdiIcons.run;
+    if (name.contains('gå') || name.contains('tur')) return MdiIcons.walk;
+    if (name.contains('cykel')) return MdiIcons.bike;
+    if (name.contains('svøm')) return MdiIcons.swim;
+    if (name.contains('styrke') || name.contains('vægt')) return MdiIcons.dumbbell;
+    if (name.contains('yoga')) return MdiIcons.yoga;
+    if (name.contains('tennis')) return MdiIcons.tennis;
+    if (name.contains('fodbold')) return MdiIcons.soccer;
+    return MdiIcons.runFast;
+  }
+
+  void _showActivityOptionsMenu(BuildContext context, UserActivityLogModel activity) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(KSizes.radiusL)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.all(KSizes.margin4x),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Text(
+                activity.activityName,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: KSizes.margin4x),
+              
+              // View details option
+              ListTile(
+                leading: Icon(MdiIcons.informationOutline, color: AppColors.primary),
+                title: Text('Se detaljer'),
+                subtitle: Text('Vis komplette aktivitetsoplysninger'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showActivityDetails(context, activity);
+                },
+              ),
+              
+              // Edit option  
+              ListTile(
+                leading: Icon(MdiIcons.pencil, color: AppColors.secondary),
+                title: Text('Rediger aktivitet'),
+                subtitle: Text('Ret aktivitetsoplysninger'),
+                onTap: () {
+                  Navigator.pop(context);
+                  // TODO: Navigate to edit activity
+                },
+              ),
+              
+              // Delete option  
+              ListTile(
+                leading: Icon(MdiIcons.delete, color: AppColors.error),
+                title: Text('Slet aktivitet'),
+                subtitle: Text('Fjern aktivitet fra dagens log'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final shouldDelete = await _showDeleteConfirmDialog(context, activity);
+                  if (shouldDelete == true) {
+                    onDeleteActivity(activity);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${activity.activityName} er slettet'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+              ),
+              
+              // Cancel
+              const SizedBox(height: KSizes.margin2x),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Annuller'),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -432,27 +626,25 @@ class TodaysActivitiesWidget extends StatelessWidget {
     );
   }
 
-  IconData _getActivityIcon(String activityName) {
-    final name = activityName.toLowerCase();
-    if (name.contains('løb')) return MdiIcons.run;
-    if (name.contains('gå') || name.contains('tur')) return MdiIcons.walk;
-    if (name.contains('cykel')) return MdiIcons.bike;
-    if (name.contains('svøm')) return MdiIcons.swim;
-    if (name.contains('styrke') || name.contains('vægt')) return MdiIcons.dumbbell;
-    if (name.contains('yoga')) return MdiIcons.yoga;
-    if (name.contains('tennis')) return MdiIcons.tennis;
-    if (name.contains('fodbold')) return MdiIcons.soccer;
-    return MdiIcons.runFast;
-  }
-
-  Color _getIntensityColor(ActivityIntensity intensity) {
-    switch (intensity) {
-      case ActivityIntensity.let:
-        return AppColors.success;
-      case ActivityIntensity.moderat:
-        return AppColors.primary;
-      case ActivityIntensity.haardt:
-        return AppColors.error;
-    }
+  Future<bool?> _showDeleteConfirmDialog(BuildContext context, UserActivityLogModel activity) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Slet ${activity.activityName}?'),
+          content: Text('Er du sikker på, at du vil slette denne aktivitet?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('Nej'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Ja'),
+            ),
+          ],
+        );
+      },
+    );
   }
 } 

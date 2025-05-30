@@ -6,6 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../activity/application/activity_notifier.dart';
 import '../../activity/presentation/widgets/todays_activities_widget.dart';
+import '../../dashboard/widgets/recent_meals_widget.dart';
+import '../../food_logging/application/food_logging_notifier.dart';
 
 /// Main home page of the app after onboarding
 class HomePage extends ConsumerStatefulWidget {
@@ -46,12 +48,15 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    print('🔍 HomePage - build method called');
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
+    
+    print('🔍 HomePage - state: ${state.userProfile.activityTrackingPreference}');
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dit Sunde Jeg'),
+        title: const Text('Kalorie App'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -78,6 +83,43 @@ class _HomePageState extends ConsumerState<HomePage> {
               // Welcome back header
               _buildWelcomeHeader(context, state),
               
+              // TEST WIDGET - Dette skal ALTID vises ØVERST
+              Container(
+                height: 80,
+                width: double.infinity,
+                color: Colors.orange,
+                margin: EdgeInsets.all(8),
+                child: Center(
+                  child: Text(
+                    '🧪 ØVERSTE TEST WIDGET 🧪',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              
+              // DEBUG: Make it very clear this is the HOME page
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(KSizes.margin4x),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Text(
+                  '🏠 DU ER PÅ HJEM-SIDEN 🏠',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
               KSizes.spacingVerticalL,
               
               // Daily summary card
@@ -85,10 +127,36 @@ class _HomePageState extends ConsumerState<HomePage> {
               
               KSizes.spacingVerticalL,
               
-              // Today's activities section
+              // Today's meals section
+              const RecentMealsWidget(),
+              
+              KSizes.spacingVerticalL,
+              
+              // TEST WIDGET - Dette skal ALTID vises
+              Container(
+                height: 100,
+                width: double.infinity,
+                color: Colors.purple,
+                margin: EdgeInsets.all(16),
+                child: Center(
+                  child: Text(
+                    'TEST AKTIVITETS WIDGET',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              
+              KSizes.spacingVerticalL,
+              
+              // Today's activities section - ALWAYS SHOW
               TodaysActivitiesWidget(
                 notifier: _activityNotifier,
                 onDeleteActivity: _onDeleteActivity,
+                activityTrackingPreference: state.userProfile.activityTrackingPreference,
               ),
               
               KSizes.spacingVerticalL,
@@ -145,7 +213,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
           KSizes.spacingVerticalS,
           Text(
-            'Du er godt på vej til dit mål om ${_getGoalDescription(state.userProfile.goalType)}',
+            'Du er på vej til dit mål om ${_getGoalDescription(state.userProfile.goalType)}',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: AppColors.textSecondary,
               height: 1.4,
@@ -443,7 +511,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       'GoalType.weightGain' => 'vægtøgning', 
       'GoalType.muscleGain' => 'muskelopbygning',
       'GoalType.weightMaintenance' => 'vægtvedligeholdelse',
-      _ => 'dit sundhedsmål',
+      _ => 'dit mål',
     };
   }
 

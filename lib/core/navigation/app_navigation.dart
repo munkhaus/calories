@@ -45,7 +45,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     ), // Re-enabled for testing
     NavigationItem(
       icon: MdiIcons.chartLine,
-      label: 'Fremgang',
+      label: 'Forløb',
     ),
     NavigationItem(
       icon: MdiIcons.calendarOutline,
@@ -58,9 +58,19 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   ];
 
   void _onItemTapped(int index) {
+    final previousIndex = _currentIndex;
+    
     setState(() {
       _currentIndex = index;
     });
+    
+    // If switching to home tab (0) from activity tab (2), refresh dashboard activity data
+    if (index == 0 && previousIndex == 2) {
+      print('🔄 Switching from Activity tab to Home tab - refreshing dashboard');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        DashboardPage.refreshActivityData();
+      });
+    }
   }
 
   @override

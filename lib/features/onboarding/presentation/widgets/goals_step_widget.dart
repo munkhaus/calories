@@ -72,7 +72,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
               // Weight Loss Goal - simplified design
               OnboardingOptionCard(
                 title: 'Tabe vægt',
-                description: 'Sund og bæredygtig vægttab over tid.',
+                description: 'Graduel vægttab over tid.',
                 isSelected: state.userProfile.goalType == GoalType.weightLoss,
                 onTap: () => notifier.updateGoalType(GoalType.weightLoss),
               ),
@@ -375,7 +375,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
   String _getWeeklyGoalRecommendation(GoalType goalType, double weeklyGoal) {
     if (goalType == GoalType.weightLoss) {
       if (weeklyGoal <= 0.3) {
-        return 'Langsomt og bæredygtigt tempo - godt valg!';
+        return 'Langsomt og bæredygtigt tempo.';
       } else if (weeklyGoal <= 0.7) {
         return 'Moderat tempo - realistisk for de fleste.';
       } else {
