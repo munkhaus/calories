@@ -202,7 +202,12 @@ class RecentMealsWidget extends ConsumerWidget {
                   
                   SizedBox(height: KSizes.margin6x),
                   
-                  // Modern summary footer
+                  // Simple total footer like activities
+                  _buildTotalSummaryFooter(context, meals),
+                  
+                  SizedBox(height: KSizes.margin3x),
+                  
+                  // Detailed nutrition summary
                   _buildModernSummaryFooter(context, meals),
                 ],
               ),
@@ -452,6 +457,51 @@ class RecentMealsWidget extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTotalSummaryFooter(BuildContext context, List<UserFoodLogModel> meals) {
+    final totalCalories = meals.fold(0, (sum, meal) => sum + meal.calories);
+    
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                MdiIcons.fire,
+                color: AppColors.primary,
+                size: KSizes.iconM,
+              ),
+              const SizedBox(width: KSizes.margin2x),
+              Text(
+                'Total spist i dag',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: KSizes.fontWeightBold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '$totalCalories kcal',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightBold,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
       ),
     );
   }

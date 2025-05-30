@@ -6,27 +6,25 @@ import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/domain/user_profile_model.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
-import '../../activity/application/activity_calories_notifier.dart';
 import '../application/selected_date_provider.dart';
+import '../application/date_aware_providers.dart';
 
 /// Widget showing daily calorie intake vs goal with circular progress and stats
 class CalorieOverviewWidget extends ConsumerWidget {
   const CalorieOverviewWidget({super.key});
-
+ 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
     final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
     
-    // Get calorie data
-    final baseCalories = userProfile.tdee > 0 ? userProfile.tdee : 2000.0;
-    final activityCaloriesAsync = ref.watch(activityCaloriesProvider);
-    final activityCalories = activityCaloriesAsync.when(
-      data: (calories) => calories.toDouble(),
-      loading: () => 0.0,
-      error: (error, stack) => 0.0,
-    );
+    // Trigger date-aware activity loading
+    ref.watch(dateAwareActivityProvider);
+    
+    // Get calorie data - recalculate TDEE based on current profile state
+    final baseCalories = _calculateCurrentTdee(userProfile);
+    final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider).toDouble();
     final totalAvailableCalories = baseCalories + activityCalories;
     
     // Get consumed calories
@@ -590,12 +588,13 @@ class CalorieOverviewWidget extends ConsumerWidget {
     return profile.targetCalories.toDouble();
   }
   
-  double _calculateBmrCalories(UserProfileModel profile) {
+  double _calculateCurrentTdee(UserProfileModel profile) {
+    // Calculate BMR first
     if (profile.dateOfBirth == null || 
         profile.heightCm <= 0 || 
         profile.currentWeightKg <= 0 ||
         profile.gender == null) {
-      return 0.0;
+      return profile.tdee; // Fallback to pre-calculated TDEE
     }
 
     // Calculate age from date of birth
@@ -607,26 +606,26 @@ class CalorieOverviewWidget extends ConsumerWidget {
       age--;
     }
 
-    // Mifflin-St Jeor Equation for BMR (daily rate)
-    double dailyBmr;
+    // Mifflin-St Jeor Equation for BMR
+    double bmr;
     if (profile.gender == Gender.male) {
-      dailyBmr = (10 * profile.currentWeightKg) + 
-                 (6.25 * profile.heightCm) - 
-                 (5 * age) + 5;
+      bmr = (10 * profile.currentWeightKg) + 
+            (6.25 * profile.heightCm) - 
+            (5 * age) + 5;
     } else {
-      dailyBmr = (10 * profile.currentWeightKg) + 
-                 (6.25 * profile.heightCm) - 
-                 (5 * age) - 161;
+      bmr = (10 * profile.currentWeightKg) + 
+            (6.25 * profile.heightCm) - 
+            (5 * age) - 161;
     }
 
-    double dailyTdee;
+    double tdee;
     
-    // Use new activity system if available, otherwise fall back to legacy
+    // Use new activity system if available
     if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
       // Calculate work activity multiplier based on current day
       double workMultiplier = 1.2; // Default sedentary baseline
       
-      // Determine if today is a work day
+      // Determine if today is a work day using CURRENT profile state
       final isWorkDay = profile.useAutomaticWeekdayDetection 
           ? (now.weekday >= 1 && now.weekday <= 5)
           : profile.isCurrentlyWorkDay;
@@ -641,24 +640,24 @@ class CalorieOverviewWidget extends ConsumerWidget {
         };
       }
       
-      // Calculate leisure activity addition - only if NOT manual tracking
+      // Calculate leisure activity addition using CURRENT profile state
       double leisureAddition = 0.0;
       if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
-          profile.isLeisureActivityEnabledToday) {
+          profile.isLeisureActivityEnabledToday) { // This reflects current toggle state
         leisureAddition = switch (profile.leisureActivityLevel!) {
           LeisureActivityLevel.sedentary => 0.0,
-          LeisureActivityLevel.lightlyActive => 0.155, // ~155 calories
-          LeisureActivityLevel.moderatelyActive => 0.35, // ~350 calories
-          LeisureActivityLevel.veryActive => 0.525, // ~525 calories
-          LeisureActivityLevel.extraActive => 0.7, // ~700 calories
+          LeisureActivityLevel.lightlyActive => 0.155,
+          LeisureActivityLevel.moderatelyActive => 0.35,
+          LeisureActivityLevel.veryActive => 0.525,
+          LeisureActivityLevel.extraActive => 0.7,
         };
       }
       
-      dailyTdee = (dailyBmr * workMultiplier) + (dailyBmr * leisureAddition);
+      tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
     } else {
       // Fall back to legacy activity level system
       if (profile.activityLevel == null) {
-        return 0.0;
+        return profile.tdee;
       }
       
       final activityMultiplier = switch (profile.activityLevel!) {
@@ -669,17 +668,11 @@ class CalorieOverviewWidget extends ConsumerWidget {
         ActivityLevel.extraActive => 1.9,
       };
       
-      dailyTdee = dailyBmr * activityMultiplier;
+      tdee = bmr * activityMultiplier;
     }
 
-    // Calculate TDEE calories burned based on time of day
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final minutesSinceStartOfDay = now.difference(startOfDay).inMinutes;
-    final percentOfDayPassed = minutesSinceStartOfDay / (24 * 60);
-    
-    final tdeeCalories = (dailyTdee * percentOfDayPassed);
-
-    return tdeeCalories;
+    // Return raw TDEE (total daily energy expenditure) without goal adjustments
+    return tdee;
   }
 }
 
