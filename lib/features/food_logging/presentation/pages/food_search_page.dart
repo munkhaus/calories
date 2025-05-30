@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/app_page_header.dart';
 import '../widgets/food_item_card.dart';
 import '../widgets/meal_type_selector.dart';
 import '../../domain/food_item_model.dart';
@@ -120,79 +121,121 @@ class _FoodSearchPageState extends State<FoodSearchPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'Log Måltid',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: KSizes.fontWeightBold,
-            color: AppColors.textPrimary,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppDesign.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Back button and header
+              Padding(
+                padding: const EdgeInsets.all(KSizes.margin4x),
+                child: Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(KSizes.radiusL),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: Icon(
+                          MdiIcons.arrowLeft,
+                          color: AppColors.textPrimary,
+                          size: KSizes.iconM,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: KSizes.margin4x),
+                    Expanded(
+                      child: StandardPageHeader(
+                        title: 'Find dine fødevarer 🔍',
+                        subtitle: 'Søg og vælg det du har spist',
+                        icon: MdiIcons.magnify,
+                        iconColor: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                  child: Column(
+                    children: [
+                      // Meal Type Selector
+                      Container(
+                        padding: EdgeInsets.all(KSizes.margin4x),
+                        child: MealTypeSelector(
+                          selectedMealType: _selectedMealType,
+                          onMealTypeChanged: (mealType) {
+                            setState(() => _selectedMealType = mealType);
+                          },
+                        ),
+                      ),
+                      
+                      // Search Bar
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Søg efter fødevarer...',
+                            prefixIcon: Icon(
+                              MdiIcons.magnify,
+                              color: AppColors.textSecondary,
+                            ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: Icon(
+                                      MdiIcons.close,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _searchFoods('');
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(KSizes.radiusM),
+                              borderSide: BorderSide(color: AppColors.border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(KSizes.radiusM),
+                              borderSide: BorderSide(color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: AppColors.surface,
+                          ),
+                          onChanged: _searchFoods,
+                        ),
+                      ),
+                      
+                      SizedBox(height: KSizes.margin4x),
+                      
+                      // Content Tabs or Search Results
+                      Expanded(
+                        child: _searchController.text.isEmpty
+                            ? _buildTabContent()
+                            : _buildSearchResults(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        backgroundColor: AppColors.background,
-        elevation: 0,
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
-      ),
-      body: Column(
-        children: [
-          // Meal Type Selector
-          Container(
-            padding: EdgeInsets.all(KSizes.margin4x),
-            child: MealTypeSelector(
-              selectedMealType: _selectedMealType,
-              onMealTypeChanged: (mealType) {
-                setState(() => _selectedMealType = mealType);
-              },
-            ),
-          ),
-          
-          // Search Bar
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Søg efter fødevarer...',
-                prefixIcon: Icon(
-                  MdiIcons.magnify,
-                  color: AppColors.textSecondary,
-                ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          MdiIcons.close,
-                          color: AppColors.textSecondary,
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                          _searchFoods('');
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  borderSide: BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  borderSide: BorderSide(color: AppColors.primary, width: 2),
-                ),
-                filled: true,
-                fillColor: AppColors.surface,
-              ),
-              onChanged: _searchFoods,
-            ),
-          ),
-          
-          SizedBox(height: KSizes.margin4x),
-          
-          // Content Tabs or Search Results
-          Expanded(
-            child: _searchController.text.isEmpty
-                ? _buildTabContent()
-                : _buildSearchResults(),
-          ),
-        ],
       ),
     );
   }

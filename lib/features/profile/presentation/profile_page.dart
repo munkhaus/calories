@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/app_page_header.dart';
+import '../../../shared/widgets/app_option_card.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
@@ -19,7 +21,6 @@ class ProfilePage extends ConsumerWidget {
     final userProfile = onboardingState.userProfile;
     
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
@@ -29,38 +30,49 @@ class ProfilePage extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(KSizes.margin4x),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header
-                  _buildHeader(context, userProfile),
-                  
-                  KSizes.spacingVerticalL,
-                  
-                  // Profile Summary Card
-                  if (userProfile.name.isNotEmpty)
-                    _buildProfileSummaryCard(context, userProfile),
-                  
-                  if (userProfile.name.isNotEmpty)
-                    KSizes.spacingVerticalM,
-                  
-                  // Physical Stats Card
-                  if (userProfile.heightCm > 0 || userProfile.currentWeightKg > 0)
-                    _buildPhysicalStatsCard(context, userProfile),
-                  
-                  if (userProfile.heightCm > 0 || userProfile.currentWeightKg > 0)
-                    KSizes.spacingVerticalM,
-                  
-                  // Goals Card
-                  if (userProfile.goalType != null || userProfile.targetCalories > 0)
-                    _buildGoalsCard(context, userProfile),
-                  
-                  if (userProfile.goalType != null || userProfile.targetCalories > 0)
-                    KSizes.spacingVerticalM,
-                  
-                  // Actions Card
-                  _buildActionsCard(context, ref),
+                  // Header with new design
+                  StandardPageHeader(
+                    title: userProfile.name.isNotEmpty ? userProfile.name : 'Din Profil',
+                    subtitle: userProfile.name.isNotEmpty 
+                        ? 'Administrer dine indstillinger og præferencer'
+                        : 'Gennemgå onboarding for at sætte din profil op',
+                    icon: MdiIcons.account,
+                    iconColor: AppColors.primary,
+                    onInfoTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const InfoPage(),
+                        ),
+                      );
+                    },
+                  ),
                   
                   KSizes.spacingVerticalXL,
+                  
+                  // Profile Summary Card (only if profile exists)
+                  if (userProfile.name.isNotEmpty) ...[
+                    _buildProfileSummarySection(context, userProfile),
+                    KSizes.spacingVerticalXL,
+                  ],
+                  
+                  // Physical Stats Card (only if data exists)
+                  if (userProfile.heightCm > 0 || userProfile.currentWeightKg > 0) ...[
+                    _buildPhysicalStatsSection(context, userProfile),
+                    KSizes.spacingVerticalXL,
+                  ],
+                  
+                  // Goals Card (only if goals exist)
+                  if (userProfile.goalType != null || userProfile.targetCalories > 0) ...[
+                    _buildGoalsSection(context, userProfile),
+                    KSizes.spacingVerticalXL,
+                  ],
+                  
+                  // Settings and Actions Section
+                  _buildSettingsSection(context, ref, userProfile),
+                  
+                  // Bottom padding
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -70,445 +82,434 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, UserProfileModel userProfile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(KSizes.margin3x),
-              decoration: AppDesign.iconContainerDecoration(AppColors.primary),
-              child: Icon(
-                MdiIcons.account,
-                color: Colors.white,
-                size: KSizes.iconL,
-              ),
-            ),
-            KSizes.spacingHorizontalM,
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Din Profil',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeHeading,
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  if (userProfile.name.isNotEmpty)
-                    Text(
-                      userProfile.name,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeL,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        if (userProfile.name.isEmpty) ...[
-          KSizes.spacingVerticalM,
-          Container(
-            padding: const EdgeInsets.all(KSizes.margin4x),
-            decoration: BoxDecoration(
-              color: AppColors.info.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(KSizes.radiusL),
-              border: Border.all(
-                color: AppColors.info.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  MdiIcons.informationOutline,
-                  color: AppColors.info,
-                  size: KSizes.iconM,
-                ),
-                KSizes.spacingHorizontalM,
-                Expanded(
-                  child: Text(
-                    'Gennemgå onboarding for at sætte din profil op',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeM,
-                      color: AppColors.info,
-                      fontWeight: KSizes.fontWeightMedium,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildProfileSummarySection(BuildContext context, UserProfileModel userProfile) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildProfileSummaryCard(BuildContext context, UserProfileModel userProfile) {
-    return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.accountDetails,
-                  color: AppColors.primary,
-                  size: KSizes.iconM,
-                ),
-                KSizes.spacingHorizontalS,
-                Text(
-                  'Personlige oplysninger',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXL,
-                    fontWeight: KSizes.fontWeightSemiBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            KSizes.spacingVerticalM,
-            
-            if (userProfile.name.isNotEmpty)
-              _buildInfoRow('Navn', userProfile.name, MdiIcons.account),
-            
-            if (userProfile.dateOfBirth != null)
-              _buildInfoRow(
-                'Alder', 
-                '${_calculateAge(userProfile.dateOfBirth!)} år', 
-                MdiIcons.cake,
-              ),
-            
-            if (userProfile.gender != null)
-              _buildInfoRow(
-                'Køn', 
-                _getGenderText(userProfile.gender!), 
-                MdiIcons.humanMaleFemale,
-              ),
-          ],
-        ),
       ),
-    );
-  }
-
-  Widget _buildPhysicalStatsCard(BuildContext context, UserProfileModel userProfile) {
-    return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.humanMaleHeight,
-                  color: AppColors.secondary,
-                  size: KSizes.iconM,
-                ),
-                KSizes.spacingHorizontalS,
-                Text(
-                  'Fysiske mål',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXL,
-                    fontWeight: KSizes.fontWeightSemiBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            KSizes.spacingVerticalM,
-            
-            if (userProfile.heightCm > 0)
-              _buildInfoRow(
-                'Højde', 
-                '${userProfile.heightCm.round()} cm', 
-                MdiIcons.humanMaleHeight,
-              ),
-            
-            if (userProfile.currentWeightKg > 0)
-              _buildInfoRow(
-                'Nuværende vægt', 
-                '${userProfile.currentWeightKg.toStringAsFixed(1)} kg', 
-                MdiIcons.scaleBalance,
-              ),
-            
-            if (userProfile.targetWeightKg > 0)
-              _buildInfoRow(
-                'Målvægt', 
-                '${userProfile.targetWeightKg.toStringAsFixed(1)} kg', 
-                MdiIcons.target,
-              ),
-            
-            if (userProfile.heightCm > 0 && userProfile.currentWeightKg > 0) ...[
-              KSizes.spacingVerticalS,
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      MdiIcons.calculator,
-                      color: AppColors.success,
-                      size: KSizes.iconS,
-                    ),
-                    KSizes.spacingHorizontalS,
-                    Text(
-                      'BMI: ${userProfile.bmi.toStringAsFixed(1)} (${userProfile.bmiCategory})',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.success,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGoalsCard(BuildContext context, UserProfileModel userProfile) {
-    return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.target,
-                  color: AppColors.success,
-                  size: KSizes.iconM,
-                ),
-                KSizes.spacingHorizontalS,
-                Text(
-                  'Mål & Kalorier',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXL,
-                    fontWeight: KSizes.fontWeightSemiBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            KSizes.spacingVerticalM,
-            
-            if (userProfile.goalType != null)
-              _buildInfoRow(
-                'Mål', 
-                _getGoalTypeText(userProfile.goalType!), 
-                MdiIcons.flagOutline,
-              ),
-            
-            // Show new activity system if available, otherwise legacy
-            if (userProfile.workActivityLevel != null && userProfile.leisureActivityLevel != null) ...[
-              _buildInfoRow(
-                'Aktivitetstracking', 
-                _getActivityTrackingText(userProfile.activityTrackingPreference), 
-                MdiIcons.chartLine,
-              ),
-              _buildInfoRow(
-                'Arbejde', 
-                _getWorkActivityText(userProfile.workActivityLevel!), 
-                MdiIcons.briefcase,
-              ),
-              _buildInfoRow(
-                'Fritid', 
-                _getLeisureActivityText(userProfile.leisureActivityLevel!), 
-                MdiIcons.run,
-              ),
-            ] else if (userProfile.activityLevel != null) ...[
-              _buildInfoRow(
-                'Aktivitetsniveau', 
-                _getActivityLevelText(userProfile.activityLevel!), 
-                MdiIcons.run,
-              ),
-            ],
-            
-            if (userProfile.targetCalories > 0) ...[
-              KSizes.spacingVerticalM,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
               Container(
                 padding: const EdgeInsets.all(KSizes.margin3x),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.1),
-                      AppColors.secondary.withOpacity(0.1),
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          MdiIcons.fire,
-                          color: AppColors.warning,
-                          size: KSizes.iconM,
-                        ),
-                        KSizes.spacingHorizontalS,
-                        Text(
-                          '${userProfile.targetCalories} kcal/dag',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeXL,
-                            fontWeight: KSizes.fontWeightBold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    
-                    if (userProfile.targetProteinG > 0) ...[
-                      KSizes.spacingVerticalM,
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildMacroChip(
-                              'Protein',
-                              '${userProfile.targetProteinG.round()}g',
-                              AppColors.error,
-                            ),
-                          ),
-                          KSizes.spacingHorizontalS,
-                          Expanded(
-                            child: _buildMacroChip(
-                              'Fedt',
-                              '${userProfile.targetFatG.round()}g',
-                              AppColors.warning,
-                            ),
-                          ),
-                          KSizes.spacingHorizontalS,
-                          Expanded(
-                            child: _buildMacroChip(
-                              'Kulhydrater',
-                              '${userProfile.targetCarbsG.round()}g',
-                              AppColors.success,
-                            ),
-                          ),
-                        ],
+                  ],
+                ),
+                child: Icon(
+                  MdiIcons.accountDetails,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Personlige oplysninger',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
                       ),
-                    ],
+                    ),
+                    Text(
+                      'Dine grundlæggende profil informationer',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
-          ],
-        ),
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Profile details
+          if (userProfile.name.isNotEmpty)
+            _buildInfoRow('Navn', userProfile.name, MdiIcons.account),
+          
+          if (userProfile.dateOfBirth != null)
+            _buildInfoRow(
+              'Alder', 
+              '${_calculateAge(userProfile.dateOfBirth!)} år', 
+              MdiIcons.cake,
+            ),
+          
+          if (userProfile.gender != null)
+            _buildInfoRow(
+              'Køn', 
+              _getGenderText(userProfile.gender!), 
+              MdiIcons.humanMaleFemale,
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildActionsCard(BuildContext context, WidgetRef ref) {
+  Widget _buildPhysicalStatsSection(BuildContext context, UserProfileModel userProfile) {
     return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.cog,
-                  color: AppColors.info,
-                  size: KSizes.iconM,
-                ),
-                KSizes.spacingHorizontalS,
-                Text(
-                  'Handlinger',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeXL,
-                    fontWeight: KSizes.fontWeightSemiBold,
-                    color: AppColors.textPrimary,
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.secondary,
+                      AppColors.secondary.withOpacity(0.8),
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
+                child: Icon(
+                  MdiIcons.scaleBalance,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Fysiske data',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Højde, vægt og kropssammensætning',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Physical stats
+          if (userProfile.heightCm > 0)
+            _buildInfoRow('Højde', '${userProfile.heightCm.round()} cm', MdiIcons.human),
+          
+          if (userProfile.currentWeightKg > 0)
+            _buildInfoRow('Nuværende vægt', '${userProfile.currentWeightKg.toStringAsFixed(1)} kg', MdiIcons.scale),
+          
+          if (userProfile.targetWeightKg > 0)
+            _buildInfoRow('Målvægt', '${userProfile.targetWeightKg.toStringAsFixed(1)} kg', MdiIcons.target),
+          
+          if (userProfile.bmr > 0)
+            _buildInfoRow('BMR', '${userProfile.bmr.round()} kcal/dag', MdiIcons.fire),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGoalsSection(BuildContext context, UserProfileModel userProfile) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.success,
+                      AppColors.success.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.success.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  MdiIcons.target,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mål og præferencer',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Dine mål og træningsindstillinger',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Goals info
+          if (userProfile.goalType != null)
+            _buildInfoRow('Mål', _getGoalTypeText(userProfile.goalType!), MdiIcons.bullseyeArrow),
+          
+          if (userProfile.targetCalories > 0)
+            _buildInfoRow('Dagligt kaloriemål', '${userProfile.targetCalories.round()} kcal', MdiIcons.fire),
+          
+          if (userProfile.weeklyGoalKg != 0)
+            _buildInfoRow('Ugentlig vægtændring', '${userProfile.weeklyGoalKg > 0 ? '+' : ''}${userProfile.weeklyGoalKg.toStringAsFixed(1)} kg', MdiIcons.trendingUp),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.info,
+                      AppColors.info.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.info.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  MdiIcons.cog,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Indstillinger og handlinger',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Administrer din app og dine data',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Settings options
+          if (userProfile.name.isEmpty)
+            ProfileOptionCard(
+              title: 'Gennemgå onboarding',
+              subtitle: 'Sæt din profil op med personlige mål og præferencer',
+              icon: MdiIcons.accountPlus,
+              onTap: () => _navigateToOnboarding(context, ref),
             ),
-            KSizes.spacingVerticalM,
-            
-            // Edit Profile Button
-            _buildActionButton(
-              icon: MdiIcons.accountEdit,
+          
+          ProfileOptionCard(
+            title: 'Aktivitetsindstillinger',
+            subtitle: 'Justér aktivitetsniveau og træningstyper',
+            icon: MdiIcons.runFast,
+            onTap: () => _navigateToActivitySettings(context),
+          ),
+          
+          if (userProfile.name.isNotEmpty)
+            ProfileOptionCard(
               title: 'Rediger profil',
-              subtitle: 'Opdater dine oplysninger',
-              gradient: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
-              onTap: () => _editProfile(context, ref),
+              subtitle: 'Opdater personlige oplysninger og mål',
+              icon: MdiIcons.pencil,
+              onTap: () => _navigateToOnboarding(context, ref),
             ),
-            
-            KSizes.spacingVerticalM,
-            
-            // Activity Settings Button
-            _buildActionButton(
-              icon: MdiIcons.run,
-              title: 'Aktivitetsindstillinger',
-              subtitle: 'Juster dit arbejde og fritidsaktiviteter',
-              gradient: [AppColors.secondary, AppColors.secondary.withOpacity(0.8)],
-              onTap: () => _navigateToActivitySettings(context),
+          
+          ProfileOptionCard(
+            title: 'App information',
+            subtitle: 'Om appen, version og support',
+            icon: MdiIcons.informationOutline,
+            onTap: () => _navigateToInfo(context),
+          ),
+          
+          if (userProfile.name.isNotEmpty)
+            ProfileOptionCard(
+              title: 'Nulstil profil',
+              subtitle: 'Genstart onboarding og ryd alle data',
+              icon: MdiIcons.refresh,
+              onTap: () => _showRestartOnboardingDialog(context, ref),
             ),
-            
-            KSizes.spacingVerticalM,
-            
-            // Info Button
-            _buildActionButton(
-              icon: MdiIcons.informationOutline,
-              title: 'Information & Ansvarsfraskrivelse',
-              subtitle: 'Vigtig information om appen',
-              gradient: [AppColors.info, AppColors.info.withOpacity(0.8)],
-              onTap: () => _navigateToInfo(context),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: KSizes.margin1x),
+      padding: const EdgeInsets.only(bottom: KSizes.margin4x),
       child: Row(
         children: [
-          Icon(
-            icon,
-            color: AppColors.textTertiary,
-            size: KSizes.iconS,
-          ),
-          KSizes.spacingHorizontalM,
-          Text(
-            '$label:',
-            style: TextStyle(
-              fontSize: KSizes.fontSizeM,
-              color: AppColors.textSecondary,
-              fontWeight: KSizes.fontWeightMedium,
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin2x),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(KSizes.radiusS),
+            ),
+            child: Icon(
+              icon,
+              color: AppColors.primary,
+              size: KSizes.iconM,
             ),
           ),
-          KSizes.spacingHorizontalS,
+          const SizedBox(width: KSizes.margin3x),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                fontSize: KSizes.fontSizeM,
-                color: AppColors.textPrimary,
-                fontWeight: KSizes.fontWeightMedium,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    fontWeight: KSizes.fontWeightMedium,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -516,111 +517,39 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildMacroChip(String label, String value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KSizes.margin2x,
-        vertical: KSizes.margin1x,
-      ),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusS),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeXS,
-              color: color,
-              fontWeight: KSizes.fontWeightMedium,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeS,
-              color: color,
-              fontWeight: KSizes.fontWeightBold,
-            ),
-          ),
-        ],
-      ),
-    );
+  int _calculateAge(DateTime dateOfBirth) {
+    final now = DateTime.now();
+    int age = now.year - dateOfBirth.year;
+    if (now.month < dateOfBirth.month || 
+        (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
+      age--;
+    }
+    return age;
   }
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required List<Color> gradient,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        child: Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: AppDesign.quickActionDecoration(gradient),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  icon,
-                  color: Colors.white,
-                  size: KSizes.iconM,
-                ),
-              ),
-              KSizes.spacingHorizontalM,
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeL,
-                        fontWeight: KSizes.fontWeightSemiBold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                MdiIcons.chevronRight,
-                color: Colors.white.withOpacity(0.8),
-                size: KSizes.iconM,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  String _getGenderText(Gender gender) {
+    switch (gender) {
+      case Gender.male:
+        return 'Mand';
+      case Gender.female:
+        return 'Kvinde';
+    }
   }
 
-  void _editProfile(BuildContext context, WidgetRef ref) {
-    // Restart onboarding flow to start from welcome step (preserve data)
-    ref.read(onboardingProvider.notifier).restartOnboardingFlow();
-    
+  String _getGoalTypeText(GoalType goalType) {
+    switch (goalType) {
+      case GoalType.weightLoss:
+        return 'Tab vægt';
+      case GoalType.weightMaintenance:
+        return 'Vedligehold vægt';
+      case GoalType.weightGain:
+        return 'Tag på i vægt';
+      case GoalType.muscleGain:
+        return 'Byg muskler';
+    }
+  }
+
+  void _navigateToOnboarding(BuildContext context, WidgetRef ref) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const OnboardingPage(),
@@ -644,68 +573,122 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  int _calculateAge(DateTime dateOfBirth) {
-    final now = DateTime.now();
-    int age = now.year - dateOfBirth.year;
-    if (now.month < dateOfBirth.month ||
-        (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
-      age--;
-    }
-    return age;
-  }
-
-  String _getGenderText(Gender? gender) {
-    return switch (gender) {
-      Gender.male => 'Mand',
-      Gender.female => 'Kvinde',
-      null => 'Ikke angivet',
-    };
-  }
-
-  String _getGoalTypeText(GoalType goalType) {
-    return switch (goalType) {
-      GoalType.weightLoss => 'Vægttab',
-      GoalType.weightGain => 'Vægtforøgelse',
-      GoalType.muscleGain => 'Muskelopbygning',
-      GoalType.weightMaintenance => 'Vedligeholdelse',
-    };
-  }
-
-  String _getActivityLevelText(ActivityLevel activityLevel) {
-    return switch (activityLevel) {
-      ActivityLevel.sedentary => 'Stillesiddende',
-      ActivityLevel.lightlyActive => 'Let aktiv',
-      ActivityLevel.moderatelyActive => 'Moderat aktiv',
-      ActivityLevel.veryActive => 'Meget aktiv',
-      ActivityLevel.extraActive => 'Ekstremt aktiv',
-    };
-  }
-
-  String _getActivityTrackingText(ActivityTrackingPreference activityTrackingPreference) {
-    return switch (activityTrackingPreference) {
-      ActivityTrackingPreference.automatic => 'Automatisk',
-      ActivityTrackingPreference.manual => 'Manuel',
-      ActivityTrackingPreference.hybrid => 'Hybrid',
-    };
-  }
-
-  String _getWorkActivityText(WorkActivityLevel workActivityLevel) {
-    return switch (workActivityLevel) {
-      WorkActivityLevel.sedentary => 'Kontorarbejde',
-      WorkActivityLevel.light => 'Let fysisk arbejde',
-      WorkActivityLevel.moderate => 'Moderat fysisk arbejde',
-      WorkActivityLevel.heavy => 'Hård fysisk arbejde',
-      WorkActivityLevel.veryHeavy => 'Meget hård fysisk arbejde',
-    };
-  }
-
-  String _getLeisureActivityText(LeisureActivityLevel leisureActivityLevel) {
-    return switch (leisureActivityLevel) {
-      LeisureActivityLevel.sedentary => 'Ingen/minimal aktivitet',
-      LeisureActivityLevel.lightlyActive => 'Let aktivitet (1-3 dage/uge)',
-      LeisureActivityLevel.moderatelyActive => 'Moderat aktivitet (3-5 dage/uge)',
-      LeisureActivityLevel.veryActive => 'Meget aktivitet (6-7 dage/uge)',
-      LeisureActivityLevel.extraActive => 'Ekstra aktivitet (daglig)',
-    };
+  void _showRestartOnboardingDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusXL),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Icon(
+                  MdiIcons.refresh,
+                  color: Colors.white,
+                  size: KSizes.iconS,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin3x),
+              Text(
+                'Genstart onboarding',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeL,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(KSizes.radiusL),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Er du sikker på, at du vil genstarte onboarding processen?',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: KSizes.margin2x),
+                Text(
+                  'Dine eksisterende data bliver ikke slettet.',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin4x,
+                  vertical: KSizes.margin2x,
+                ),
+              ),
+              child: Text(
+                'Annuller',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await ref.read(onboardingProvider.notifier).restartOnboardingFlow();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  // Navigate to onboarding
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const OnboardingPage(),
+                    ),
+                    (route) => false,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warning,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin4x,
+                  vertical: KSizes.margin2x,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                ),
+              ),
+              child: Text(
+                'Genstart',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 } 

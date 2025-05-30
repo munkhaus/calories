@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/app_page_header.dart';
+import '../../../shared/widgets/app_option_card.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 import '../../food_logging/presentation/pages/food_search_page.dart';
 import '../../info/presentation/info_page.dart';
@@ -14,185 +16,99 @@ class LoggingPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'Log måltid',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: KSizes.fontWeightBold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const InfoPage(),
-                ),
-              );
-            },
-            icon: Icon(
-              MdiIcons.informationOutline,
-              color: AppColors.info,
-            ),
-          ),
-        ],
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(KSizes.margin4x),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                _buildSectionHeader(context, 'Vælg måltidstype'),
-                
-                const SizedBox(height: KSizes.margin6x),
-                
-                // Meal type selection cards
-                Expanded(
-                  child: ListView(
-                    children: MealType.values.map((mealType) {
-                      return _buildMealTypeCard(context, mealType);
-                    }).toList(),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(KSizes.margin4x),
+              child: Column(
+                children: [
+                  // Header with new design
+                  StandardPageHeader(
+                    title: 'Tid til at logge! 🍽️',
+                    subtitle: 'Vælg hvilken type måltid du vil registrere',
+                    icon: MdiIcons.silverwareForkKnife,
+                    iconColor: AppColors.primary,
+                    onInfoTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const InfoPage(),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(BuildContext context, String title) {
-    return Container(
-      padding: EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.primary.withOpacity(0.1),
-            AppColors.secondary.withOpacity(0.1),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.all(KSizes.margin3x),
-            decoration: BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.circular(KSizes.radiusM),
-            ),
-            child: Icon(
-              MdiIcons.silverwareForkKnife,
-              color: AppColors.surface,
-              size: KSizes.iconM,
-            ),
-          ),
-          SizedBox(width: KSizes.margin4x),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tid til at logge!',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: KSizes.fontWeightBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                SizedBox(height: KSizes.margin1x),
-                Text(
-                  'Vælg hvilken type måltid du vil logge',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMealTypeCard(BuildContext context, MealType mealType) {
-    return Card(
-      elevation: 2,
-      shadowColor: AppColors.primary.withOpacity(0.2),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => FoodSearchPage(initialMealType: mealType),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        child: Container(
-          padding: EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-            border: Border.all(
-              color: AppColors.primary.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: KSizes.iconXL,
-                height: KSizes.iconXL,
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  _getIconForMealType(mealType),
-                  color: AppColors.primary,
-                  size: KSizes.iconL,
-                ),
-              ),
-              SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _getTitleForMealType(mealType),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
+                  
+                  KSizes.spacingVerticalXL,
+                  
+                  // Meal type selection with new design
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.08),
+                          blurRadius: KSizes.blurRadiusL,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: KSizes.margin1x),
-                    Text(
-                      _getSubtitleForMealType(mealType),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Section header
+                        Text(
+                          'Vælg måltidstype',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeXL,
+                            fontWeight: KSizes.fontWeightBold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin2x),
+                        
+                        Text(
+                          'Hvilken type måltid vil du registrere i dag?',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeM,
+                            color: AppColors.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin6x),
+                        
+                        // Meal type cards
+                        ...MealType.values.map((mealType) {
+                          return MealTypeCard(
+                            title: _getTitleForMealType(mealType),
+                            subtitle: _getSubtitleForMealType(mealType),
+                            icon: _getIconForMealType(mealType),
+                            iconColor: _getColorForMealType(mealType),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => FoodSearchPage(initialMealType: mealType),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  
+                  // Bottom padding
+                  const SizedBox(height: 100),
+                ],
               ),
-              Icon(
-                MdiIcons.chevronRight,
-                color: AppColors.textTertiary,
-                size: KSizes.iconM,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -209,8 +125,19 @@ class LoggingPage extends ConsumerWidget {
         return MdiIcons.weatherNight;
       case MealType.snack:
         return MdiIcons.star;
-      default:
-        throw Exception("Unknown meal type");
+    }
+  }
+
+  Color _getColorForMealType(MealType mealType) {
+    switch (mealType) {
+      case MealType.morgenmad:
+        return AppColors.warning;
+      case MealType.frokost:
+        return AppColors.primary;
+      case MealType.aftensmad:
+        return AppColors.secondary;
+      case MealType.snack:
+        return AppColors.info;
     }
   }
 
@@ -224,23 +151,19 @@ class LoggingPage extends ConsumerWidget {
         return 'Aftensmad';
       case MealType.snack:
         return 'Snack';
-      default:
-        throw Exception("Unknown meal type");
     }
   }
 
   String _getSubtitleForMealType(MealType mealType) {
     switch (mealType) {
       case MealType.morgenmad:
-        return 'Start dagen';
+        return 'Start dagen godt med en nærrende morgenmad';
       case MealType.frokost:
         return 'Energi til resten af dagen';
       case MealType.aftensmad:
-        return 'Afslut dagen lækkert';
+        return 'Afslut dagen med et godt måltid';
       case MealType.snack:
-        return 'Lille mellemmåltid';
-      default:
-        throw Exception("Unknown meal type");
+        return 'Lille bid mellem måltiderne';
     }
   }
 } 

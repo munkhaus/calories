@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/app_page_header.dart';
+import '../../../shared/widgets/app_option_card.dart';
 import '../application/activity_notifier.dart';
 import '../application/activity_calories_notifier.dart';
 import '../domain/activity_item_model.dart';
@@ -72,255 +74,371 @@ class _ActivityPageState extends ConsumerState<ActivityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(
-          'Log aktivitet',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: KSizes.fontWeightBold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => const InfoPage(),
-                ),
-              );
-            },
-            icon: Icon(
-              MdiIcons.informationOutline,
-              color: AppColors.info,
-            ),
-          ),
-        ],
-      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
         ),
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(KSizes.margin4x),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Activity search widget with error handling
-                ActivitySearchWidget(
-                  notifier: _notifier,
-                  onActivitySelected: _onActivitySelected,
-                ),
-                
-                SizedBox(height: KSizes.margin4x),
-                
-                // Expanded scrollable content
-                Expanded(
-                  child: ListView(
-                    children: [
-                      // Common activities section with error handling
-                      CommonActivitiesWidget(
-                        notifier: _notifier,
-                        onActivitySelected: _onActivitySelected,
-                      ),
-                      
-                      SizedBox(height: KSizes.margin6x),
-                      
-                      // Manual entry options
-                      _buildManualEntrySection(),
-                      
-                      SizedBox(height: KSizes.margin6x),
-                      
-                      // Today's activities with error handling
-                      TodaysActivitiesWidget(
-                        notifier: _notifier,
-                        onDeleteActivity: _onDeleteActivity,
-                        activityTrackingPreference: ActivityTrackingPreference.manual,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildManualEntrySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Manuel registrering',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: KSizes.fontWeightBold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        
-        SizedBox(height: KSizes.margin4x),
-        
-        // Manual activity registration
-        Card(
-          elevation: KSizes.cardElevation,
-          child: InkWell(
-            onTap: _onManualActivityTap,
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
+          child: SingleChildScrollView(
             child: Padding(
-              padding: EdgeInsets.all(KSizes.margin4x),
-              child: Row(
+              padding: const EdgeInsets.all(KSizes.margin4x),
+              child: Column(
                 children: [
-                  Container(
-                    width: KSizes.iconXL,
-                    height: KSizes.iconXL,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                    ),
-                    child: Icon(
-                      MdiIcons.pencilPlus,
-                      color: AppColors.primary,
-                      size: KSizes.iconL,
-                    ),
+                  // Header with new design
+                  StandardPageHeader(
+                    title: 'Tid til aktivitet! 🏃‍♂️',
+                    subtitle: 'Log dine aktiviteter og hold styr på dit energiforbrug',
+                    icon: MdiIcons.runFast,
+                    iconColor: AppColors.secondary,
+                    onInfoTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const InfoPage(),
+                        ),
+                      );
+                    },
                   ),
                   
-                  SizedBox(width: KSizes.margin4x),
+                  KSizes.spacingVerticalXL,
                   
-                  Expanded(
+                  // Search section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.08),
+                          blurRadius: KSizes.blurRadiusL,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Manuel registrering af aktivitet',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: KSizes.fontWeightMedium,
+                          'Søg aktiviteter',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeXL,
+                            fontWeight: KSizes.fontWeightBold,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         
+                        const SizedBox(height: KSizes.margin2x),
+                        
                         Text(
-                          'Opret din egen aktivitet',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          'Find aktiviteter og log dit træning',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeM,
                             color: AppColors.textSecondary,
+                            height: 1.3,
                           ),
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin4x),
+                        
+                        // Activity search widget
+                        ActivitySearchWidget(
+                          notifier: _notifier,
+                          onActivitySelected: _onActivitySelected,
                         ),
                       ],
                     ),
                   ),
                   
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    color: AppColors.textSecondary,
-                    size: KSizes.iconS,
+                  KSizes.spacingVerticalXL,
+                  
+                  // Common activities section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.08),
+                          blurRadius: KSizes.blurRadiusL,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(KSizes.margin3x),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.secondary,
+                                    AppColors.secondary.withOpacity(0.8),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.secondary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                MdiIcons.fire,
+                                color: Colors.white,
+                                size: KSizes.iconL,
+                              ),
+                            ),
+                            const SizedBox(width: KSizes.margin4x),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Populære aktiviteter',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeXL,
+                                      fontWeight: KSizes.fontWeightBold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Hurtig adgang til almindelige aktiviteter',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeM,
+                                      color: AppColors.textSecondary,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin4x),
+                        
+                        CommonActivitiesWidget(
+                          notifier: _notifier,
+                          onActivitySelected: _onActivitySelected,
+                        ),
+                      ],
+                    ),
                   ),
+                  
+                  KSizes.spacingVerticalXL,
+                  
+                  // Manual entry section with improved design
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.08),
+                          blurRadius: KSizes.blurRadiusL,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(KSizes.margin3x),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.primary,
+                                    AppColors.primary.withOpacity(0.8),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                MdiIcons.pencilPlus,
+                                color: Colors.white,
+                                size: KSizes.iconL,
+                              ),
+                            ),
+                            const SizedBox(width: KSizes.margin4x),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Manuel registrering',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeXL,
+                                      fontWeight: KSizes.fontWeightBold,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Registrer aktivitet manuelt eller kalorier direkte',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeM,
+                                      color: AppColors.textSecondary,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        const SizedBox(height: KSizes.margin6x),
+                        
+                        // Manual options
+                        ActivityOptionCard(
+                          title: 'Manuel aktivitet',
+                          subtitle: 'Registrer træning med varighed og intensitet',
+                          icon: MdiIcons.runFast,
+                          onTap: _onManualActivityTap,
+                        ),
+                        
+                        ActivityOptionCard(
+                          title: 'Direkte kalorier',
+                          subtitle: 'Indtast forbrændte kalorier direkte',
+                          icon: MdiIcons.fire,
+                          onTap: _onManualCaloriesTap,
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  KSizes.spacingVerticalXL,
+                  
+                  // Today's activities section
+                  TodaysActivitiesWidget(
+                    notifier: _notifier,
+                    onDeleteActivity: _onDeleteActivity,
+                    activityTrackingPreference: ActivityTrackingPreference.manual,
+                  ),
+                  
+                  // Bottom padding
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
         ),
-        
-        SizedBox(height: KSizes.margin4x),
-        
-        // Quick manual calorie entry
-        _buildQuickCalorieEntry(),
-      ],
-    );
-  }
-
-  Widget _buildQuickCalorieEntry() {
-    final TextEditingController calorieController = TextEditingController();
-    
-    return Card(
-      elevation: KSizes.cardElevation,
-      child: Padding(
-        padding: EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  MdiIcons.fire,
-                  color: AppColors.secondary,
-                  size: KSizes.iconM,
-                ),
-                SizedBox(width: KSizes.margin2x),
-                Text(
-                  'Hurtig kalore-log',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: KSizes.margin3x),
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    controller: calorieController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: 'Kalorier',
-                      suffixText: 'kcal',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: KSizes.margin3x,
-                        vertical: KSizes.margin2x,
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(width: KSizes.margin3x),
-                Expanded(
-                  flex: 1,
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: () => _logQuickCalories(calorieController),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(KSizes.radiusM),
-                        ),
-                      ),
-                      child: const Text('Log'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  Future<void> _logQuickCalories(TextEditingController calorieController) async {
-    final calories = double.tryParse(calorieController.text);
-    if (calories != null && calories > 0) {
-      final activity = UserActivityLogModel(
-        logEntryId: DateTime.now().millisecondsSinceEpoch,
-        userId: 1, // TODO: Get real user ID from user session
-        activityName: 'Manuel kalorier',
-        caloriesBurned: calories.round(),
-        durationMinutes: 0,
-        loggedAt: DateTime.now().toIso8601String(),
-        inputType: ActivityInputType.varighed,
-        intensity: ActivityIntensity.moderat,
-        isManualEntry: true,
+  void _onActivitySelected(ActivityItemModel activity) async {
+    print('🏃 Activity selected: ${activity.name}');
+    
+    try {
+      final result = await Navigator.of(context).push<UserActivityLogModel>(
+        MaterialPageRoute(
+          builder: (context) => ActivityDetailsPage(
+            activity: activity,
+            notifier: _notifier,
+          ),
+        ),
       );
+      
+      if (result != null) {
+        print('✅ Activity logged successfully: ${result.activityName}');
+      }
+    } catch (e) {
+      print('❌ Error navigating to activity details: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kunne ikke åbne aktivitetsdetaljer'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
-      final success = await _notifier.logActivity(activity);
+  void _onManualActivityTap() async {
+    print('📝 Manual activity registration tapped');
+    
+    try {
+      final result = await Navigator.of(context).push<UserActivityLogModel>(
+        MaterialPageRoute(
+          builder: (context) => ManualActivityPage(
+            notifier: _notifier,
+          ),
+        ),
+      );
+      
+      if (result != null) {
+        print('✅ Manual activity logged successfully: ${result.activityName}');
+      }
+    } catch (e) {
+      print('❌ Error navigating to manual activity page: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kunne ikke åbne manuel aktivitetsregistrering'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _onManualCaloriesTap() async {
+    print('🔥 Manual calories entry tapped');
+    
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusXL),
+          ),
+          content: ManualCalorieEntryWidget(
+            notifier: _notifier,
+            onCaloriesLogged: () {
+              Navigator.of(context).pop();
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      print('❌ Error with manual calories entry: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kunne ikke registrere kalorier'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  void _onDeleteActivity(UserActivityLogModel activity) async {
+    print('🗑️ Deleting activity: ${activity.activityName}');
+    
+    try {
+      final success = await _notifier.deleteActivity(activity.logEntryId);
       
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -328,178 +446,24 @@ class _ActivityPageState extends ConsumerState<ActivityPage> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(success 
-                  ? '${calories.round()} kalorier logget!'
-                  : 'Kunne ikke logge kalorier'
-                ),
+                  ? 'Aktivitet slettet' 
+                  : 'Kunne ikke slette aktivitet'),
                 backgroundColor: success ? AppColors.success : AppColors.error,
               ),
             );
           }
         });
       }
-      
-      // Clear the controller after successful logging
-      if (success) {
-        calorieController.clear();
+    } catch (e) {
+      print('❌ Error deleting activity: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved sletning af aktivitet'),
+            backgroundColor: AppColors.error,
+          ),
+        );
       }
     }
-  }
-
-  void _onActivitySelected(ActivityItemModel activity) {
-    _showActivityDialog(activity);
-  }
-
-  Future<void> _showActivityDialog(ActivityItemModel activity) async {
-    final TextEditingController durationController = TextEditingController();
-    final TextEditingController caloriesController = TextEditingController();
-    
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Log ${activity.name}'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: durationController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Varighed',
-                  suffixText: 'min',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  ),
-                ),
-              ),
-              SizedBox(height: KSizes.margin3x),
-              TextField(
-                controller: caloriesController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Kalorier (valgfri)',
-                  suffixText: 'kcal',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Annuller'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final duration = double.tryParse(durationController.text);
-              if (duration != null && duration > 0) {
-                await _logActivity(activity, duration, caloriesController.text);
-                if (mounted) {
-                  Navigator.of(context).pop();
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Log'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _logActivity(ActivityItemModel activity, double duration, String calories) async {
-    final logEntry = UserActivityLogModel(
-      logEntryId: DateTime.now().millisecondsSinceEpoch,
-      userId: 1, // TODO: Get real user ID from user session
-      activityName: activity.name,
-      caloriesBurned: double.tryParse(calories)?.round() ?? 0,
-      durationMinutes: duration,
-      loggedAt: DateTime.now().toIso8601String(),
-      inputType: ActivityInputType.varighed,
-      intensity: ActivityIntensity.moderat,
-      isManualEntry: false,
-    );
-
-    final success = await _notifier.logActivity(logEntry);
-    
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(success 
-                ? '${activity.name} logget! ${double.tryParse(calories)?.round() ?? 0} kcal forbrændt'
-                : 'Kunne ikke logge aktivitet'
-              ),
-              backgroundColor: success ? AppColors.success : AppColors.error,
-            ),
-          );
-        }
-      });
-    }
-  }
-
-  void _onManualActivityTap() {
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Manuel aktivitetsoprettelse kommer snart'),
-              backgroundColor: AppColors.primary,
-            ),
-          );
-        }
-      });
-    }
-  }
-
-  void _onDeleteActivity(UserActivityLogModel activity) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Slet aktivitet'),
-        content: Text('Er du sikker på, at du vil slette "${activity.activityName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuller'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop();
-              final success = await _notifier.deleteActivity(activity.logEntryId);
-              
-              if (mounted) {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(success 
-                          ? 'Aktivitet slettet' 
-                          : 'Kunne ikke slette aktivitet'
-                        ),
-                        backgroundColor: success ? AppColors.success : AppColors.error,
-                      ),
-                    );
-                  }
-                });
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-            ),
-            child: Text('Slet'),
-          ),
-        ],
-      ),
-    );
   }
 } 

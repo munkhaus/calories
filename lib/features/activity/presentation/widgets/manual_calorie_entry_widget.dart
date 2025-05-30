@@ -33,140 +33,164 @@ class _ManualCalorieEntryWidgetState extends State<ManualCalorieEntryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: KSizes.cardElevation,
-      child: Padding(
-        padding: EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: KSizes.iconL,
-                  height: KSizes.iconL,
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
-                  child: Icon(
-                    MdiIcons.fire,
-                    color: AppColors.secondary,
-                    size: KSizes.iconM,
-                  ),
-                ),
-                
-                SizedBox(width: KSizes.margin3x),
-                
-                Expanded(
-                  child: Text(
-                    'Angiv manuelt kalorieforbrug',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: KSizes.fontWeightMedium,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: KSizes.margin4x),
-            
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _caloriesController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(KSizes.margin6x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header with icon and title
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.secondary,
+                      AppColors.secondary.withOpacity(0.8),
                     ],
-                    decoration: InputDecoration(
-                      hintText: 'Kalorier',
-                      hintStyle: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: KSizes.fontSizeM,
-                      ),
-                      suffixText: 'kcal',
-                      suffixStyle: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: KSizes.fontSizeM,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                        borderSide: BorderSide(
-                          color: AppColors.border,
-                          width: 1,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                        borderSide: BorderSide(
-                          color: AppColors.border.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                        borderSide: BorderSide(
-                          color: AppColors.primary,
-                          width: 2,
-                        ),
-                      ),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: KSizes.margin4x,
-                        vertical: KSizes.margin3x,
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  MdiIcons.fire,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              
+              const SizedBox(width: KSizes.margin4x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Manuel Kalorieindtastning',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                  ),
-                ),
-                
-                SizedBox(width: KSizes.margin3x),
-                
-                SizedBox(
-                  height: KSizes.buttonHeight,
-                  child: ElevatedButton(
-                    onPressed: _isLogging ? null : _logCalories,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      foregroundColor: AppColors.surface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      ),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: KSizes.margin4x,
+                    const SizedBox(height: 2),
+                    Text(
+                      'Angiv dit totale kalorieforbrug',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
                       ),
                     ),
-                    child: _isLogging
-                        ? SizedBox(
-                            width: KSizes.iconS,
-                            height: KSizes.iconS,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.surface),
-                            ),
-                          )
-                        : Text(
-                            'Log kalorier',
-                            style: TextStyle(
-                              fontWeight: KSizes.fontWeightMedium,
-                              fontSize: KSizes.fontSizeM,
-                            ),
-                          ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            
-            const SizedBox(height: KSizes.margin2x),
-            
-            Text(
-              'Indtast det totale antal kalorier du har forbrændt',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Input field
+          TextField(
+            controller: _caloriesController,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+            decoration: InputDecoration(
+              labelText: 'Kalorier forbrændt',
+              hintText: 'Indtast antal kalorier',
+              suffixText: 'kcal',
+              suffixStyle: TextStyle(
                 color: AppColors.textSecondary,
+                fontSize: KSizes.fontSizeM,
+                fontWeight: FontWeight.w500,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                borderSide: BorderSide(
+                  color: AppColors.border.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                borderSide: BorderSide(
+                  color: AppColors.border.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                borderSide: BorderSide(
+                  color: AppColors.secondary,
+                  width: 2,
+                ),
+              ),
+              filled: true,
+              fillColor: AppColors.background.withOpacity(0.5),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: KSizes.margin4x,
+                vertical: KSizes.margin4x,
               ),
             ),
-          ],
-        ),
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Log button
+          SizedBox(
+            width: double.infinity,
+            height: KSizes.buttonHeight,
+            child: ElevatedButton(
+              onPressed: _isLogging ? null : _logCalories,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                elevation: 2,
+                shadowColor: AppColors.secondary.withOpacity(0.3),
+              ),
+              child: _isLogging
+                  ? SizedBox(
+                      width: KSizes.iconM,
+                      height: KSizes.iconM,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      'Log Kalorier',
+                      style: TextStyle(
+                        fontWeight: KSizes.fontWeightBold,
+                        fontSize: KSizes.fontSizeL,
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }

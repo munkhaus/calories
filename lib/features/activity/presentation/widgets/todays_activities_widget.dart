@@ -98,98 +98,116 @@ class TodaysActivitiesWidget extends StatelessWidget {
 
   Widget _buildActivitiesCard(BuildContext context, List<UserActivityLogModel> activities) {
     return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header matching meals widget style
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.secondary, AppColors.primary],
-                        ),
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      ),
-                      child: Icon(
-                        MdiIcons.runFast,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header matching the new design pattern
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.secondary,
+                      AppColors.secondary.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.secondary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    const SizedBox(width: 8),
+                  ],
+                ),
+                child: Icon(
+                  MdiIcons.runFast,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Dagens aktiviteter',
+                      'Dagens aktiviteter 🏃‍♂️',
                       style: TextStyle(
-                        fontSize: KSizes.fontSizeL,
+                        fontSize: KSizes.fontSizeXL,
                         fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(KSizes.radiusS),
-                      ),
-                      child: IconButton(
-                        onPressed: () => notifier.loadTodaysActivities(),
-                        icon: Icon(
-                          MdiIcons.refresh,
-                          color: AppColors.primary,
-                          size: KSizes.iconS,
-                        ),
-                        tooltip: 'Opdater aktiviteter',
-                      ),
-                    ),
-                    SizedBox(width: 8),
                     Text(
-                      'Se alle',
+                      activities.isEmpty 
+                          ? 'Ingen aktiviteter endnu'
+                          : '${activities.length} ${activities.length == 1 ? 'aktivitet' : 'aktiviteter'} logget',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
-                        color: AppColors.primary,
-                        fontWeight: KSizes.fontWeightSemiBold,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
                       ),
                     ),
                   ],
                 ),
+              ),
+              GestureDetector(
+                onTap: () => notifier.loadTodaysActivities(),
+                child: Container(
+                  padding: const EdgeInsets.all(KSizes.margin2x),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
+                  child: Icon(
+                    MdiIcons.refresh,
+                    color: AppColors.secondary,
+                    size: KSizes.iconS,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Activities list
+          if (activities.isEmpty)
+            _buildEmptyState(context)
+          else
+            Column(
+              children: [
+                Column(
+                  children: activities
+                      .take(3) // Show only first 3 activities like meals widget
+                      .map((activity) => _buildActivityCard(context, activity))
+                      .toList(),
+                ),
+                
+                const SizedBox(height: KSizes.margin3x),
+                
+                // Summary footer
+                _buildSummaryFooter(context, activities),
               ],
             ),
-            
-            const SizedBox(height: KSizes.margin4x),
-            
-            // Activities list
-            if (activities.isEmpty)
-              _buildEmptyState(context)
-            else
-              Column(
-                children: [
-                  Column(
-                    children: activities
-                        .take(3) // Show only first 3 activities like meals widget
-                        .map((activity) => _buildActivityCard(context, activity))
-                        .toList(),
-                  ),
-                  
-                  const SizedBox(height: KSizes.margin3x),
-                  
-                  // Summary footer
-                  _buildSummaryFooter(context, activities),
-                ],
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }

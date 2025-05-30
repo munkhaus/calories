@@ -46,161 +46,195 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final hasExceededGoal = remainingCalories < 0;
 
     return Container(
-      margin: EdgeInsets.all(KSizes.margin2x),
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          children: [
-            // Work day toggle for manual users
-            if (_shouldShowWorkDayToggle(userProfile)) ...[
-              _WorkDayToggle(userProfile: userProfile),
-              SizedBox(height: KSizes.margin4x),
-            ],
-            
-            // Header with title and info icon only
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    'Dagens kalorier',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
-                    ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header with title and info icon only
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                    ],
                   ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                if (hasExceededGoal) ...[
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      'Over mål',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w500,
+                child: Icon(
+                  MdiIcons.fire,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dagens kalorier 🔥',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
                       ),
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
                     ),
+                    Text(
+                      hasExceededGoal 
+                          ? 'Du har overskredet dit mål i dag'
+                          : 'Hold styr på dit kalorie indtag',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: hasExceededGoal ? AppColors.error : AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () => _showCalorieDetails(context, userProfile),
+                child: Container(
+                  padding: const EdgeInsets.all(KSizes.margin2x),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
                   ),
-                ],
-                SizedBox(width: KSizes.margin1x),
-                GestureDetector(
-                  onTap: () => _showCalorieDetails(context, userProfile),
                   child: Icon(
                     MdiIcons.informationOutline,
                     size: KSizes.iconS,
                     color: AppColors.textSecondary,
                   ),
                 ),
-              ],
-            ),
-            
-            SizedBox(height: KSizes.margin6x),
-            
-            // Enhanced circular progress indicator
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 160,
-                  height: 160,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.primary.withOpacity(0.1),
-                        AppColors.secondary.withOpacity(0.1),
-                      ],
-                    ),
+              ),
+            ],
+          ),
+          
+          SizedBox(height: KSizes.margin6x),
+          
+          // Enhanced circular progress indicator
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary.withOpacity(0.1),
+                      AppColors.secondary.withOpacity(0.1),
+                    ],
                   ),
                 ),
-                SizedBox(
-                  width: 140,
-                  height: 140,
-                  child: CircularProgressIndicator(
-                    value: displayProgress,
-                    strokeWidth: 8,
-                    backgroundColor: AppColors.surface.withOpacity(0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      displayProgress >= 1.0 
-                          ? AppColors.error 
-                          : displayProgress >= 0.8 
-                              ? AppColors.warning 
-                              : AppColors.primary,
-                    ),
+              ),
+              SizedBox(
+                width: 140,
+                height: 140,
+                child: CircularProgressIndicator(
+                  value: displayProgress,
+                  strokeWidth: 8,
+                  backgroundColor: AppColors.surface.withOpacity(0.3),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    displayProgress >= 1.0 
+                        ? AppColors.error 
+                        : displayProgress >= 0.8 
+                            ? AppColors.warning 
+                            : AppColors.primary,
                   ),
                 ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '${consumedCalories.toInt()}',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${consumedCalories.toInt()}',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeXXL,
+                      fontWeight: KSizes.fontWeightBold,
+                      color: AppColors.textPrimary,
                     ),
-                    Text(
-                      'af ${totalAvailableCalories.toInt()} kcal',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: AppColors.textSecondary,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
+                  ),
+                  Text(
+                    'af ${totalAvailableCalories.toInt()} kcal',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeS,
+                      color: AppColors.textSecondary,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
-                    SizedBox(height: KSizes.margin1x),
-                    Text(
-                      hasExceededGoal ? 'Overskudt!' : '${(displayProgress * 100).toInt()}% af målet',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXS,
-                        color: hasExceededGoal ? AppColors.error : AppColors.primary,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
+                  ),
+                  SizedBox(height: KSizes.margin1x),
+                  Text(
+                    hasExceededGoal ? 'Overskudt!' : '${(displayProgress * 100).toInt()}% af målet',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeXS,
+                      color: hasExceededGoal ? AppColors.error : AppColors.primary,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
-                  ],
-                ),
-              ],
-            ),
-            
-            SizedBox(height: KSizes.margin6x),
-            
-            // Stats row with proper spacing
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    label: 'Tilbage',
-                    value: hasExceededGoal 
-                        ? '+${(-remainingCalories).toInt()}'
-                        : '${remainingCalories.toInt()}',
-                    color: hasExceededGoal ? AppColors.error : AppColors.success,
                   ),
+                ],
+              ),
+            ],
+          ),
+          
+          SizedBox(height: KSizes.margin6x),
+          
+          // Stats row with proper spacing
+          Row(
+            children: [
+              Expanded(
+                child: _StatCard(
+                  label: 'Tilbage',
+                  value: hasExceededGoal 
+                      ? '+${(-remainingCalories).toInt()}'
+                      : '${remainingCalories.toInt()}',
+                  color: hasExceededGoal ? AppColors.error : AppColors.success,
                 ),
-                SizedBox(width: KSizes.margin3x),
-                Expanded(
-                  child: _StatCard(
-                    label: 'Spist',
-                    value: '${consumedCalories.toInt()}',
-                    color: AppColors.primary,
-                  ),
+              ),
+              SizedBox(width: KSizes.margin3x),
+              Expanded(
+                child: _StatCard(
+                  label: 'Spist',
+                  value: '${consumedCalories.toInt()}',
+                  color: AppColors.primary,
                 ),
-                SizedBox(width: KSizes.margin3x),
-                Expanded(
-                  child: _StatCard(
-                    label: 'Aktivitet',
-                    value: '${activityCalories.toInt()}',
-                    color: AppColors.info,
-                  ),
+              ),
+              SizedBox(width: KSizes.margin3x),
+              Expanded(
+                child: _StatCard(
+                  label: 'Aktivitet',
+                  value: '${activityCalories.toInt()}',
+                  color: AppColors.info,
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -301,13 +335,6 @@ class CalorieOverviewWidget extends ConsumerWidget {
     final tdeeCalories = (dailyTdee * percentOfDayPassed);
 
     return tdeeCalories;
-  }
-
-  bool _shouldShowWorkDayToggle(UserProfileModel profile) {
-    // Always show toggle to allow users to manually control their day type
-    // This is useful for people who want to override automatic detection
-    // or who are using the legacy activity system but still want day control
-    return true;
   }
 
   void _showCalorieDetails(BuildContext context, UserProfileModel userProfile) {
@@ -500,141 +527,6 @@ class _StatCard extends StatelessWidget {
               fontWeight: KSizes.fontWeightMedium,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Widget for toggling between work day and leisure activity settings
-class _WorkDayToggle extends ConsumerWidget {
-  final UserProfileModel userProfile;
-
-  const _WorkDayToggle({required this.userProfile});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(onboardingProvider.notifier);
-    
-    // Determine if today is a work day - respect manual override properly
-    final isWorkDay = userProfile.useAutomaticWeekdayDetection 
-        ? (DateTime.now().weekday >= 1 && DateTime.now().weekday <= 5)
-        : userProfile.isCurrentlyWorkDay;
-    
-    // Only show leisure activity toggle if not using manual tracking
-    final showLeisureToggle = userProfile.activityTrackingPreference != ActivityTrackingPreference.manual;
-    
-    final isLeisureEnabled = userProfile.isLeisureActivityEnabledToday;
-    
-    return Container(
-      padding: EdgeInsets.all(KSizes.margin3x),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        border: Border.all(color: AppColors.border, width: 1),
-      ),
-      child: Column(
-        children: [
-          // Work day toggle (always shown)
-          Row(
-            children: [
-              Icon(
-                isWorkDay ? MdiIcons.briefcase : MdiIcons.home,
-                color: isWorkDay ? AppColors.primary : AppColors.secondary,
-                size: KSizes.iconS,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Expanded(
-                child: Text(
-                  isWorkDay ? 'Arbejdsdag' : 'Hjemme/fridag',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeS,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  // When user manually toggles, disable automatic detection
-                  notifier.updateWeekdayDetection(false);
-                  notifier.updateCurrentWorkDayStatus(!isWorkDay);
-                },
-                child: Container(
-                  width: 40,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: isWorkDay ? AppColors.primary : AppColors.border,
-                  ),
-                  child: AnimatedAlign(
-                    duration: Duration(milliseconds: 200),
-                    alignment: isWorkDay ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      margin: EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          // Leisure activity toggle (only shown if not manual tracking)
-          if (showLeisureToggle) ...[
-            SizedBox(height: KSizes.margin2x),
-            Row(
-              children: [
-                Icon(
-                  isLeisureEnabled ? MdiIcons.run : MdiIcons.sleep,
-                  color: isLeisureEnabled ? AppColors.primary : AppColors.textSecondary,
-                  size: KSizes.iconS,
-                ),
-                SizedBox(width: KSizes.margin2x),
-                Expanded(
-                  child: Text(
-                    isLeisureEnabled ? 'Fritidsaktivitet tæller' : 'Ingen fritidsaktivitet i dag',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeS,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    notifier.updateLeisureActivityForToday(!isLeisureEnabled);
-                  },
-                  child: Container(
-                    width: 40,
-                    height: 20,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: isLeisureEnabled ? AppColors.primary : AppColors.border,
-                    ),
-                    child: AnimatedAlign(
-                      duration: Duration(milliseconds: 200),
-                      alignment: isLeisureEnabled ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        width: 16,
-                        height: 16,
-                        margin: EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
     );

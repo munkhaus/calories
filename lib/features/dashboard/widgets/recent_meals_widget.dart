@@ -72,91 +72,116 @@ class RecentMealsWidget extends ConsumerWidget {
 
   Widget _buildMealsCard(BuildContext context, WidgetRef ref, List<UserFoodLogModel> meals) {
     return Container(
-      decoration: AppDesign.sectionDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColors.primary, AppColors.secondary],
-                        ),
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      ),
-                      child: Icon(
-                        MdiIcons.silverwareForkKnife,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    const SizedBox(width: 8),
+                  ],
+                ),
+                child: Icon(
+                  MdiIcons.silverwareForkKnife,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Dagens måltider',
+                      'Dagens måltider 🍽️',
                       style: TextStyle(
-                        fontSize: KSizes.fontSizeL,
+                        fontSize: KSizes.fontSizeXL,
                         fontWeight: KSizes.fontWeightBold,
                         color: AppColors.textPrimary,
                       ),
                     ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => ref.read(foodLoggingProvider.notifier).refresh(),
-                      icon: Icon(
-                        MdiIcons.refresh,
-                        color: AppColors.primary,
-                        size: KSizes.iconS,
-                      ),
-                      tooltip: 'Opdater',
-                    ),
                     Text(
-                      'Se alle',
+                      meals.isEmpty 
+                          ? 'Ingen måltider endnu'
+                          : '${meals.length} ${meals.length == 1 ? 'måltid' : 'måltider'} logget',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
-                        color: AppColors.primary,
-                        fontWeight: KSizes.fontWeightSemiBold,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
                       ),
                     ),
                   ],
                 ),
+              ),
+              GestureDetector(
+                onTap: () => ref.read(foodLoggingProvider.notifier).refresh(),
+                child: Container(
+                  padding: const EdgeInsets.all(KSizes.margin2x),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
+                  child: Icon(
+                    MdiIcons.refresh,
+                    color: AppColors.primary,
+                    size: KSizes.iconS,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Meals list
+          if (meals.isEmpty)
+            _buildEmptyState(context)
+          else
+            Column(
+              children: [
+                Column(
+                  children: meals
+                      .take(3) // Show only first 3 meals
+                      .map((meal) => _buildMealCard(context, ref, meal))
+                      .toList(),
+                ),
+                
+                const SizedBox(height: KSizes.margin3x),
+                
+                // Summary footer
+                _buildSummaryFooter(context, meals),
               ],
             ),
-            
-            const SizedBox(height: KSizes.margin4x),
-            
-            // Meals list
-            if (meals.isEmpty)
-              _buildEmptyState(context)
-            else
-              Column(
-                children: [
-                  Column(
-                    children: meals
-                        .take(3) // Show only first 3 meals
-                        .map((meal) => _buildMealCard(context, ref, meal))
-                        .toList(),
-                  ),
-                  
-                  const SizedBox(height: KSizes.margin3x),
-                  
-                  // Summary footer
-                  _buildSummaryFooter(context, meals),
-                ],
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
