@@ -6,7 +6,6 @@ import '../theme/app_theme.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/logging/presentation/logging_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
-import '../../features/planning/presentation/planning_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/activity/presentation/activity_page.dart'; // Re-enabled
 
@@ -26,7 +25,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     const LoggingPage(),
     const ActivityPage(), // Re-enabled for testing
     const ProgressPage(),
-    const PlanningPage(),
     const ProfilePage(),
   ];
 
@@ -46,10 +44,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     NavigationItem(
       icon: MdiIcons.chartLine,
       label: 'Forløb',
-    ),
-    NavigationItem(
-      icon: MdiIcons.calendarOutline,
-      label: 'Planlægning',
     ),
     NavigationItem(
       icon: Icons.person_outlined,

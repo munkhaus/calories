@@ -141,10 +141,19 @@ class RecentMealsWidget extends ConsumerWidget {
               _buildEmptyState(context)
             else
               Column(
-                children: meals
-                    .take(3) // Show only first 3 meals
-                    .map((meal) => _buildMealCard(context, ref, meal))
-                    .toList(),
+                children: [
+                  Column(
+                    children: meals
+                        .take(3) // Show only first 3 meals
+                        .map((meal) => _buildMealCard(context, ref, meal))
+                        .toList(),
+                  ),
+                  
+                  const SizedBox(height: KSizes.margin3x),
+                  
+                  // Summary footer
+                  _buildSummaryFooter(context, meals),
+                ],
               ),
           ],
         ),
@@ -481,6 +490,51 @@ class RecentMealsWidget extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSummaryFooter(BuildContext context, List<UserFoodLogModel> meals) {
+    final totalCalories = meals.fold(0, (sum, meal) => sum + meal.calories);
+    
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(
+          color: AppColors.primary.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                MdiIcons.food,
+                color: AppColors.primary,
+                size: KSizes.iconM,
+              ),
+              const SizedBox(width: KSizes.margin2x),
+              Text(
+                'Total spist i dag',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: KSizes.fontWeightBold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '$totalCalories kcal',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightBold,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 } 

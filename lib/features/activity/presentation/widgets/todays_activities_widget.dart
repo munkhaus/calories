@@ -174,10 +174,19 @@ class TodaysActivitiesWidget extends StatelessWidget {
               _buildEmptyState(context)
             else
               Column(
-                children: activities
-                    .take(3) // Show only first 3 activities like meals widget
-                    .map((activity) => _buildActivityCard(context, activity))
-                    .toList(),
+                children: [
+                  Column(
+                    children: activities
+                        .take(3) // Show only first 3 activities like meals widget
+                        .map((activity) => _buildActivityCard(context, activity))
+                        .toList(),
+                  ),
+                  
+                  const SizedBox(height: KSizes.margin3x),
+                  
+                  // Summary footer
+                  _buildSummaryFooter(context, activities),
+                ],
               ),
           ],
         ),
@@ -645,6 +654,51 @@ class TodaysActivitiesWidget extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildSummaryFooter(BuildContext context, List<UserActivityLogModel> activities) {
+    final totalCaloriesBurned = activities.fold(0, (sum, activity) => sum + activity.caloriesBurned);
+    
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.secondary.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(
+          color: AppColors.secondary.withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Icon(
+                MdiIcons.fire,
+                color: AppColors.secondary,
+                size: KSizes.iconM,
+              ),
+              const SizedBox(width: KSizes.margin2x),
+              Text(
+                'Total forbrændt i dag',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: KSizes.fontWeightBold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '$totalCaloriesBurned kcal',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: KSizes.fontWeightBold,
+              color: AppColors.secondary,
+            ),
+          ),
+        ],
+      ),
     );
   }
 } 
