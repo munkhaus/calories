@@ -6,7 +6,7 @@ import '../theme/app_theme.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
-import '../../features/food_logging/presentation/pages/favorites_page.dart';
+import '../../features/food_database/presentation/food_database_page.dart';
 import '../../features/food_logging/application/pending_food_cubit.dart';
 import '../../features/food_logging/presentation/pages/food_search_page.dart';
 import '../../features/food_logging/presentation/pages/categorize_food_page.dart';
@@ -40,7 +40,8 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
 
   final List<Widget> _pages = [
     const DashboardPage(),
-    const FavoritesPage(),
+    const QuickFavoritesPage(initialTab: 0), // Favorites page
+    const FoodDatabasePage(),
     const ProgressPage(),
     const ProfilePage(),
   ];
@@ -53,6 +54,10 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     NavigationItem(
       icon: MdiIcons.star,
       label: 'Favoritter',
+    ),
+    NavigationItem(
+      icon: MdiIcons.database,
+      label: 'Mad',
     ),
     NavigationItem(
       icon: MdiIcons.chartLine,
