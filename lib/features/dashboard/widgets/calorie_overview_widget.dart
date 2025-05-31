@@ -116,17 +116,16 @@ class CalorieOverviewWidget extends ConsumerWidget {
                         ),
                       ),
                       
-                      SizedBox(height: KSizes.margin1x),
-                      
-                      // Contextual status message
-                      Text(
-                        _getContextualStatusMessage(progress, isAheadOfPace, timeContext, remainingCalories),
-                        style: TextStyle(
-                          fontSize: KSizes.fontSizeS,
-                          color: _getStatusColor(progress, isAheadOfPace),
-                          fontWeight: KSizes.fontWeightMedium,
-                        ),
-                      ),
+                      // Removed contextual status message per user request
+                      // SizedBox(height: KSizes.margin1x),
+                      // Text(
+                      //   _getContextualStatusMessage(progress, isAheadOfPace, timeContext, remainingCalories),
+                      //   style: TextStyle(
+                      //     fontSize: KSizes.fontSizeS,
+                      //     color: _getStatusColor(progress, isAheadOfPace),
+                      //     fontWeight: KSizes.fontWeightMedium,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -235,30 +234,30 @@ class CalorieOverviewWidget extends ConsumerWidget {
                       
                       SizedBox(height: KSizes.margin2x),
                       
-                      // Actionable insight
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: KSizes.margin2x,
-                          vertical: KSizes.margin1x,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getProgressColor(displayProgress).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(KSizes.radiusL),
-                          border: Border.all(
-                            color: _getProgressColor(displayProgress).withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          nextMealSuggestion,
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeXS,
-                            color: _getProgressColor(displayProgress),
-                            fontWeight: KSizes.fontWeightBold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                      // Removed actionable insight per user request
+                      // Container(
+                      //   padding: const EdgeInsets.symmetric(
+                      //     horizontal: KSizes.margin2x,
+                      //     vertical: KSizes.margin1x,
+                      //   ),
+                      //   decoration: BoxDecoration(
+                      //     color: _getProgressColor(displayProgress).withOpacity(0.15),
+                      //     borderRadius: BorderRadius.circular(KSizes.radiusL),
+                      //     border: Border.all(
+                      //       color: _getProgressColor(displayProgress).withOpacity(0.3),
+                      //       width: 1,
+                      //     ),
+                      //   ),
+                      //   child: Text(
+                      //     nextMealSuggestion,
+                      //     style: TextStyle(
+                      //       fontSize: KSizes.fontSizeXS,
+                      //       color: _getProgressColor(displayProgress),
+                      //       fontWeight: KSizes.fontWeightBold,
+                      //     ),
+                      //     textAlign: TextAlign.center,
+                      //   ),
+                      // ),
                     ],
                   ),
                 ),
@@ -426,12 +425,30 @@ class CalorieOverviewWidget extends ConsumerWidget {
   Color _getProgressColor(double progress) {
     // Handle invalid progress values during initial load
     if (progress.isNaN || progress.isInfinite) {
-      return AppColors.primary;
+      return const Color(0xFF4CAF50); // Green for default
     }
     
-    if (progress >= 1.0) return AppColors.error;
-    if (progress >= 0.8) return AppColors.warning; 
-    return AppColors.primary;
+    // Clamp progress to reasonable bounds
+    progress = progress.clamp(0.0, 1.2);
+    
+    // Create gradual color transition from green to orange to red
+    // Green zone is much larger when there are many calories remaining
+    if (progress <= 0.8) {
+      // Many calories remaining: Green
+      return const Color(0xFF4CAF50); // Standard green
+    } else if (progress <= 0.9) {
+      // Getting close to goal: Orange
+      return const Color(0xFFFF9800); // Orange
+    } else if (progress <= 1.0) {
+      // Very close to goal: Dark orange  
+      return const Color(0xFFFF5722); // Dark orange
+    } else if (progress <= 1.1) {
+      // Over goal: Red
+      return const Color(0xFFF44336); // Red
+    } else {
+      // Way over goal: Dark red
+      return const Color(0xFFD32F2F); // Dark red
+    }
   }
 
   void _showCalorieDetails(BuildContext context, UserProfileModel userProfile) {

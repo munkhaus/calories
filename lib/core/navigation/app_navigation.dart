@@ -74,14 +74,12 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   void _refreshProviders() {
     if (!mounted) return;
     
-    print('🔄 AppNavigation: Starting provider refresh...');
+    print('🔄 AppNavigation: All providers refreshed after registration');
     
     try {
-      final container = ProviderScope.containerOf(context);
-      
       // Always refresh pending foods first - this is stable
       try {
-        container.read(pendingFoodProvider.notifier).loadPendingFoods();
+        ref.read(pendingFoodProvider.notifier).loadPendingFoods();
         print('🔄 AppNavigation: Pending foods refreshed');
       } catch (e) {
         print('🔄 AppNavigation: Pending food refresh failed: $e');
@@ -90,29 +88,25 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
       // Only refresh other providers if we're on the home tab to avoid unnecessary work
       if (_currentIndex == 0) {
         // Use a small delay to allow navigation to complete
-        Future.delayed(Duration(milliseconds: 50), () {
+        Future.delayed(Duration(milliseconds: 100), () {
           if (!mounted) return;
           
           try {
-            // Trigger activity data refresh by calling a method on the provider
-            // This is safer than invalidating which causes dispose issues
-            final activityNotifier = container.read(activityNotifierProvider);
-            activityNotifier.refresh();
+            // Use the new centralized refresh function
+            refreshActivityCalories(ref);
             
-            print('🔄 AppNavigation: Activity provider refreshed');
+            print('🔄 AppNavigation: Activity calories refreshed');
           } catch (e) {
-            print('🔄 AppNavigation: Activity provider refresh failed: $e');
+            print('🔄 AppNavigation: Activity calories refresh failed: $e');
           }
           
           try {
-            // Force refresh of date-aware providers
-            container.invalidate(dateAwareActivityProvider);
-            container.invalidate(activityCaloriesForSelectedDateProvider);
-            container.invalidate(totalCaloriesForSelectedDateProvider);
+            // Refresh food logging for the selected date
+            ref.read(foodLoggingProvider.notifier).refresh();
             
-            print('🔄 AppNavigation: Date-aware providers invalidated');
+            print('🔄 AppNavigation: Food logging refreshed');
           } catch (e) {
-            print('🔄 AppNavigation: Date-aware provider invalidation failed: $e');
+            print('🔄 AppNavigation: Food logging refresh failed: $e');
           }
         });
       }
@@ -586,22 +580,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
         ),
       ),
     );
-  }
-
-  void _openPendingFoodsRegistration(BuildContext context) {
-    // Get first pending food and navigate to categorization
-    final container = ProviderScope.containerOf(context);
-    final pendingFoods = container.read(pendingFoodProvider).pendingFoodsState.data ?? [];
-    
-    if (pendingFoods.isNotEmpty) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => CategorizeFoodPage(
-            pendingFood: pendingFoods.first,
-          ),
-        ),
-      );
-    }
   }
 
   void _navigateToMultiPhotoMeal(BuildContext context) {

@@ -11,6 +11,7 @@ import '../../../activity/domain/favorite_activity_model.dart';
 import '../../../activity/domain/user_activity_log_model.dart';
 import '../../../activity/infrastructure/favorite_activity_service.dart';
 import '../../../activity/application/activity_notifier.dart';
+import '../../../dashboard/application/date_aware_providers.dart';
 
 /// Page for managing both food and activity favorites with tabs
 class FavoritesPage extends ConsumerStatefulWidget {
@@ -592,16 +593,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
       // Convert favorite to UserActivityLogModel and log directly
       final activityLog = favorite.toUserActivityLog();
 
-      // Create an ActivityNotifier instance to log the activity
-      final activityNotifier = ActivityNotifier();
+      // Use the shared ActivityNotifier from provider
+      final activityNotifier = ref.read(activityNotifierProvider);
       await activityNotifier.logActivity(activityLog);
 
       // Update favorite usage
       final updatedFavorite = favorite.withUpdatedUsage();
       await _activityService.updateFavorite(updatedFavorite);
 
-      // Refresh all ActivityNotifier instances globally
-      await ActivityNotifier.refreshAllInstances();
+      // Use the new centralized refresh function
+      refreshActivityCalories(ref);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

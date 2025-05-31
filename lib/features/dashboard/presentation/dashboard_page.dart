@@ -8,7 +8,6 @@ import '../../onboarding/application/onboarding_notifier.dart';
 import '../../activity/application/activity_notifier.dart';
 import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../widgets/calorie_overview_widget.dart';
-import '../widgets/date_navigation_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../widgets/daily_settings_widget.dart';
 import '../widgets/weight_progress_widget.dart';
@@ -23,6 +22,9 @@ import '../../food_logging/presentation/pages/food_search_page.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
 import '../../food_logging/application/pending_food_cubit.dart';
 import '../../food_logging/infrastructure/pending_food_service.dart';
+import '../widgets/date_navigation_widget.dart';
+import 'dart:io';
+import '../../food_logging/domain/pending_food_model.dart';
 
 /// Main dashboard page showing daily overview
 class DashboardPage extends ConsumerStatefulWidget {
@@ -131,38 +133,34 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                 padding: const EdgeInsets.all(KSizes.margin4x),
                 child: Column(
                   children: [
-                    // Header with new design
-                    DashboardHeader(
-                      greeting: _getGreeting(),
-                      userName: userProfile.name.isNotEmpty 
-                          ? userProfile.name.split(' ').first 
-                          : 'der',
-                      onInfoTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const InfoPage(),
-                          ),
-                        );
-                      },
-                      onRegistrationTap: () => _showRegistrationOptions(context),
-                    ),
+                    // Header with new design - REMOVED per user request
+                    // DashboardHeader(
+                    //   greeting: _getGreeting(),
+                    //   userName: userProfile.name.isNotEmpty 
+                    //       ? userProfile.name.split(' ').first 
+                    //       : 'der',
+                    //   onInfoTap: () {
+                    //     Navigator.of(context).push(
+                    //       MaterialPageRoute(
+                    //         builder: (context) => const InfoPage(),
+                    //       ),
+                    //     );
+                    //   },
+                    //   onRegistrationTap: () => _showRegistrationOptions(context),
+                    // ),
+                    
+                    // KSizes.spacingVerticalXL,
+                    
+                    // Date navigation widget - always at top of the actual home page
+                    const DateNavigationWidget(),
                     
                     KSizes.spacingVerticalXL,
-                    
-                    // Date navigation info card (only show if not today)
-                    if (!selectedDateNotifier.isToday) ...[
-                      _buildDateInfoCard(context),
-                      KSizes.spacingVerticalXL,
-                    ],
                     
                     // Daily settings widget (only show for today)
                     if (selectedDateNotifier.isToday) ...[
                       const DailySettingsWidget(),
                       KSizes.spacingVerticalXL,
                     ],
-                    
-                    // Date navigation widget - always show
-                    const DateNavigationWidget(),
                     
                     // Calorie overview widget (main card with date functionality)
                     const CalorieOverviewWidget(),
@@ -951,24 +949,174 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
       final pendingFoods = ref.read(pendingFoodProvider).pendingFoodsState.data ?? [];
       print('🍎 Dashboard: Found ${pendingFoods.length} pending foods');
       
-      if (pendingFoods.isNotEmpty) {
-        print('🍎 Dashboard: Navigating to CategorizeFoodPage with food: ${pendingFoods.first.imageUrl}');
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => CategorizeFoodPage(
-              pendingFood: pendingFoods.first,
-            ),
+      // For testing: Add mock data if no pending foods exist
+      List<PendingFoodModel> displayFoods = pendingFoods;
+      if (pendingFoods.isEmpty) {
+        print('🍎 Dashboard: Adding test data for demonstration');
+        displayFoods = [
+          PendingFoodModel(
+            id: 'test_1',
+            imagePaths: ['mock_test_food.jpg'],
+            capturedAt: DateTime.now().subtract(Duration(minutes: 30)),
           ),
-        );
-      } else {
-        print('🍎 Dashboard: No pending foods found, showing error');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ingen ventende mad registreringer fundet'),
-            backgroundColor: AppColors.warning,
+          PendingFoodModel(
+            id: 'test_2', 
+            imagePaths: ['mock_test_meal_1.jpg', 'mock_test_meal_2.jpg'],
+            capturedAt: DateTime.now().subtract(Duration(hours: 2)),
           ),
-        );
+        ];
       }
+      
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => Consumer(
+          builder: (context, ref, child) {
+            final pendingState = ref.watch(pendingFoodProvider);
+            
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(KSizes.radiusXL),
+                  topRight: Radius.circular(KSizes.radiusXL),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Handle bar
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  
+                  // Header
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.warning,
+                            borderRadius: BorderRadius.circular(KSizes.radiusM),
+                          ),
+                          child: Icon(
+                            MdiIcons.camera,
+                            color: Colors.white,
+                            size: KSizes.iconM,
+                          ),
+                        ),
+                        SizedBox(width: KSizes.margin3x),
+                        Expanded(
+                          child: Text(
+                            'Ventende mad-billeder',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeXL,
+                              fontWeight: KSizes.fontWeightBold,
+                            ),
+                          ),
+                        ),
+                        if (displayFoods.isNotEmpty)
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: KSizes.margin3x,
+                              vertical: KSizes.margin2x,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.warning.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(KSizes.radiusM),
+                            ),
+                            child: Text(
+                              '${displayFoods.length}',
+                              style: TextStyle(
+                                color: AppColors.warning,
+                                fontWeight: KSizes.fontWeightBold,
+                                fontSize: KSizes.fontSizeM,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  SizedBox(height: KSizes.margin4x),
+                  
+                  // Content
+                  Expanded(
+                    child: pendingState.isLoadingPendingFoods
+                        ? _buildPopupLoadingState()
+                        : pendingState.hasPendingFoodsError
+                            ? _buildPopupErrorState(context, ref)
+                            : displayFoods.isEmpty
+                                ? _buildPopupEmptyState()
+                                : _buildPopupPendingFoodsList(context, ref, displayFoods),
+                  ),
+                  
+                  // Actions
+                  if (displayFoods.isNotEmpty)
+                    Container(
+                      padding: EdgeInsets.all(KSizes.margin4x),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface.withOpacity(0.5),
+                        border: Border(
+                          top: BorderSide(
+                            color: AppColors.border.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                              ),
+                              child: Text('Luk'),
+                            ),
+                          ),
+                          SizedBox(width: KSizes.margin3x),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                // Navigate to first pending food (use real data if available)
+                                final foodToNavigate = pendingFoods.isNotEmpty ? pendingFoods.first : displayFoods.first;
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => CategorizeFoodPage(
+                                      pendingFood: foodToNavigate,
+                                    ),
+                                  ),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.warning,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                              ),
+                              child: Text(pendingFoods.isEmpty ? 'Test kategorisering' : 'Kategoriser alle'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      );
     } catch (e) {
       print('🍎 Dashboard: Error in _openPendingFoodsRegistration: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -978,6 +1126,262 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
         ),
       );
     }
+  }
+
+  Widget _buildPopupLoadingState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin8x),
+        child: CircularProgressIndicator(
+          color: AppColors.warning,
+          strokeWidth: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPopupErrorState(BuildContext context, WidgetRef ref) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          color: AppColors.error.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+          border: Border.all(
+            color: AppColors.error.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              MdiIcons.alertCircle,
+              color: AppColors.error,
+              size: KSizes.iconL,
+            ),
+            SizedBox(height: KSizes.margin2x),
+            Text(
+              'Kunne ikke indlæse afventende billeder',
+              style: TextStyle(
+                color: AppColors.error,
+                fontSize: KSizes.fontSizeM,
+                fontWeight: KSizes.fontWeightMedium,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: KSizes.margin3x),
+            ElevatedButton(
+              onPressed: () => ref.read(pendingFoodProvider.notifier).retryLoadPendingFoods(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Prøv igen'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPopupEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              MdiIcons.cameraOutline,
+              size: KSizes.iconXXL,
+              color: AppColors.warning,
+            ),
+            SizedBox(height: KSizes.margin4x),
+            Text(
+              'Ingen afventende billeder',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeXL,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: KSizes.margin2x),
+            Text(
+              'Tag et billede af din mad og kategoriser det senere når du har tid',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPopupPendingFoodsList(BuildContext context, WidgetRef ref, List<PendingFoodModel> pendingFoods) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+      child: ListView.builder(
+        shrinkWrap: true,
+        itemCount: pendingFoods.length,
+        itemBuilder: (context, index) {
+          final food = pendingFoods[index];
+          return _buildPopupPendingFoodCard(context, ref, food);
+        },
+      ),
+    );
+  }
+
+  Widget _buildPopupPendingFoodCard(BuildContext context, WidgetRef ref, PendingFoodModel food) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: KSizes.margin3x),
+      padding: const EdgeInsets.all(KSizes.margin3x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(
+          color: AppColors.border.withOpacity(0.3),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Image placeholder with image count indicator
+          Stack(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: food.hasValidImage && !food.primaryImagePath.startsWith('mock_')
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(KSizes.radiusS),
+                        child: Image.file(
+                          File(food.primaryImagePath),
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              MdiIcons.imageOff,
+                              color: AppColors.textSecondary,
+                              size: KSizes.iconM,
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        MdiIcons.image,
+                        color: AppColors.textSecondary,
+                        size: KSizes.iconM,
+                      ),
+              ),
+              
+              // Image count indicator
+              if (food.imageCount > 1)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${food.imageCount}',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          SizedBox(width: KSizes.margin3x),
+          
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  food.imageCount > 1 ? 'Måltid (${food.imageCount} billeder)' : 'Mad-billede',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    fontWeight: KSizes.fontWeightMedium,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(height: KSizes.margin1x),
+                Text(
+                  food.displayTime,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Categorize button
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Close popup first
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => CategorizeFoodPage(pendingFood: food),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.warning,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: KSizes.margin3x,
+                vertical: KSizes.margin2x,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+              ),
+            ),
+            child: Text(
+              'Kategoriser',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeS,
+                fontWeight: KSizes.fontWeightMedium,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _refreshProviders() {

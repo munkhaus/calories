@@ -20,6 +20,11 @@ class ActivityDatabaseService {
       UserActivityLogModel.fromJson,
     );
     
+    // Add test activity logs if none exist
+    if (_activityLogs.isEmpty) {
+      await _addTestActivityLogs();
+    }
+    
     _isInitialized = true;
     print('🏃 ActivityDatabaseService: Loaded ${_activityLogs.length} activity logs from storage');
   }
@@ -134,6 +139,67 @@ class ActivityDatabaseService {
 
     _activities.clear();
     _activities.addAll(sampleActivities);
+  }
+
+  /// Add test activity logs for demonstration
+  static Future<void> _addTestActivityLogs() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    
+    final testLogs = [
+      UserActivityLogModel(
+        logEntryId: 1,
+        userId: 1,
+        activityName: 'Morgenløb',
+        inputType: ActivityInputType.varighed,
+        durationMinutes: 30.0,
+        distanceKm: 0.0,
+        intensity: ActivityIntensity.moderat,
+        caloriesBurned: 350,
+        notes: 'Godt morgenløb i parken',
+        loggedAt: today.toIso8601String(),
+        createdAt: today.toIso8601String(),
+        updatedAt: today.toIso8601String(),
+        isManualEntry: false,
+        isCaloriesAdjusted: false,
+      ),
+      UserActivityLogModel(
+        logEntryId: 2,
+        userId: 1,
+        activityName: 'Styrketræning',
+        inputType: ActivityInputType.varighed,
+        durationMinutes: 45.0,
+        distanceKm: 0.0,
+        intensity: ActivityIntensity.haardt,
+        caloriesBurned: 280,
+        notes: 'Fuld krop workout',
+        loggedAt: today.toIso8601String(),
+        createdAt: today.toIso8601String(),
+        updatedAt: today.toIso8601String(),
+        isManualEntry: false,
+        isCaloriesAdjusted: false,
+      ),
+      UserActivityLogModel(
+        logEntryId: 3,
+        userId: 1,
+        activityName: 'Manuel kalorie registrering',
+        inputType: ActivityInputType.varighed,
+        durationMinutes: 0.0,
+        distanceKm: 0.0,
+        intensity: ActivityIntensity.moderat,
+        caloriesBurned: 120,
+        notes: 'Rengøring og husholdningsarbejde',
+        loggedAt: today.subtract(Duration(hours: 2)).toIso8601String(),
+        createdAt: today.subtract(Duration(hours: 2)).toIso8601String(),
+        updatedAt: today.subtract(Duration(hours: 2)).toIso8601String(),
+        isManualEntry: true,
+        isCaloriesAdjusted: false,
+      ),
+    ];
+    
+    _activityLogs.addAll(testLogs);
+    await _saveActivityLogs();
+    print('🏃 ActivityDatabaseService: Added ${testLogs.length} test activity logs');
   }
 
   // Activity Item Operations

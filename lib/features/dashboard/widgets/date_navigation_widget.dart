@@ -60,22 +60,10 @@ class DateNavigationWidget extends ConsumerWidget {
           Expanded(
             child: GestureDetector(
               onTap: () => _showDatePicker(context, ref),
-              child: Container(
+              child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: KSizes.margin4x,
                   vertical: KSizes.margin3x,
-                ),
-                decoration: BoxDecoration(
-                  color: isToday 
-                      ? AppColors.primary.withOpacity(0.1)
-                      : AppColors.surface.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                  border: Border.all(
-                    color: isToday 
-                        ? AppColors.primary.withOpacity(0.3)
-                        : AppColors.border.withOpacity(0.2),
-                    width: 1,
-                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -131,31 +119,8 @@ class DateNavigationWidget extends ConsumerWidget {
       message: tooltip,
       child: GestureDetector(
         onTap: onTap,
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.primary.withOpacity(0.1),
-                AppColors.primary.withOpacity(0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(KSizes.radiusL),
-            border: Border.all(
-              color: AppColors.primary.withOpacity(0.2),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
+        child: Padding(
+          padding: EdgeInsets.all(KSizes.margin3x),
           child: Icon(
             icon,
             size: KSizes.iconM,

@@ -51,6 +51,8 @@ class ActivityNotifier extends ChangeNotifier {
   
   /// Refresh this instance's data
   Future<void> _refreshData() async {
+    if (!mounted) return;
+    
     if (_currentBmr != null) {
       await Future.wait([
         loadActivitiesForDate(_selectedDate),
@@ -247,20 +249,28 @@ class ActivityNotifier extends ChangeNotifier {
       if (!mounted) return; // Don't proceed if disposed during async operation
       
       if (result.isSuccess) {
-        // Reload activities for the current date
-        await loadActivitiesForDate(_selectedDate);
+        // Set the selected date to the activity's date
+        final activityDate = DateTime.parse(activity.loggedAt);
+        final activityDateNormalized = DateTime(activityDate.year, activityDate.month, activityDate.day);
+        _selectedDate = activityDateNormalized;
         
-        // Also reload calories if we're tracking BMR
-        if (_currentBmr != null) {
-          await loadTotalCaloriesWithBmrForDate(_currentBmr!, _selectedDate);
-        } else {
-          await loadCaloriesBurnedForDate(_selectedDate);
-        }
+        // Force reload of all activity data for the activity's date
+        await Future.wait([
+          loadActivitiesForDate(activityDateNormalized),
+          _currentBmr != null 
+            ? loadTotalCaloriesWithBmrForDate(_currentBmr!, activityDateNormalized)
+            : loadCaloriesBurnedForDate(activityDateNormalized),
+        ]);
         
-        // Notify calorie changes
+        // Notify listeners of changes
         if (onActivityChanged != null) {
           onActivityChanged!();
         }
+        
+        // Update to completed state
+        _updateState(_state.copyWith(
+          isLoggingActivity: false,
+        ));
       } else {
         if (!mounted) return; // Check again before error update
         
@@ -350,11 +360,10 @@ class ActivityNotifier extends ChangeNotifier {
     ));
   }
 
-  /// Refresh all data
+  /// Refresh all data for current selected date
   Future<void> refresh() async {
-    if (!mounted) return; // Don't proceed if disposed
-    
-    await loadActivitiesForDate(_selectedDate);
+    if (!mounted) return;
+    await _refreshData();
   }
 
   void updateSelectedDate(DateTime date) {

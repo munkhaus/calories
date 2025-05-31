@@ -16,6 +16,9 @@ import '../../activity/infrastructure/favorite_activity_service.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 import '../../food_logging/presentation/pages/quick_favorites_page.dart';
 import '../../food_logging/presentation/pages/multi_photo_meal_page.dart';
+import '../../dashboard/widgets/calorie_overview_widget.dart';
+import '../../../core/navigation/app_navigation.dart';
+import '../../activity/application/activity_notifier.dart';
 import '../../dashboard/application/date_aware_providers.dart';
 
 /// Main home page of the app after onboarding
@@ -88,8 +91,29 @@ class _HomePageState extends ConsumerState<HomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Welcome back header
-              _buildWelcomeHeader(context, state),
+              // TEST WIDGET - Dette skal ALTID vises ØVERST EFTER DATO-VÆLGEREN
+              Container(
+                height: 60,
+                width: double.infinity,
+                color: Colors.orange,
+                margin: EdgeInsets.all(8),
+                child: Center(
+                  child: Text(
+                    '🧪 TEST: DateNavigationWidget skal være lige over denne boks 🧪',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+              
+              KSizes.spacingVerticalL,
+              
+              // Daily summary card - REMOVED per user request
+              // _buildDailySummaryCard(context, state),
               
               // TEST WIDGET - Dette skal ALTID vises ØVERST
               Container(
@@ -127,11 +151,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              
-              KSizes.spacingVerticalL,
-              
-              // Daily summary card
-              _buildDailySummaryCard(context, state),
               
               KSizes.spacingVerticalL,
               

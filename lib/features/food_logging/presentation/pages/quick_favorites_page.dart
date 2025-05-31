@@ -614,37 +614,26 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
 
         print('⭐ FavoriteActivityService: Updated favorite: ${favorite.activityName}');
         
-        // Refresh all providers to update home tab data
-        ref.read(foodLoggingProvider.notifier).refresh();
+        // Use the new centralized refresh function
+        refreshActivityCalories(ref);
+        
+        // Also refresh pending foods
         await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(MdiIcons.check, color: Colors.white),
-                SizedBox(width: KSizes.margin2x),
-                Flexible(child: Text('${favorite.activityName} er tilføjet som aktivitet!')),
-              ],
-            ),
+            content: Text('${favorite.activityName} er tilføjet!'),
             backgroundColor: AppColors.success,
-            duration: Duration(milliseconds: 1500),
+            duration: Duration(seconds: 2),
           ),
         );
-        
-        // Navigate back after a short delay
-        Future.delayed(Duration(milliseconds: 800), () {
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fejl ved tilføjelse af aktivitet: $e'),
