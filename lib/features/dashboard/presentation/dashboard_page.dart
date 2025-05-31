@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -9,9 +10,15 @@ import '../../food_logging/application/food_logging_notifier.dart';
 import '../../food_logging/application/pending_food_cubit.dart';
 import '../../food_logging/domain/pending_food_model.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
+import '../../food_logging/presentation/pages/pending_food_selection_page.dart';
 import '../../activity/application/activity_notifier.dart';
 import '../../activity/presentation/widgets/todays_activities_widget.dart';
+import '../widgets/dashboard_header.dart';
 import '../widgets/calorie_overview_widget.dart';
+import '../widgets/daily_settings_widget.dart';
+import '../widgets/daily_nutrition_widget.dart';
+import '../widgets/weight_progress_widget.dart';
+import '../widgets/date_navigation_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../widgets/pending_foods_widget.dart';
 import '../application/selected_date_provider.dart';
@@ -20,10 +27,7 @@ import '../../weight_tracking/application/weight_tracking_notifier.dart';
 import '../../weight_tracking/domain/weight_entry_model.dart';
 import '../../activity/presentation/pages/quick_activity_registration_page.dart';
 import '../../food_logging/presentation/pages/food_search_page.dart';
-import '../widgets/daily_settings_widget.dart';
-import '../widgets/weight_progress_widget.dart';
-import '../widgets/date_navigation_widget.dart';
-import 'dart:io';
+import '../widgets/todays_meals_widget.dart';
 
 /// Main dashboard page showing daily overview
 class DashboardPage extends ConsumerStatefulWidget {
@@ -154,127 +158,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                     const DateNavigationWidget(),
                     
                     KSizes.spacingVerticalM,
-                    
-                    // DEBUG: Ventende registreringer boks - directly on the dashboard page
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final pendingState = ref.watch(pendingFoodProvider);
-                        final pendingCount = pendingState.pendingFoods.length;
-                        
-                        print('🎯 DashboardPage DEBUG Box: pendingCount = $pendingCount');
-                        if (pendingCount > 0) {
-                          print('🎯 DashboardPage DEBUG Box: Pending foods: ${pendingState.pendingFoods.map((f) => f.id).toList()}');
-                        }
-                        
-                        return GestureDetector(
-                          onTap: pendingCount > 0 ? () {
-                            print('🎯 DashboardPage DEBUG Box: Clicked with $pendingCount pending foods');
-                            _openPendingFoodsRegistration(context, ref);
-                          } : null,
-                          child: Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.symmetric(horizontal: KSizes.margin2x),
-                            padding: EdgeInsets.all(KSizes.margin4x),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: pendingCount > 0 
-                                  ? [Colors.red.withOpacity(0.8), Colors.orange.withOpacity(0.8)]
-                                  : [Colors.green.withOpacity(0.8), Colors.teal.withOpacity(0.8)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(KSizes.radiusL),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      pendingCount > 0 ? MdiIcons.alertCircle : MdiIcons.checkCircle,
-                                      color: Colors.white,
-                                      size: 32,
-                                    ),
-                                    SizedBox(width: KSizes.margin3x),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '🔧 DEBUG: Ventende Registreringer',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: KSizes.fontSizeL,
-                                              fontWeight: KSizes.fontWeightBold,
-                                            ),
-                                          ),
-                                          SizedBox(height: KSizes.margin1x),
-                                          Text(
-                                            pendingCount > 0 
-                                              ? '$pendingCount billeder venter på kategorisering'
-                                              : 'Alle billeder er kategoriserede',
-                                            style: TextStyle(
-                                              color: Colors.white.withOpacity(0.9),
-                                              fontSize: KSizes.fontSizeM,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    if (pendingCount > 0)
-                                      ElevatedButton(
-                                        onPressed: () {
-                                          print('🎯 DashboardPage: KATEGORISER button clicked');
-                                          _openPendingFoodsRegistration(context, ref);
-                                        },
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.white,
-                                          foregroundColor: Colors.orange,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(KSizes.radiusM),
-                                          ),
-                                        ),
-                                        child: Text('KATEGORISER'),
-                                      ),
-                                  ],
-                                ),
-                                
-                                SizedBox(height: KSizes.margin2x),
-                                
-                                if (pendingCount > 0) ...[
-                                  SizedBox(height: KSizes.margin3x),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: EdgeInsets.all(KSizes.margin2x),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.2),
-                                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                                    ),
-                                    child: Text(
-                                      '⚠️ Klik "KATEGORISER" eller hele boksen for at bruge Gemini AI til at identificere mad og registrere kalorier automatisk',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: KSizes.fontSizeS,
-                                        fontStyle: FontStyle.italic,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    KSizes.spacingVerticalXL,
                     
                     // Daily settings widget (only show for today)
                     if (selectedDateNotifier.isToday) ...[
@@ -439,7 +322,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     if (pendingCount > 0) {
       // Navigate directly to categorize pending foods
       print('🍎 Dashboard: Navigating to pending foods registration');
-      _openPendingFoodsRegistration(context, ref);
+      _showPendingFoodsDialog(context, ref);
       return;
     }
     
@@ -1062,11 +945,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     );
   }
 
-  void _openPendingFoodsRegistration(BuildContext context, WidgetRef ref) async {
-    print('🔧 DEBUG: _openPendingFoodsRegistration called');
+  void _showPendingFoodsDialog(BuildContext context, WidgetRef ref) async {
+    print('🍎 Dashboard: _showPendingFoodsDialog called');
     
     final pendingFoods = ref.read(pendingFoodProvider).pendingFoods;
-    print('🔧 DEBUG: Found ${pendingFoods.length} pending foods');
+    print('🍎 Dashboard: Found ${pendingFoods.length} pending foods');
     
     if (pendingFoods.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1082,7 +965,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
       // If only one pending food, go directly to categorization
       if (pendingFoods.length == 1) {
         final selectedFood = pendingFoods.first;
-        print('🔧 DEBUG: Only one pending food, navigating directly to CategorizeFoodPage with food: ${selectedFood.id}');
+        print('🍎 Dashboard: Only one pending food, navigating directly to CategorizeFoodPage');
         
         await Navigator.of(context).push(
           MaterialPageRoute(
@@ -1097,71 +980,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
         return;
       }
       
-      // Multiple pending foods - show selection dialog
-      final selectedFood = await showDialog<PendingFoodModel>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                MdiIcons.silverwareForkKnife,
-                color: AppColors.primary,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Text(
-                'Vælg måltid at kategorisere',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: KSizes.fontWeightBold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+      // Multiple pending foods - navigate to selection page
+      print('🍎 Dashboard: Multiple pending foods, navigating to PendingFoodSelectionPage');
+      
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PendingFoodSelectionPage(
+            pendingFoods: pendingFoods,
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: pendingFoods.map((food) => ListTile(
-              leading: Icon(
-                MdiIcons.foodApple,
-                color: AppColors.primary,
-              ),
-              title: Text('Måltid ${food.id.substring(food.id.length - 4)}'),
-              subtitle: Text(
-                DateTime.parse(food.capturedAt.toIso8601String()).toString().split('.').first,
-                style: TextStyle(fontSize: 12),
-              ),
-              onTap: () => Navigator.of(context).pop(food),
-            )).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Annuller'),
-            ),
-          ],
         ),
       );
       
-      if (selectedFood != null) {
-        print('🔧 DEBUG: Selected pending food: ${selectedFood.id}, navigating to CategorizeFoodPage');
-        
-        await Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => CategorizeFoodPage(
-              pendingFood: selectedFood,
-            ),
-          ),
-        );
-        
-        print('🔧 DEBUG: Returned from CategorizeFoodPage');
-        
-        // Refresh data after categorization
-        await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
-      }
+      print('🍎 Dashboard: Returned from PendingFoodSelectionPage');
+      
+      // Refresh data after categorization
+      await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
       
     } catch (e) {
-      print('🔧 DEBUG: Error in _openPendingFoodsRegistration: $e');
+      print('🍎 Dashboard: Error in _showPendingFoodsDialog: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1175,15 +1011,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
   
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final itemDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final difference = now.difference(dateTime);
     
-    if (itemDate == today) {
-      return 'I dag ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } else if (itemDate == today.subtract(Duration(days: 1))) {
-      return 'I går ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    if (difference.inMinutes < 1) {
+      return 'Lige nu';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes} min siden';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours} timer siden';  
     } else {
-      return '${dateTime.day}/${dateTime.month} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+      return '${difference.inDays} dage siden';
     }
   }
 
@@ -1192,5 +1029,266 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
     ref.read(activityNotifierProvider).loadTodaysActivities();
     ref.read(weightTrackingProvider.notifier).refresh();
     ref.read(pendingFoodProvider.notifier).loadPendingFoods();
+  }
+}
+
+/// Widget for displaying pending food selection cards with image navigation
+class _PendingFoodSelectCard extends StatefulWidget {
+  final PendingFoodModel food;
+  final VoidCallback onTap;
+  
+  const _PendingFoodSelectCard({
+    required this.food,
+    required this.onTap,
+  });
+  
+  @override
+  State<_PendingFoodSelectCard> createState() => _PendingFoodSelectCardState();
+}
+
+class _PendingFoodSelectCardState extends State<_PendingFoodSelectCard> {
+  int _currentImageIndex = 0;
+  
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.only(bottom: KSizes.margin2x),
+      child: InkWell(
+        onTap: widget.onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        child: Padding(
+          padding: EdgeInsets.all(KSizes.margin3x),
+          child: Row(
+            children: [
+              // Image preview with navigation
+              _buildImagePreview(),
+              
+              SizedBox(width: KSizes.margin3x),
+              
+              // Food info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.food.aiResult?.foodName.isNotEmpty == true 
+                          ? widget.food.aiResult!.foodName
+                          : 'Måltid ${widget.food.id.substring(widget.food.id.length - 4)}',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    SizedBox(height: KSizes.margin1x),
+                    
+                    if (widget.food.aiResult?.description.isNotEmpty == true) ...[
+                      Text(
+                        widget.food.aiResult!.description,
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: KSizes.margin1x),
+                    ],
+                    
+                    Row(
+                      children: [
+                        Icon(
+                          MdiIcons.clock,
+                          size: 12,
+                          color: AppColors.textTertiary,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          _formatDateTime(widget.food.capturedAt),
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeXS,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                        if (widget.food.aiResult?.estimatedCalories != null && widget.food.aiResult!.estimatedCalories > 0) ...[
+                          SizedBox(width: KSizes.margin2x),
+                          Icon(
+                            MdiIcons.fire,
+                            size: 12,
+                            color: AppColors.warning,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            '${widget.food.aiResult!.estimatedCalories} kcal',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeXS,
+                              color: AppColors.warning,
+                              fontWeight: KSizes.fontWeightMedium,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              Icon(
+                MdiIcons.chevronRight,
+                color: AppColors.textSecondary,
+                size: KSizes.iconS,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildImagePreview() {
+    if (widget.food.imagePaths.isEmpty) {
+      return Container(
+        width: 60,
+        height: 60,
+        decoration: BoxDecoration(
+          color: AppColors.border.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(KSizes.radiusS),
+        ),
+        child: Icon(
+          MdiIcons.foodApple,
+          color: AppColors.primary,
+        ),
+      );
+    }
+    
+    return GestureDetector(
+      onTap: widget.food.imageCount > 1 ? _showImageNavigator : null,
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(KSizes.radiusS),
+            child: Image.file(
+              File(widget.food.imagePaths[_currentImageIndex]),
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 60,
+                height: 60,
+                color: AppColors.border.withOpacity(0.2),
+                child: Icon(
+                  MdiIcons.foodApple,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
+          ),
+          
+          // Image counter if multiple images
+          if (widget.food.imageCount > 1)
+            Positioned(
+              top: 2,
+              right: 2,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(KSizes.radiusXS),
+                ),
+                child: Text(
+                  '${_currentImageIndex + 1}/${widget.food.imageCount}',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            
+          // Navigation hint if multiple images
+          if (widget.food.imageCount > 1)
+            Positioned(
+              bottom: 2,
+              right: 2,
+              child: Container(
+                padding: EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  MdiIcons.imageMultiple,
+                  color: Colors.white,
+                  size: 10,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+  
+  void _showImageNavigator() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Billeder af måltid'),
+        content: Container(
+          width: double.maxFinite,
+          height: 300,
+          child: PageView.builder(
+            controller: PageController(initialPage: _currentImageIndex),
+            onPageChanged: (index) {
+              setState(() {
+                _currentImageIndex = index;
+              });
+            },
+            itemCount: widget.food.imageCount,
+            itemBuilder: (context, index) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                child: Image.file(
+                  File(widget.food.imagePaths[index]),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: AppColors.border.withOpacity(0.2),
+                    child: Icon(
+                      MdiIcons.imageOff,
+                      size: KSizes.iconXL,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Luk'),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inMinutes < 1) {
+      return 'Lige nu';
+    } else if (difference.inHours < 1) {
+      return '${difference.inMinutes} min siden';
+    } else if (difference.inDays < 1) {
+      return '${difference.inHours} timer siden';  
+    } else {
+      return '${difference.inDays} dage siden';
+    }
   }
 } 

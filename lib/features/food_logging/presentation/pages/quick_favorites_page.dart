@@ -47,6 +47,16 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       vsync: this,
       initialIndex: widget.initialTab,
     );
+    
+    // Add listener to rebuild UI when tab changes
+    _tabController.addListener(() {
+      if (mounted) {
+        setState(() {
+          // This will trigger a rebuild and update the FloatingActionButton
+        });
+      }
+    });
+    
     _loadFavorites();
   }
 
@@ -109,28 +119,21 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
           ],
         ),
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Create new food favorite
-          FloatingActionButton(
-            heroTag: "food_fab",
-            onPressed: () => _createNewFoodFavorite(),
-            backgroundColor: AppColors.primary,
-            child: Icon(MdiIcons.plus),
-            tooltip: 'Ny mad favorit',
-          ),
-          SizedBox(height: KSizes.margin2x),
-          // Create new activity favorite
-          FloatingActionButton(
-            heroTag: "activity_fab",
-            onPressed: () => _createNewActivityFavorite(),
-            backgroundColor: AppColors.secondary,
-            child: Icon(MdiIcons.runFast),
-            tooltip: 'Ny aktivitet favorit',
-          ),
-        ],
-      ),
+      floatingActionButton: _tabController.index == 0
+          ? FloatingActionButton(
+              heroTag: "food_fab",
+              onPressed: () => _createNewFoodFavorite(),
+              backgroundColor: AppColors.primary,
+              child: Icon(MdiIcons.plus),
+              tooltip: 'Ny mad favorit',
+            )
+          : FloatingActionButton(
+              heroTag: "activity_fab",
+              onPressed: () => _createNewActivityFavorite(),
+              backgroundColor: AppColors.secondary,
+              child: Icon(MdiIcons.plus),
+              tooltip: 'Ny aktivitet favorit',
+            ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
@@ -622,18 +625,33 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       }
       
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        // Clear any existing snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${favorite.activityName} er tilføjet!'),
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Flexible(child: Text('${favorite.activityName} er tilføjet!')),
+              ],
+            ),
             backgroundColor: AppColors.success,
-            duration: Duration(seconds: 2),
+            duration: Duration(milliseconds: 1500),
           ),
         );
+        
+        // Navigate back to dashboard after a short delay
+        Future.delayed(Duration(milliseconds: 800), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fejl ved tilføjelse af aktivitet: $e'),

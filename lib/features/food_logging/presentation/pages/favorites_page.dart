@@ -12,6 +12,9 @@ import '../../../activity/domain/user_activity_log_model.dart';
 import '../../../activity/infrastructure/favorite_activity_service.dart';
 import '../../../activity/application/activity_notifier.dart';
 import '../../../dashboard/application/date_aware_providers.dart';
+import '../../application/pending_food_cubit.dart';
+import './food_favorite_detail_page.dart';
+import '../../../activity/presentation/pages/activity_favorite_detail_page.dart';
 
 /// Page for managing both food and activity favorites with tabs
 class FavoritesPage extends ConsumerStatefulWidget {
@@ -590,33 +593,76 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
 
   Future<void> _useActivityFavorite(FavoriteActivityModel favorite) async {
     try {
-      // Convert favorite to UserActivityLogModel and log directly
-      final activityLog = favorite.toUserActivityLog();
-
-      // Use the shared ActivityNotifier from provider
-      final activityNotifier = ref.read(activityNotifierProvider);
-      await activityNotifier.logActivity(activityLog);
-
-      // Update favorite usage
-      final updatedFavorite = favorite.withUpdatedUsage();
-      await _activityService.updateFavorite(updatedFavorite);
-
-      // Use the new centralized refresh function
-      refreshActivityCalories(ref);
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${favorite.activityName} er tilføjet som aktivitet!'),
-            backgroundColor: AppColors.success,
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: KSizes.margin2x),
+                Flexible(child: Text('Tilføjer ${favorite.activityName}...')),
+              ],
+            ),
+            backgroundColor: AppColors.info,
+            duration: Duration(milliseconds: 1500),
           ),
         );
         
-        // Refresh favorites to show updated usage
-        _loadFavorites();
+        // Convert favorite to UserActivityLogModel and log directly
+        final activityLog = favorite.toUserActivityLog();
+
+        // Create an ActivityNotifier instance to log the activity
+        final activityNotifier = ref.read(activityNotifierProvider);
+        await activityNotifier.logActivity(activityLog);
+
+        // Update favorite usage
+        final updatedFavorite = favorite.withUpdatedUsage();
+        await _activityService.updateFavorite(updatedFavorite);
+
+        print('⭐ FavoriteActivityService: Updated favorite: ${favorite.activityName}');
+        
+        // Use the new centralized refresh function
+        refreshActivityCalories(ref);
+        
+        // Also refresh pending foods
+        await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
+      }
+      
+      if (mounted) {
+        // Clear any existing snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Flexible(child: Text('${favorite.activityName} er tilføjet!')),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            duration: Duration(milliseconds: 1500),
+          ),
+        );
+        
+        // Navigate back to dashboard after a short delay
+        Future.delayed(Duration(milliseconds: 800), () {
+          if (mounted) {
+            Navigator.of(context).pop();
+          }
+        });
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Fejl ved tilføjelse af aktivitet: $e'),

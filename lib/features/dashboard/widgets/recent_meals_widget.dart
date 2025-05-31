@@ -9,6 +9,7 @@ import '../../food_logging/domain/pending_food_model.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 import '../../food_logging/presentation/pages/edit_meal_page.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
+import '../../food_logging/presentation/pages/pending_food_selection_page.dart';
 import 'dart:io';
 
 /// Widget showing today's logged meals
@@ -693,65 +694,42 @@ class RecentMealsWidget extends ConsumerWidget {
     }
     
     try {
-      // Show selection dialog
-      final selectedFood = await showDialog<PendingFoodModel>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                MdiIcons.silverwareForkKnife,
-                color: AppColors.primary,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Text(
-                'Vælg måltid at kategorisere',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: KSizes.fontWeightBold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: pendingFoods.map((food) => ListTile(
-              leading: Icon(
-                MdiIcons.foodApple,
-                color: AppColors.primary,
-              ),
-              title: Text('Måltid ${food.id.substring(food.id.length - 4)}'),
-              subtitle: Text(
-                DateTime.parse(food.capturedAt.toIso8601String()).toString().split('.').first,
-                style: TextStyle(fontSize: 12),
-              ),
-              onTap: () => Navigator.of(context).pop(food),
-            )).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Annuller'),
-            ),
-          ],
-        ),
-      );
-      
-      if (selectedFood != null) {
-        print('🍎 RecentMealsWidget: User selected food, navigating to CategorizeFoodPage');
+      // If only one pending food, go directly to categorization
+      if (pendingFoods.length == 1) {
+        final selectedFood = pendingFoods.first;
+        print('🍎 RecentMealsWidget: Only one pending food, navigating directly to CategorizeFoodPage');
         
-        Navigator.of(context).push(
+        await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => CategorizeFoodPage(
               pendingFood: selectedFood,
             ),
           ),
         );
+        
+        // Refresh data after categorization
+        await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
+        return;
       }
+      
+      // Multiple pending foods - navigate to selection page (NOT dialog!)
+      print('🍎 RecentMealsWidget: Multiple pending foods, navigating to PendingFoodSelectionPage');
+      
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => PendingFoodSelectionPage(
+            pendingFoods: pendingFoods,
+          ),
+        ),
+      );
+      
+      print('🍎 RecentMealsWidget: Returned from PendingFoodSelectionPage');
+      
+      // Refresh data after categorization
+      await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
+      
     } catch (e) {
-      print('🍎 RecentMealsWidget: Error in _openPendingFoodsRegistration: $e');
+      print('🍎 RecentMealsWidget: Error in _navigateToPendingFoods: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Fejl ved åbning af kategorisering: $e'),

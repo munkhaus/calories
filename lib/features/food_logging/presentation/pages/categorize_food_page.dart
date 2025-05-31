@@ -36,6 +36,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   bool _markAsFavorite = false;
   FoodAnalysisResult? _analysisResult;
   String? _analysisError;
+  int _currentImageIndex = 0;
 
   final GeminiService _geminiService = GeminiService();
   final FavoriteFoodService _favoriteFoodService = FavoriteFoodService();
@@ -43,8 +44,16 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   @override
   void initState() {
     super.initState();
-    // Start analysis when page opens
-    _analyzeImage();
+    
+    // Check if AI results already exist
+    if (widget.pendingFood.aiResult != null) {
+      print('🤖 CategorizeFoodPage: Using existing AI results');
+      _analysisResult = widget.pendingFood.aiResult;
+      _foodNameController.text = _analysisResult!.foodName;
+      _caloriesController.text = _analysisResult!.estimatedCalories.toString();
+    } else {
+      print('🤖 CategorizeFoodPage: No AI results available yet - user can manually analyze if needed');
+    }
   }
 
   @override
@@ -147,45 +156,103 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
       );
     }
 
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        child: Stack(
-          children: [
-            // Primary image
-            Image.file(
-              File(widget.pendingFood.primaryImagePath),
-              width: double.infinity,
-              height: 200,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 200,
-                  color: AppColors.surface,
-                  child: Center(
-                    child: Icon(
-                      MdiIcons.imageOff,
-                      size: KSizes.iconXL,
-                      color: AppColors.textSecondary,
+    return GestureDetector(
+      onTap: _showImageGallery,
+      child: Container(
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          child: Stack(
+            children: [
+              // Current image
+              Image.file(
+                File(widget.pendingFood.imagePaths[_currentImageIndex]),
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 200,
+                    color: AppColors.surface,
+                    child: Center(
+                      child: Icon(
+                        MdiIcons.imageOff,
+                        size: KSizes.iconXL,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              
+              // Navigation arrows if multiple images
+              if (widget.pendingFood.imageCount > 1) ...[
+                // Left arrow
+                if (_currentImageIndex > 0)
+                  Positioned(
+                    left: KSizes.margin2x,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _currentImageIndex = (_currentImageIndex - 1).clamp(0, widget.pendingFood.imageCount - 1);
+                        }),
+                        child: Container(
+                          padding: EdgeInsets.all(KSizes.margin2x),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            MdiIcons.chevronLeft,
+                            color: Colors.white,
+                            size: KSizes.iconM,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                );
-              },
-            ),
-            
-            // Image count indicator if multiple images
-            if (widget.pendingFood.imageCount > 1)
+                
+                // Right arrow
+                if (_currentImageIndex < widget.pendingFood.imageCount - 1)
+                  Positioned(
+                    right: KSizes.margin2x,
+                    top: 0,
+                    bottom: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: () => setState(() {
+                          _currentImageIndex = (_currentImageIndex + 1).clamp(0, widget.pendingFood.imageCount - 1);
+                        }),
+                        child: Container(
+                          padding: EdgeInsets.all(KSizes.margin2x),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            MdiIcons.chevronRight,
+                            color: Colors.white,
+                            size: KSizes.iconM,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+              
+              // Image counter and indicator
               Positioned(
                 top: KSizes.margin2x,
                 right: KSizes.margin2x,
@@ -201,25 +268,148 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (widget.pendingFood.imageCount > 1) ...[
+                        Text(
+                          '${_currentImageIndex + 1}/${widget.pendingFood.imageCount}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: KSizes.fontSizeS,
+                            fontWeight: KSizes.fontWeightBold,
+                          ),
+                        ),
+                        SizedBox(width: KSizes.margin1x),
+                      ],
                       Icon(
-                        MdiIcons.imageMultiple,
+                        widget.pendingFood.imageCount > 1 ? MdiIcons.imageMultiple : MdiIcons.image,
+                        color: Colors.white,
+                        size: KSizes.iconXS,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Tap hint
+              Positioned(
+                bottom: KSizes.margin2x,
+                left: KSizes.margin2x,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: KSizes.margin2x,
+                    vertical: KSizes.margin1x,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        MdiIcons.eye,
                         color: Colors.white,
                         size: KSizes.iconXS,
                       ),
                       SizedBox(width: KSizes.margin1x),
                       Text(
-                        '${widget.pendingFood.imageCount}',
+                        'Tryk for fuld visning',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: KSizes.fontSizeS,
-                          fontWeight: KSizes.fontWeightBold,
+                          fontSize: KSizes.fontSizeXS,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showImageGallery() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.all(KSizes.margin4x),
+        child: Container(
+          width: double.maxFinite,
+          height: MediaQuery.of(context).size.height * 0.8,
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: EdgeInsets.all(KSizes.margin4x),
+                child: Row(
+                  children: [
+                    Text(
+                      'Billeder af måltid',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                      ),
+                    ),
+                    Spacer(),
+                    if (widget.pendingFood.imageCount > 1)
+                      Text(
+                        '${_currentImageIndex + 1} af ${widget.pendingFood.imageCount}',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: KSizes.fontSizeM,
+                        ),
+                      ),
+                    SizedBox(width: KSizes.margin3x),
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: Icon(
+                        MdiIcons.close,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Image gallery
+              Expanded(
+                child: PageView.builder(
+                  controller: PageController(initialPage: _currentImageIndex),
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentImageIndex = index;
+                    });
+                  },
+                  itemCount: widget.pendingFood.imageCount,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: EdgeInsets.all(KSizes.margin4x),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(KSizes.radiusL),
+                        child: Image.file(
+                          File(widget.pendingFood.imagePaths[index]),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: AppColors.border.withOpacity(0.2),
+                            child: Center(
+                              child: Icon(
+                                MdiIcons.imageOff,
+                                size: KSizes.iconXXL,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -739,7 +929,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
         carbs: 0.0,
         quantity: 1.0,
         servingUnit: 'portion',
-        loggedAt: DateTime.now().toIso8601String(),
+        loggedAt: widget.pendingFood.capturedAt.toIso8601String(),
       );
 
       // Log the food

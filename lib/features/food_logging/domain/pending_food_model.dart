@@ -1,3 +1,5 @@
+import '../infrastructure/gemini_service.dart';
+
 /// Model for food items that are pending categorization after photo capture
 class PendingFoodModel {
   final String id;
@@ -6,6 +8,7 @@ class PendingFoodModel {
   final DateTime capturedAt;
   final String notes;
   final bool isProcessed;
+  final FoodAnalysisResult? aiResult;
 
   const PendingFoodModel({
     this.id = '',
@@ -14,6 +17,7 @@ class PendingFoodModel {
     required this.capturedAt,
     this.notes = '',
     this.isProcessed = false,
+    this.aiResult,
   });
 
   /// Create from JSON
@@ -25,6 +29,7 @@ class PendingFoodModel {
       capturedAt: DateTime.tryParse(json['capturedAt'] ?? '') ?? DateTime.now(),
       notes: json['notes'] ?? '',
       isProcessed: json['isProcessed'] ?? false,
+      aiResult: json['aiResult'] != null ? _foodAnalysisResultFromJson(json['aiResult']) : null,
     );
   }
 
@@ -37,6 +42,7 @@ class PendingFoodModel {
       'capturedAt': capturedAt.toIso8601String(),
       'notes': notes,
       'isProcessed': isProcessed,
+      'aiResult': aiResult != null ? _foodAnalysisResultToJson(aiResult!) : null,
     };
   }
 
@@ -48,6 +54,7 @@ class PendingFoodModel {
     DateTime? capturedAt,
     String? notes,
     bool? isProcessed,
+    FoodAnalysisResult? aiResult,
   }) {
     return PendingFoodModel(
       id: id ?? this.id,
@@ -56,6 +63,7 @@ class PendingFoodModel {
       capturedAt: capturedAt ?? this.capturedAt,
       notes: notes ?? this.notes,
       isProcessed: isProcessed ?? this.isProcessed,
+      aiResult: aiResult ?? this.aiResult,
     );
   }
 
@@ -83,4 +91,36 @@ class PendingFoodModel {
       return '${difference.inDays} dage siden';
     }
   }
+}
+
+/// Helper function to convert FoodAnalysisResult to JSON
+Map<String, dynamic> _foodAnalysisResultToJson(FoodAnalysisResult result) {
+  return {
+    'foodName': result.foodName,
+    'description': result.description,
+    'portionSize': result.portionSize,
+    'estimatedCalories': result.estimatedCalories,
+    'confidence': result.confidence,
+    'quantity': result.quantity,
+    'servingUnit': result.servingUnit,
+    'protein': result.protein,
+    'fat': result.fat,
+    'carbs': result.carbs,
+  };
+}
+
+/// Helper function to convert JSON to FoodAnalysisResult
+FoodAnalysisResult _foodAnalysisResultFromJson(Map<String, dynamic> json) {
+  return FoodAnalysisResult(
+    foodName: json['foodName'] ?? '',
+    description: json['description'] ?? '',
+    portionSize: json['portionSize'] ?? '',
+    estimatedCalories: json['estimatedCalories'] ?? 0,
+    confidence: (json['confidence'] ?? 0.0).toDouble(),
+    quantity: (json['quantity'] ?? 1.0).toDouble(),
+    servingUnit: json['servingUnit'] ?? 'portion',
+    protein: (json['protein'] ?? 0.0).toDouble(),
+    fat: (json['fat'] ?? 0.0).toDouble(),
+    carbs: (json['carbs'] ?? 0.0).toDouble(),
+  );
 } 

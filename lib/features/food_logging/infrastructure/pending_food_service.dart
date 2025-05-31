@@ -1,15 +1,21 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:result_type/result_type.dart';
 import '../domain/i_pending_food_service.dart';
 import '../domain/pending_food_model.dart';
 import 'camera_service.dart';
 import '../../../core/infrastructure/storage_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'gemini_service.dart';
 
 /// Implementation of pending food service with in-memory storage
 class PendingFoodService implements IPendingFoodService {
   // Static list to simulate database storage
   static List<PendingFoodModel> _pendingFoods = [];
   static bool _isInitialized = false;
+  
+  // Gemini service for AI analysis
+  final GeminiService _geminiService = GeminiService();
   
   /// Initialize service and load persisted data
   static Future<void> initialize() async {
@@ -160,19 +166,22 @@ class PendingFoodService implements IPendingFoodService {
       
       final imagePath = result.success;
       
-      // Create new pending food item
+      // Create initial pending food item
       final pendingFood = PendingFoodModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         imagePaths: [imagePath],
         capturedAt: DateTime.now(),
       );
       
-      // Add to list
+      // Add to list immediately so user sees it
       _pendingFoods.add(pendingFood);
-      
-      await _savePendingFoods(); // Save to persistent storage
+      await _savePendingFoods();
       
       print('🍎 PendingFoodService: Added new pending food with ID ${pendingFood.id}');
+      
+      // Start AI analysis in background (don't wait for it)
+      _performBackgroundAiAnalysis(pendingFood);
+      
       return Success(pendingFood);
     } catch (e) {
       print('🍎 PendingFoodService: Error capturing food: $e');
@@ -205,19 +214,22 @@ class PendingFoodService implements IPendingFoodService {
       
       final imagePath = result.success;
       
-      // Create new pending food item
+      // Create initial pending food item
       final pendingFood = PendingFoodModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         imagePaths: [imagePath],
         capturedAt: DateTime.now(),
       );
       
-      // Add to list
+      // Add to list immediately so user sees it
       _pendingFoods.add(pendingFood);
-      
-      await _savePendingFoods(); // Save to persistent storage
+      await _savePendingFoods();
       
       print('🍎 PendingFoodService: Added new pending food from gallery with ID ${pendingFood.id}');
+      
+      // Start AI analysis in background (don't wait for it)
+      _performBackgroundAiAnalysis(pendingFood);
+      
       return Success(pendingFood);
     } catch (e) {
       print('🍎 PendingFoodService: Error capturing from gallery: $e');
@@ -225,6 +237,46 @@ class PendingFoodService implements IPendingFoodService {
     }
   }
   
+  /// Perform AI analysis in background and update the pending food
+  Future<void> _performBackgroundAiAnalysis(PendingFoodModel pendingFood) async {
+    try {
+      print('🤖 PendingFoodService: Starting background AI analysis for ${pendingFood.id}');
+      
+      // Perform AI analysis
+      Result<FoodAnalysisResult, GeminiError> analysisResult;
+      if (pendingFood.imageCount > 1) {
+        analysisResult = await _geminiService.analyzeMultipleFoodImages(pendingFood.imagePaths);
+      } else {
+        analysisResult = await _geminiService.analyzeFoodImage(pendingFood.primaryImagePath);
+      }
+      
+      if (analysisResult.isSuccess) {
+        print('🤖 PendingFoodService: AI analysis successful, updating pending food');
+        
+        // Find and update the pending food with AI results
+        final index = _pendingFoods.indexWhere((food) => food.id == pendingFood.id);
+        if (index != -1) {
+          final updatedFood = _pendingFoods[index].copyWith(
+            aiResult: analysisResult.success,
+          );
+          _pendingFoods[index] = updatedFood;
+          
+          // Save updated list
+          await _savePendingFoods();
+          
+          print('🤖 PendingFoodService: Updated pending food ${pendingFood.id} with AI analysis: ${analysisResult.success.foodName}');
+        } else {
+          print('🤖 PendingFoodService: Warning: Could not find pending food ${pendingFood.id} to update with AI results');
+        }
+      } else {
+        print('🤖 PendingFoodService: AI analysis failed: ${analysisResult.failure}');
+      }
+    } catch (e) {
+      print('🤖 PendingFoodService: Error during background AI analysis: $e');
+      // Don't fail the whole operation if AI analysis fails
+    }
+  }
+
   Future<Result<String, PendingFoodError>> captureFromGallery() async {
     // Use pickFromGallery and return just the ID for compatibility
     final result = await pickFromGallery();

@@ -832,35 +832,46 @@ class CalorieOverviewWidget extends ConsumerWidget {
     // Clamp progress to reasonable bounds
     progress = progress.clamp(0.0, 1.2);
     
-    // Get the main color based on progress (same logic as _getProgressColor)
-    Color mainColor;
-    if (progress <= 0.8) {
-      // Many calories remaining: Green
-      mainColor = const Color(0xFF4CAF50); // Standard green
-    } else if (progress <= 0.9) {
-      // Getting close to goal: Orange
-      mainColor = const Color(0xFFFF9800); // Orange
-    } else if (progress <= 1.0) {
-      // Very close to goal: Dark orange  
-      mainColor = const Color(0xFFFF5722); // Dark orange
-    } else if (progress <= 1.1) {
-      // Over goal: Red
-      mainColor = const Color(0xFFF44336); // Red
+    // MEGET mere synlige farver baseret på kalorie-progress!
+    Color primaryColor;
+    Color secondaryColor;
+    
+    if (progress <= 0.3) {
+      // Mange kalorier tilbage: Kraftig grøn gradient
+      primaryColor = const Color(0xFF4CAF50); // Grøn
+      secondaryColor = const Color(0xFF81C784); // Lys grøn
+    } else if (progress <= 0.6) {
+      // Nogle kalorier tilbage: Blå-grøn gradient
+      primaryColor = const Color(0xFF26A69A); // Teal
+      secondaryColor = const Color(0xFF66BB6A); // Mellem grøn
+    } else if (progress <= 0.8) {
+      // Kommer tættere på målet: Gul-orange gradient
+      primaryColor = const Color(0xFFFFCA28); // Gul
+      secondaryColor = const Color(0xFFFFB74D); // Lys orange
+    } else if (progress <= 0.95) {
+      // Tæt på målet: Orange gradient
+      primaryColor = const Color(0xFFFF9800); // Orange
+      secondaryColor = const Color(0xFFFFB74D); // Lys orange
+    } else if (progress <= 1.05) {
+      // Lige over målet: Rød-orange gradient
+      primaryColor = const Color(0xFFFF5722); // Dyb orange
+      secondaryColor = const Color(0xFFFF7043); // Orange-rød
     } else {
-      // Way over goal: Dark red
-      mainColor = const Color(0xFFD32F2F); // Dark red
+      // Langt over målet: Kraftig rød gradient
+      primaryColor = const Color(0xFFF44336); // Rød
+      secondaryColor = const Color(0xFFE57373); // Lys rød
     }
     
-    // Create smooth gradient using the progress-based color
+    // Skab MEGET mere synlig gradient med høj opacity
     return LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        mainColor.withOpacity(0.15), // Stronger color at top-left
-        mainColor.withOpacity(0.05), // Lighter color in middle
-        Colors.white.withOpacity(0.95), // White at bottom-right
+        primaryColor.withOpacity(0.9), // MEGET stærk farve!
+        secondaryColor.withOpacity(0.7), // Stærk mellem farve
+        primaryColor.withOpacity(0.4), // Stadig synlig i bunden
       ],
-      stops: const [0.0, 0.6, 1.0],
+      stops: const [0.0, 0.5, 1.0],
     );
   }
   

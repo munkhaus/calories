@@ -8,6 +8,7 @@ import '../../infrastructure/camera_service.dart';
 import '../../application/pending_food_cubit.dart';
 import '../../domain/pending_food_model.dart';
 import '../../infrastructure/pending_food_service.dart';
+import '../../presentation/pages/categorize_food_page.dart';
 
 /// Page for quick photo session - starts immediately with camera capture
 /// Allows multiple photos of the same meal element
@@ -208,84 +209,56 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
                     ),
                   ),
                   
-                  SizedBox(height: KSizes.margin4x),
+                  SizedBox(height: KSizes.margin6x),
                   
-                  // Equal-sized action buttons in modern style
+                  // Two primary action buttons - MODERN CARD STYLE
                   Row(
                     children: [
-                      // Take another photo button
+                      // Kategoriser Nu - PRIMARY ACTION
                       Expanded(
-                        child: Container(
-                          height: 60,
-                          child: ElevatedButton.icon(
-                            onPressed: _captureAdditionalImage,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.surface,
-                              foregroundColor: AppColors.warning,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(KSizes.radiusL),
-                                side: BorderSide(
-                                  color: AppColors.warning.withOpacity(0.3),
-                                  width: 2,
-                                ),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: KSizes.margin4x,
-                                vertical: KSizes.margin3x,
-                              ),
-                            ),
-                            icon: Icon(
-                              MdiIcons.cameraPlus,
-                              size: KSizes.iconM,
-                            ),
-                            label: Text(
-                              'Tag et til',
-                              style: TextStyle(
-                                fontSize: KSizes.fontSizeM,
-                                fontWeight: KSizes.fontWeightBold,
-                              ),
-                            ),
-                          ),
+                        child: _buildActionButton(
+                          onTap: _goDirectToCategorizeFoods,
+                          icon: MdiIcons.silverwareForkKnife,
+                          label: 'Kategoriser Nu',
+                          subtitle: 'Gå direkte til registrering',
+                          color: AppColors.primary,
+                          isPrimary: true,
                         ),
                       ),
                       
                       SizedBox(width: KSizes.margin4x),
                       
-                      // Add to pending button - PRIMARY ACTION
+                      // Tilføj til Ventende - SECONDARY ACTION
                       Expanded(
-                        child: Container(
-                          height: 60,
-                          child: ElevatedButton.icon(
-                            onPressed: _addToPendingFoods,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.success,
-                              foregroundColor: Colors.white,
-                              elevation: 8,
-                              shadowColor: AppColors.success.withOpacity(0.3),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(KSizes.radiusL),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: KSizes.margin4x,
-                                vertical: KSizes.margin3x,
-                              ),
-                            ),
-                            icon: Icon(
-                              MdiIcons.plus,
-                              size: KSizes.iconM,
-                            ),
-                            label: Text(
-                              'Tilføj til ventende',
-                              style: TextStyle(
-                                fontSize: KSizes.fontSizeM,
-                                fontWeight: KSizes.fontWeightBold,
-                              ),
-                            ),
-                          ),
+                        child: _buildActionButton(
+                          onTap: _addToPendingFoods,
+                          icon: MdiIcons.clockOutline,
+                          label: 'Tilføj til Ventende',
+                          subtitle: 'Kategoriser senere',
+                          color: AppColors.warning,
+                          isPrimary: false,
                         ),
                       ),
                     ],
+                  ),
+                  
+                  SizedBox(height: KSizes.margin4x),
+                  
+                  // Add more photos button - SUBTLE STYLE
+                  TextButton.icon(
+                    onPressed: _isCapturing ? null : _captureAdditionalImage,
+                    icon: Icon(
+                      _isCapturing ? MdiIcons.loading : MdiIcons.cameraPlus,
+                      size: KSizes.iconS,
+                    ),
+                    label: Text(_isCapturing ? 'Tager billede...' : 'Tag endnu et billede'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: KSizes.margin4x,
+                        vertical: KSizes.margin2x,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -523,5 +496,99 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildActionButton({
+    required VoidCallback onTap,
+    required IconData icon,
+    required String label,
+    required String subtitle,
+    required Color color,
+    required bool isPrimary,
+  }) {
+    return Container(
+      height: 80,
+      child: ElevatedButton(
+        onPressed: onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isPrimary ? color : AppColors.surface,
+          foregroundColor: isPrimary ? Colors.white : color,
+          elevation: isPrimary ? 8 : 0,
+          shadowColor: isPrimary ? color.withOpacity(0.3) : null,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+            side: BorderSide(
+              color: color.withOpacity(0.3),
+              width: 2,
+            ),
+          ),
+          padding: EdgeInsets.all(KSizes.margin3x),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: KSizes.iconM,
+            ),
+            SizedBox(height: KSizes.margin1x),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                fontWeight: KSizes.fontWeightBold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: KSizes.fontSizeXS,
+                color: (isPrimary ? Colors.white : color).withOpacity(0.8),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _goDirectToCategorizeFoods() async {
+    if (_capturedImages.isEmpty) {
+      _showError('Ingen billeder at kategorisere');
+      return;
+    }
+
+    try {
+      // Create new pending food element with multiple images
+      final newPendingFood = PendingFoodModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imagePaths: List.from(_capturedImages), // Copy the list
+        capturedAt: DateTime.now(),
+        notes: 'Hurtig kategorisering (${_capturedImages.length} billeder)',
+        isProcessed: false,
+      );
+
+      if (mounted) {
+        // Navigate directly to categorization without saving to pending yet
+        final result = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => CategorizeFoodPage(
+              pendingFood: newPendingFood,
+            ),
+          ),
+        );
+        
+        // If user successfully categorized, pop this page
+        if (result == true && mounted) {
+          Navigator.of(context).pop();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Fejl ved kategorisering: $e');
+      }
+    }
   }
 } 
