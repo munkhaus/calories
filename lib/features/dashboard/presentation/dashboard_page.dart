@@ -12,7 +12,6 @@ import '../../food_logging/domain/pending_food_model.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
 import '../../food_logging/presentation/pages/pending_food_selection_page.dart';
 import '../../activity/application/activity_notifier.dart';
-import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/calorie_overview_widget.dart';
 import '../widgets/daily_settings_widget.dart';
@@ -21,6 +20,7 @@ import '../widgets/weight_progress_widget.dart';
 import '../widgets/date_navigation_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../widgets/pending_foods_widget.dart';
+import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../application/selected_date_provider.dart';
 import '../application/date_aware_providers.dart';
 import '../../weight_tracking/application/weight_tracking_notifier.dart';
@@ -28,6 +28,7 @@ import '../../weight_tracking/domain/weight_entry_model.dart';
 import '../../activity/presentation/pages/quick_activity_registration_page.dart';
 import '../../food_logging/presentation/pages/food_search_page.dart';
 import '../widgets/todays_meals_widget.dart';
+import '../../onboarding/domain/user_profile_model.dart';
 
 /// Main dashboard page showing daily overview
 class DashboardPage extends ConsumerStatefulWidget {
@@ -178,8 +179,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                     // Today's activities section
                     TodaysActivitiesWidget(
                       notifier: ref.read(activityNotifierProvider),
-                      onDeleteActivity: _onDeleteActivity,
-                      activityTrackingPreference: onboardingState.userProfile.activityTrackingPreference,
+                      onDeleteActivity: (activity) async {
+                        // Handle activity deletion
+                        await ref.read(activityNotifierProvider).deleteActivity(activity.logEntryId);
+                        _refreshDataForSelectedDate();
+                      },
+                      activityTrackingPreference: userProfile.activityTrackingPreference ?? ActivityTrackingPreference.automatic,
                     ),
                     
                     KSizes.spacingVerticalXL,
@@ -283,24 +288,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
         ],
       ),
     );
-  }
-
-  void _onDeleteActivity(dynamic activity) async {
-    final success = await ref.read(activityNotifierProvider).deleteActivity(activity.logEntryId);
-    if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(success 
-                ? 'Aktivitet slettet' 
-                : 'Kunne ikke slette aktivitet'),
-              backgroundColor: success ? AppColors.success : AppColors.error,
-            ),
-          );
-        }
-      });
-    }
   }
 
   String _getGreeting() {

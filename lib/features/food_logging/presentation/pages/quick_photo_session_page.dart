@@ -5,6 +5,7 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../infrastructure/camera_service.dart';
+import '../../infrastructure/gemini_service.dart';
 import '../../application/pending_food_cubit.dart';
 import '../../domain/pending_food_model.dart';
 import '../../infrastructure/pending_food_service.dart';
@@ -34,7 +35,10 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
   }
 
   Future<void> _captureFirstImage() async {
-    if (_hasStartedCapture) return;
+    if (_hasStartedCapture && _capturedImages.isNotEmpty) {
+      // Only skip if we have actually captured images
+      return;
+    }
     _hasStartedCapture = true;
     
     setState(() {
@@ -89,42 +93,6 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
           _isCapturing = false;
         });
         _showError('Kunne ikke tage billede: $e');
-      }
-    }
-  }
-
-  Future<void> _addToPendingFoods() async {
-    if (_capturedImages.isEmpty) {
-      _showError('Ingen billeder at tilføje');
-      return;
-    }
-
-    try {
-      // Create new pending food element with multiple images
-      final newPendingFood = PendingFoodModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePaths: List.from(_capturedImages), // Copy the list
-        capturedAt: DateTime.now(),
-        notes: 'Multi-billede måltid (${_capturedImages.length} billeder)',
-        isProcessed: false,
-      );
-
-      // Use the existing pending food cubit instead of creating new service
-      final pendingFoodCubit = ref.read(pendingFoodProvider.notifier);
-      await pendingFoodCubit.addNewPendingFood(newPendingFood);
-
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Måltid med ${_capturedImages.length} billeder tilføjet til ventende elementer!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        _showError('Fejl ved tilføjelse: $e');
       }
     }
   }
@@ -211,52 +179,67 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
                   
                   SizedBox(height: KSizes.margin6x),
                   
-                  // Two primary action buttons - MODERN CARD STYLE
-                  Row(
-                    children: [
-                      // Kategoriser Nu - PRIMARY ACTION
-                      Expanded(
-                        child: _buildActionButton(
-                          onTap: _goDirectToCategorizeFoods,
-                          icon: MdiIcons.silverwareForkKnife,
-                          label: 'Kategoriser Nu',
-                          subtitle: 'Gå direkte til registrering',
-                          color: AppColors.primary,
-                          isPrimary: true,
+                  // Single "Færdig" button - Always go to categorization
+                  Container(
+                    width: double.infinity,
+                    height: 80,
+                    child: ElevatedButton.icon(
+                      onPressed: _goDirectToCategorizeFoods,
+                      icon: Icon(
+                        MdiIcons.check,
+                        size: KSizes.iconL,
+                      ),
+                      label: Text(
+                        'Færdig',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeXL,
+                          fontWeight: KSizes.fontWeightBold,
                         ),
                       ),
-                      
-                      SizedBox(width: KSizes.margin4x),
-                      
-                      // Tilføj til Ventende - SECONDARY ACTION
-                      Expanded(
-                        child: _buildActionButton(
-                          onTap: _addToPendingFoods,
-                          icon: MdiIcons.clockOutline,
-                          label: 'Tilføj til Ventende',
-                          subtitle: 'Kategoriser senere',
-                          color: AppColors.warning,
-                          isPrimary: false,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        elevation: 8,
+                        shadowColor: AppColors.primary.withOpacity(0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
                         ),
+                        padding: EdgeInsets.all(KSizes.margin4x),
                       ),
-                    ],
+                    ),
                   ),
                   
                   SizedBox(height: KSizes.margin4x),
                   
-                  // Add more photos button - SUBTLE STYLE
-                  TextButton.icon(
-                    onPressed: _isCapturing ? null : _captureAdditionalImage,
-                    icon: Icon(
-                      _isCapturing ? MdiIcons.loading : MdiIcons.cameraPlus,
-                      size: KSizes.iconS,
-                    ),
-                    label: Text(_isCapturing ? 'Tager billede...' : 'Tag endnu et billede'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: KSizes.margin4x,
-                        vertical: KSizes.margin2x,
+                  // Add more photos button - LARGER AND MORE PROMINENT
+                  Container(
+                    width: double.infinity,
+                    height: 60,
+                    child: ElevatedButton.icon(
+                      onPressed: _isCapturing ? null : _captureAdditionalImage,
+                      icon: Icon(
+                        _isCapturing ? MdiIcons.loading : MdiIcons.cameraPlus,
+                        size: KSizes.iconM,
+                      ),
+                      label: Text(
+                        _isCapturing ? 'Tager billede...' : 'Tag endnu et billede',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeL,
+                          fontWeight: KSizes.fontWeightBold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.info,
+                        foregroundColor: Colors.white,
+                        elevation: 4,
+                        shadowColor: AppColors.info.withOpacity(0.3),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(KSizes.radiusL),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: KSizes.margin6x,
+                          vertical: KSizes.margin4x,
+                        ),
                       ),
                     ),
                   ),
@@ -324,9 +307,9 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
             ),
             SizedBox(height: KSizes.margin4x),
             ElevatedButton.icon(
-              onPressed: _captureFirstImage,
-              icon: Icon(MdiIcons.camera),
-              label: Text('Tag første billede'),
+              onPressed: _isCapturing ? null : _captureFirstImage,
+              icon: Icon(_isCapturing ? MdiIcons.loading : MdiIcons.camera),
+              label: Text(_isCapturing ? 'Tager billede...' : 'Tag første billede'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.warning,
                 foregroundColor: Colors.white,
@@ -435,6 +418,10 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
               onTap: () {
                 setState(() {
                   _capturedImages.removeAt(number - 1);
+                  // Reset hasStartedCapture if no images left so first capture can work again
+                  if (_capturedImages.isEmpty) {
+                    _hasStartedCapture = false;
+                  }
                 });
               },
               child: Container(
@@ -498,62 +485,6 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
     );
   }
 
-  Widget _buildActionButton({
-    required VoidCallback onTap,
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required Color color,
-    required bool isPrimary,
-  }) {
-    return Container(
-      height: 80,
-      child: ElevatedButton(
-        onPressed: onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? color : AppColors.surface,
-          foregroundColor: isPrimary ? Colors.white : color,
-          elevation: isPrimary ? 8 : 0,
-          shadowColor: isPrimary ? color.withOpacity(0.3) : null,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KSizes.radiusL),
-            side: BorderSide(
-              color: color.withOpacity(0.3),
-              width: 2,
-            ),
-          ),
-          padding: EdgeInsets.all(KSizes.margin3x),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: KSizes.iconM,
-            ),
-            SizedBox(height: KSizes.margin1x),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: KSizes.fontSizeM,
-                fontWeight: KSizes.fontWeightBold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: KSizes.fontSizeXS,
-                color: (isPrimary ? Colors.white : color).withOpacity(0.8),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _goDirectToCategorizeFoods() async {
     if (_capturedImages.isEmpty) {
       _showError('Ingen billeder at kategorisere');
@@ -570,19 +501,80 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
         isProcessed: false,
       );
 
+      // Start AI analysis before navigation
+      final geminiService = GeminiService();
+      FoodAnalysisResult? analysisResult;
+      
       if (mounted) {
-        // Navigate directly to categorization without saving to pending yet
+        // Show loading indicator during AI analysis
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: KSizes.margin3x),
+                Text('Analyserer billeder med AI...'),
+              ],
+            ),
+            backgroundColor: AppColors.info,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      try {
+        print('🤖 QuickPhotoSession: Starting AI analysis for categorization with ${_capturedImages.length} images');
+        if (_capturedImages.length > 1) {
+          final result = await geminiService.analyzeMultipleFoodImages(_capturedImages);
+          if (result.isSuccess) {
+            analysisResult = result.success;
+            print('🤖 QuickPhotoSession: Multi-image analysis completed for categorization: ${analysisResult.foodName}');
+          }
+        } else {
+          final result = await geminiService.analyzeFoodImage(_capturedImages.first);
+          if (result.isSuccess) {
+            analysisResult = result.success;
+            print('🤖 QuickPhotoSession: Single image analysis completed for categorization: ${analysisResult.foodName}');
+          }
+        }
+      } catch (e) {
+        print('🤖 QuickPhotoSession: AI analysis failed for categorization: $e');
+        // Continue without AI analysis
+      }
+
+      if (mounted) {
+        // Hide loading indicator
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        
+        // Create pending food with AI results if available
+        final pendingFoodWithAI = analysisResult != null 
+            ? newPendingFood.copyWith(aiResult: analysisResult)
+            : newPendingFood;
+
+        // Navigate directly to categorization
         final result = await Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => CategorizeFoodPage(
-              pendingFood: newPendingFood,
+              pendingFood: pendingFoodWithAI,
+              fromQuickPhoto: true,
             ),
           ),
         );
         
-        // If user successfully categorized, pop this page
+        // If user successfully categorized, navigate back to dashboard (not just pop)
         if (result == true && mounted) {
-          Navigator.of(context).pop();
+          // Navigate back to dashboard (remove all pages from quick photo session)
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/', // Dashboard route
+            (route) => false, // Remove all routes
+          );
         }
       }
     } catch (e) {

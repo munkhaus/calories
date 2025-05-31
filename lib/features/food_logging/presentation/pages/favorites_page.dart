@@ -3,17 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../domain/favorite_food_model.dart';
-import '../../domain/user_food_log_model.dart';
-import '../../infrastructure/favorite_food_service.dart';
 import '../../application/food_logging_notifier.dart';
+import '../../domain/favorite_food_model.dart';
+import '../../infrastructure/favorite_food_service.dart';
 import '../../../activity/domain/favorite_activity_model.dart';
-import '../../../activity/domain/user_activity_log_model.dart';
 import '../../../activity/infrastructure/favorite_activity_service.dart';
 import '../../../activity/application/activity_notifier.dart';
 import '../../../dashboard/application/date_aware_providers.dart';
+import '../../../onboarding/application/onboarding_notifier.dart';
 import '../../application/pending_food_cubit.dart';
-import './food_favorite_detail_page.dart';
+import '../../domain/user_food_log_model.dart';
+import '../../../activity/domain/user_activity_log_model.dart';
+import '../../presentation/pages/food_favorite_detail_page.dart';
 import '../../../activity/presentation/pages/activity_favorite_detail_page.dart';
 
 /// Page for managing both food and activity favorites with tabs
@@ -24,7 +25,8 @@ class FavoritesPage extends ConsumerStatefulWidget {
   ConsumerState<FavoritesPage> createState() => _FavoritesPageState();
 }
 
-class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProviderStateMixin {
+class _FavoritesPageState extends ConsumerState<FavoritesPage>
+    with SingleTickerProviderStateMixin {
   final FavoriteFoodService _foodService = FavoriteFoodService();
   final FavoriteActivityService _activityService = FavoriteActivityService();
   late TabController _tabController;
@@ -38,6 +40,16 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    
+    // Add listener to rebuild UI when tab changes
+    _tabController.addListener(() {
+      if (mounted) {
+        setState(() {
+          // This will trigger a rebuild and update the FloatingActionButton
+        });
+      }
+    });
+    
     _loadFavorites();
   }
 
@@ -108,6 +120,21 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
           indicatorColor: AppColors.primary,
         ),
       ),
+      floatingActionButton: _tabController.index == 0
+          ? FloatingActionButton(
+              heroTag: "food_fab",
+              onPressed: () => _createNewFoodFavorite(),
+              backgroundColor: AppColors.primary,
+              child: Icon(MdiIcons.plus),
+              tooltip: 'Ny mad favorit',
+            )
+          : FloatingActionButton(
+              heroTag: "activity_fab",
+              onPressed: () => _createNewActivityFavorite(),
+              backgroundColor: AppColors.secondary,
+              child: Icon(MdiIcons.plus),
+              tooltip: 'Ny aktivitet favorit',
+            ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
@@ -591,81 +618,41 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
     }
   }
 
+  /// Use activity favorite with better UX
   Future<void> _useActivityFavorite(FavoriteActivityModel favorite) async {
     try {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                ),
-                SizedBox(width: KSizes.margin2x),
-                Flexible(child: Text('Tilføjer ${favorite.activityName}...')),
-              ],
-            ),
-            backgroundColor: AppColors.info,
-            duration: Duration(milliseconds: 1500),
-          ),
-        );
-        
-        // Convert favorite to UserActivityLogModel and log directly
-        final activityLog = favorite.toUserActivityLog();
+      // Convert favorite to UserActivityLogModel and log directly
+      final activityLog = favorite.toUserActivityLog();
 
-        // Create an ActivityNotifier instance to log the activity
-        final activityNotifier = ref.read(activityNotifierProvider);
-        await activityNotifier.logActivity(activityLog);
+      // Create an ActivityNotifier instance to log the activity
+      final activityNotifier = ref.read(activityNotifierProvider);
+      await activityNotifier.logActivity(activityLog);
 
-        // Update favorite usage
-        final updatedFavorite = favorite.withUpdatedUsage();
-        await _activityService.updateFavorite(updatedFavorite);
+      // Update favorite usage
+      final updatedFavorite = favorite.withUpdatedUsage();
+      await _activityService.updateFavorite(updatedFavorite);
 
-        print('⭐ FavoriteActivityService: Updated favorite: ${favorite.activityName}');
-        
-        // Use the new centralized refresh function
-        refreshActivityCalories(ref);
-        
-        // Also refresh pending foods
-        await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
-      }
+      // Use the new centralized refresh function
+      refreshActivityCalories(ref);
+      
+      // Also refresh pending foods
+      await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
       
       if (mounted) {
-        // Clear any existing snackbars
-        ScaffoldMessenger.of(context).clearSnackBars();
-        
+        // Show simple success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(MdiIcons.check, color: Colors.white),
-                SizedBox(width: KSizes.margin2x),
-                Flexible(child: Text('${favorite.activityName} er tilføjet!')),
-              ],
-            ),
+            content: Text('${favorite.activityName} tilføjet'),
             backgroundColor: AppColors.success,
-            duration: Duration(milliseconds: 1500),
+            duration: Duration(seconds: 2),
           ),
         );
-        
-        // Navigate back to dashboard after a short delay
-        Future.delayed(Duration(milliseconds: 800), () {
-          if (mounted) {
-            Navigator.of(context).pop();
-          }
-        });
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Fejl ved tilføjelse af aktivitet: $e'),
+            content: Text('Fejl: $e'),
             backgroundColor: AppColors.error,
           ),
         );
@@ -845,5 +832,39 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
     if (name.contains('tennis')) return MdiIcons.tennis;
     if (name.contains('fodbold')) return MdiIcons.soccer;
     return MdiIcons.runFast;
+  }
+
+  String _getActivityDurationText(FavoriteActivityModel favorite) {
+    if (favorite.inputType == ActivityInputType.varighed) {
+      return '${favorite.durationMinutes.toInt()} minutter';
+    } else {
+      return '${favorite.distanceKm} km';
+    }
+  }
+
+  /// Navigate to create new food favorite
+  void _createNewFoodFavorite() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const FoodFavoriteDetailPage(),
+      ),
+    );
+    
+    if (result == true) {
+      _loadFavorites();
+    }
+  }
+
+  /// Navigate to create new activity favorite
+  void _createNewActivityFavorite() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ActivityFavoriteDetailPage(),
+      ),
+    );
+    
+    if (result == true) {
+      _loadFavorites();
+    }
   }
 } 

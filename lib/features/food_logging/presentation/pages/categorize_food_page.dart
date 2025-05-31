@@ -16,10 +16,12 @@ import '../../infrastructure/favorite_food_service.dart';
 /// Page for categorizing a pending food photo
 class CategorizeFoodPage extends ConsumerStatefulWidget {
   final PendingFoodModel pendingFood;
+  final bool fromQuickPhoto; // New parameter to indicate source
 
   const CategorizeFoodPage({
     super.key,
     required this.pendingFood,
+    this.fromQuickPhoto = false, // Default to false for backwards compatibility
   });
 
   @override
@@ -68,7 +70,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text('Kategoriser Mad'),
+        title: Text(widget.fromQuickPhoto ? 'Kategoriser Mad (Hurtig Billede)' : 'Kategoriser Mad'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: AppColors.textPrimary),
@@ -77,6 +79,17 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           fontSize: KSizes.fontSizeL,
           fontWeight: KSizes.fontWeightBold,
         ),
+        automaticallyImplyLeading: !widget.fromQuickPhoto,
+        leading: widget.fromQuickPhoto ? IconButton(
+          icon: Icon(Icons.home, color: AppColors.textPrimary),
+          onPressed: () {
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              '/',
+              (route) => false,
+            );
+          },
+          tooltip: 'Gå til dashboard',
+        ) : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -823,64 +836,143 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   Widget _buildActionButtons() {
     return Column(
       children: [
-        // Categorize button
-        SizedBox(
+        // Primary action - Kategoriser Mad
+        Container(
           width: double.infinity,
-          child: ElevatedButton(
+          height: 60,
+          child: ElevatedButton.icon(
             onPressed: _isProcessing ? null : _categorizeFood,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: KSizes.margin4x),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-              ),
-            ),
-            child: _isProcessing
+            icon: _isProcessing 
                 ? SizedBox(
-                    height: 20,
                     width: 20,
+                    height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : Text(
-                    'Kategoriser og Gem',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeL,
-                      fontWeight: KSizes.fontWeightBold,
-                    ),
-                  ),
+                : Icon(MdiIcons.check, size: KSizes.iconM),
+            label: Text(
+              _isProcessing ? 'Kategoriserer...' : 'Kategoriser Mad',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                fontWeight: KSizes.fontWeightBold,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 8,
+              shadowColor: AppColors.primary.withOpacity(0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusL),
+              ),
+            ),
           ),
         ),
         
         SizedBox(height: KSizes.margin3x),
         
-        // Delete button
-        SizedBox(
+        // Secondary action - Gør det senere
+        Container(
           width: double.infinity,
-          child: OutlinedButton(
-            onPressed: _isProcessing ? null : _deleteImage,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-              side: BorderSide(color: AppColors.error),
-              padding: EdgeInsets.symmetric(vertical: KSizes.margin4x),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
+          height: 50,
+          child: OutlinedButton.icon(
+            onPressed: _isProcessing ? null : _saveForLater,
+            icon: Icon(MdiIcons.clockOutline, size: KSizes.iconS),
+            label: Text(
+              'Gør det senere',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                fontWeight: KSizes.fontWeightSemiBold,
               ),
             ),
-            child: Text(
-              'Slet Billede',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeL,
-                fontWeight: KSizes.fontWeightMedium,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.warning,
+              side: BorderSide(color: AppColors.warning, width: 2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusL),
               ),
             ),
           ),
         ),
+        
+        SizedBox(height: KSizes.margin2x),
+        
+        // Tertiary actions row
+        Row(
+          children: [
+            // Delete button
+            Expanded(
+              child: TextButton.icon(
+                onPressed: _isProcessing ? null : _deleteImage,
+                icon: Icon(MdiIcons.delete, size: KSizes.iconS),
+                label: Text('Slet'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+              ),
+            ),
+            
+            SizedBox(width: KSizes.margin2x),
+            
+            // Analyze button
+            Expanded(
+              child: TextButton.icon(
+                onPressed: (_isProcessing || _isAnalyzing) ? null : _analyzeImage,
+                icon: _isAnalyzing 
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.info),
+                        ),
+                      )
+                    : Icon(MdiIcons.brain, size: KSizes.iconS),
+                label: Text(_isAnalyzing ? 'Analyserer...' : 'AI Analyse'),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.info,
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
+  }
+
+  void _saveForLater() async {
+    try {
+      setState(() => _isProcessing = true);
+      
+      // Just pop back without processing - the pending food stays in the list
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mad gemt til senere kategorisering'),
+            backgroundColor: AppColors.info,
+          ),
+        );
+        
+        // Navigate to dashboard instead of just popping back
+        // This makes sense because the pending food is already saved
+        if (widget.fromQuickPhoto) {
+          // Coming from quick photo session - go to dashboard
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/',
+            (route) => false,
+          );
+        } else {
+          // Coming from elsewhere - just pop back
+          Navigator.of(context).pop();
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
+    }
   }
 
   void _categorizeFood() async {
@@ -970,7 +1062,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
             backgroundColor: AppColors.success,
           ),
         );
-        Navigator.of(context).pop();
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {

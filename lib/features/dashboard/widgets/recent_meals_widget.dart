@@ -367,13 +367,6 @@ class RecentMealsWidget extends ConsumerWidget {
           SnackBar(
             content: Text('${meal.foodName} er slettet'),
             backgroundColor: AppColors.success,
-            action: SnackBarAction(
-              label: 'Fortryd',
-              textColor: Colors.white,
-              onPressed: () {
-                ref.read(foodLoggingProvider.notifier).logFood(meal);
-              },
-            ),
           ),
         );
       },
