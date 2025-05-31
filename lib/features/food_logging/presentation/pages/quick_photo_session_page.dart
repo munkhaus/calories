@@ -10,6 +10,7 @@ import '../../application/pending_food_cubit.dart';
 import '../../domain/pending_food_model.dart';
 import '../../infrastructure/pending_food_service.dart';
 import '../../presentation/pages/categorize_food_page.dart';
+import '../../../dashboard/presentation/dashboard_page.dart';
 
 /// Page for quick photo session - starts immediately with camera capture
 /// Allows multiple photos of the same meal element
@@ -568,13 +569,13 @@ class _QuickPhotoSessionPageState extends ConsumerState<QuickPhotoSessionPage> {
           ),
         );
         
-        // If user successfully categorized, navigate back to dashboard (not just pop)
+        // Handle different results from categorization
         if (result == true && mounted) {
-          // Navigate back to dashboard (remove all pages from quick photo session)
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/', // Dashboard route
-            (route) => false, // Remove all routes
-          );
+          // User successfully categorized - go back to dashboard
+          Navigator.of(context).pop();
+        } else if (result == 'saved_for_later' && mounted) {
+          // User saved for later - also go back to dashboard
+          Navigator.of(context).pop();
         }
       }
     } catch (e) {

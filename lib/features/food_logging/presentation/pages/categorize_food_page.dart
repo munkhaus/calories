@@ -12,6 +12,7 @@ import '../../application/pending_food_cubit.dart';
 import '../../application/food_logging_notifier.dart';
 import '../../infrastructure/gemini_service.dart';
 import '../../infrastructure/favorite_food_service.dart';
+import '../../../dashboard/presentation/dashboard_page.dart';
 
 /// Page for categorizing a pending food photo
 class CategorizeFoodPage extends ConsumerStatefulWidget {
@@ -79,17 +80,6 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           fontSize: KSizes.fontSizeL,
           fontWeight: KSizes.fontWeightBold,
         ),
-        automaticallyImplyLeading: !widget.fromQuickPhoto,
-        leading: widget.fromQuickPhoto ? IconButton(
-          icon: Icon(Icons.home, color: AppColors.textPrimary),
-          onPressed: () {
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              '/',
-              (route) => false,
-            );
-          },
-          tooltip: 'Gå til dashboard',
-        ) : null,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -955,18 +945,8 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           ),
         );
         
-        // Navigate to dashboard instead of just popping back
-        // This makes sense because the pending food is already saved
-        if (widget.fromQuickPhoto) {
-          // Coming from quick photo session - go to dashboard
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            '/',
-            (route) => false,
-          );
-        } else {
-          // Coming from elsewhere - just pop back
-          Navigator.of(context).pop();
-        }
+        // Return special value to indicate save for later
+        Navigator.of(context).pop('saved_for_later');
       }
     } finally {
       if (mounted) {
@@ -1106,16 +1086,25 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
       setState(() => _isProcessing = true);
 
       try {
-        await ref.read(pendingFoodProvider.notifier).deletePendingFood(widget.pendingFood.id);
+        final success = await ref.read(pendingFoodProvider.notifier).deletePendingFood(widget.pendingFood.id);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Billede slettet'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-          Navigator.of(context).pop();
+          if (success) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Billede slettet'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+            Navigator.of(context).pop();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Kunne ikke slette billede'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
         }
       } catch (e) {
         if (mounted) {

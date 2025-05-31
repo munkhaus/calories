@@ -1,7 +1,7 @@
 name: calories
-description: "A new Flutter project."
+description: "Calorie tracking app with AI-powered food analysis"
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0+1
 
 environment:
   sdk: ^3.8.0

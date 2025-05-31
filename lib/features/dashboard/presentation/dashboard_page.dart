@@ -12,6 +12,7 @@ import '../../food_logging/domain/pending_food_model.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
 import '../../food_logging/presentation/pages/pending_food_selection_page.dart';
 import '../../activity/application/activity_notifier.dart';
+import '../../activity/domain/user_activity_log_model.dart';
 import '../widgets/dashboard_header.dart';
 import '../widgets/calorie_overview_widget.dart';
 import '../widgets/daily_settings_widget.dart';
