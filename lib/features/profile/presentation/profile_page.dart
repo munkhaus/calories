@@ -9,6 +9,7 @@ import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
 import '../../info/presentation/info_page.dart';
+import '../../food_database/application/food_database_cubit.dart';
 import 'activity_settings_page.dart';
 
 /// Profile page showing user onboarding results and settings
@@ -473,6 +474,13 @@ class ProfilePage extends ConsumerWidget {
               icon: MdiIcons.refresh,
               onTap: () => _showRestartOnboardingDialog(context, ref),
             ),
+          
+          ProfileOptionCard(
+            title: 'Slet maddatabasen',
+            subtitle: 'Fjern alle madoplysninger og data',
+            icon: MdiIcons.delete,
+            onTap: () => _showDeleteFoodDatabaseDialog(context, ref),
+          ),
         ],
       ),
     );
@@ -832,6 +840,124 @@ class ProfilePage extends ConsumerWidget {
               ),
               child: Text(
                 'Genberegn',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDeleteFoodDatabaseDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusXL),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Icon(
+                  MdiIcons.delete,
+                  color: Colors.white,
+                  size: KSizes.iconS,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin3x),
+              Text(
+                'Slet maddatabasen',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeL,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Container(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(KSizes.radiusL),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Er du sikker på, at du vil slette alle madoplysninger og data?',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    color: AppColors.textPrimary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: KSizes.margin2x),
+                Text(
+                  'Dette kan ikke gendannes.',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin4x,
+                  vertical: KSizes.margin2x,
+                ),
+              ),
+              child: Text(
+                'Annuller',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await ref.read(foodDatabaseProvider.notifier).clearAllFoods();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('✅ Maddatabasen er nu tom!'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.warning,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: KSizes.margin4x,
+                  vertical: KSizes.margin2x,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                ),
+              ),
+              child: Text(
+                'Slet',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                 ),

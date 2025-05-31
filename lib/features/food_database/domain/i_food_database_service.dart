@@ -46,6 +46,9 @@ abstract class IFoodDatabaseService {
   /// Delete a food record
   Future<Result<void, FoodDatabaseError>> deleteFood(String id);
 
+  /// Clear all food records from the database
+  Future<Result<void, FoodDatabaseError>> clearAllFoods();
+
   /// Get recent foods (last used)
   Future<Result<List<FoodRecordModel>, FoodDatabaseError>> getRecentFoods({int limit = 10});
 

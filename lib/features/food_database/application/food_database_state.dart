@@ -10,11 +10,11 @@ class FoodDatabaseState with _$FoodDatabaseState {
 
   const factory FoodDatabaseState({
     required DataState<List<FoodRecordModel>> foodsDataState,
+    @Default('') String errorMessage,
     @Default('') String searchQuery,
     @Default(null) FoodCategory? selectedCategory,
     @Default(null) FoodRecordModel? editingFood,
     @Default(false) bool isAddingFood,
-    @Default('') String errorMessage,
   }) = _FoodDatabaseState;
 
   // Helper getters

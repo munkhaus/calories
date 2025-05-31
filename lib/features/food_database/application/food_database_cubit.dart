@@ -145,13 +145,68 @@ class FoodDatabaseCubit extends StateNotifier<FoodDatabaseState> {
       }
     } catch (e) {
       print('🍽️ FoodDatabaseCubit: Unexpected error deleting food: $e');
-      state = state.copyWith(errorMessage: 'Uventet fejl ved sletning');
+      state = state.copyWith(errorMessage: 'Uventet fejl ved sletning af mad');
+      return false;
+    }
+  }
+
+  Future<bool> clearAllFoods() async {
+    try {
+      state = state.copyWith(
+        foodsDataState: const DataState.loading(),
+        errorMessage: '',
+      );
+
+      final result = await _service.clearAllFoods();
+      if (result.isSuccess) {
+        print('🍽️ FoodDatabaseCubit: Cleared all foods from database');
+        
+        // Update local state to empty list
+        state = state.copyWith(
+          foodsDataState: const DataState.success([]),
+          errorMessage: '',
+        );
+        return true;
+      } else {
+        print('🍽️ FoodDatabaseCubit: Error clearing all foods: ${result.failure}');
+        state = state.copyWith(
+          foodsDataState: const DataState.error(),
+          errorMessage: result.failure.message,
+        );
+        return false;
+      }
+    } catch (e) {
+      print('🍽️ FoodDatabaseCubit: Unexpected error clearing all foods: $e');
+      state = state.copyWith(
+        foodsDataState: const DataState.error(),
+        errorMessage: 'Uventet fejl ved sletning af alle fødevarer',
+      );
       return false;
     }
   }
 
   void clearError() {
     state = state.copyWith(errorMessage: '');
+  }
+
+  Future<void> searchFoods(String query) async {
+    try {
+      final result = await _service.searchFoods(query);
+      if (result.isSuccess) {
+        print('🍽️ FoodDatabaseCubit: Search completed for: "$query" - found ${result.success.length} results');
+        state = state.copyWith(
+          foodsDataState: DataState.success(result.success),
+          searchQuery: query,
+          errorMessage: '',
+        );
+      } else {
+        print('🍽️ FoodDatabaseCubit: Error searching foods: ${result.failure}');
+        state = state.copyWith(errorMessage: result.failure.message);
+      }
+    } catch (e) {
+      print('🍽️ FoodDatabaseCubit: Unexpected error searching foods: $e');
+      state = state.copyWith(errorMessage: 'Uventet fejl ved søgning');
+    }
   }
 }
 

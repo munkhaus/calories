@@ -3,6 +3,7 @@ import 'package:result_type/result_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/food_record_model.dart';
 import '../domain/i_food_database_service.dart';
+import '../domain/online_food_models.dart';
 
 class FoodDatabaseService implements IFoodDatabaseService {
   static const String _storageKey = 'food_database';
@@ -61,6 +62,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 dl', grams: 35.0, isDefault: true),
           const ServingSize(name: '1 kop', grams: 80.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
       
@@ -77,6 +80,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 glas', grams: 200.0, isDefault: true),
           const ServingSize(name: '1 dl', grams: 100.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -93,6 +98,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 skive', grams: 37.0, isDefault: true),
           const ServingSize(name: '1 tynd skive', grams: 25.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -110,6 +117,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 bryst', grams: 150.0, isDefault: true),
           const ServingSize(name: '1 portion', grams: 120.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -126,6 +135,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 dl', grams: 80.0, isDefault: true),
           const ServingSize(name: '1 portion', grams: 150.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -142,6 +153,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 portion', grams: 100.0, isDefault: true),
           const ServingSize(name: '1 lille portion', grams: 75.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -159,6 +172,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 portion', grams: 125.0, isDefault: true),
           const ServingSize(name: '1 lille portion', grams: 100.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -176,6 +191,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 lille kartoffel', grams: 100.0, isDefault: false),
           const ServingSize(name: '3 små kartofler', grams: 200.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -193,6 +210,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 banan', grams: 120.0, isDefault: true),
           const ServingSize(name: '1 lille banan', grams: 90.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -209,6 +228,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 æble', grams: 150.0, isDefault: true),
           const ServingSize(name: '1 lille æble', grams: 100.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -226,6 +247,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 kop', grams: 200.0, isDefault: true),
           const ServingSize(name: '1 espresso', grams: 30.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
 
@@ -242,6 +265,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
           const ServingSize(name: '1 glas', grams: 200.0, isDefault: true),
           const ServingSize(name: '1 flaske', grams: 500.0, isDefault: false),
         ],
+        source: FoodSource.userCreated,
+        sourceProvider: '',
         createdAt: DateTime.now(),
       ),
     ];
@@ -287,17 +312,210 @@ class FoodDatabaseService implements IFoodDatabaseService {
         return Success(_foods);
       }
       
-      final lowerQuery = query.toLowerCase();
-      final results = _foods.where((food) {
-        return food.name.toLowerCase().contains(lowerQuery) ||
-               food.description.toLowerCase().contains(lowerQuery);
-      }).toList();
-      
+      final results = _performAdvancedSearch(query);
       return Success(results);
     } catch (e) {
       print('🍽️ FoodDatabaseService: Error searching foods: $e');
       return Failure(FoodDatabaseError.storage);
     }
+  }
+
+  List<FoodRecordModel> _performAdvancedSearch(String query) {
+    final lowerQuery = query.toLowerCase().trim();
+    final queryTerms = lowerQuery.split(' ').where((term) => term.isNotEmpty).toList();
+    
+    final scoredResults = <FoodRecordModel, double>{};
+    
+    for (final food in _foods) {
+      final score = _calculateFoodScore(food, queryTerms, lowerQuery);
+      if (score > 0) {
+        scoredResults[food] = score;
+      }
+    }
+    
+    // Sort by score (highest first)
+    final sortedResults = scoredResults.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    
+    return sortedResults.map((entry) => entry.key).toList();
+  }
+
+  double _calculateFoodScore(FoodRecordModel food, List<String> queryTerms, String fullQuery) {
+    double score = 0.0;
+    final foodName = food.name.toLowerCase();
+    final foodDescription = food.description.toLowerCase();
+    final foodType = FoodImageHelper.getFoodType(food.name);
+    final categoryName = _getCategoryDisplayName(food.category).toLowerCase();
+    
+    // Tags for this food item
+    final foodTags = _generateFoodTags(food);
+    
+    // 1. Exact name match (highest priority)
+    if (foodName == fullQuery) {
+      score += 100.0;
+    }
+    
+    // 2. Name starts with query
+    else if (foodName.startsWith(fullQuery)) {
+      score += 80.0;
+    }
+    
+    // 3. Name contains full query
+    else if (foodName.contains(fullQuery)) {
+      score += 60.0;
+    }
+    
+    // 4. Check individual terms against name and description
+    for (final term in queryTerms) {
+      if (foodName.contains(term)) {
+        score += 40.0;
+      }
+      if (foodDescription.contains(term)) {
+        score += 20.0;
+      }
+    }
+    
+    // 5. Tag-based scoring
+    for (final term in queryTerms) {
+      // Check food type tags
+      if (foodType.displayName.toLowerCase().contains(term)) {
+        score += 50.0;
+      }
+      
+      // Check category tags
+      if (categoryName.contains(term)) {
+        score += 45.0;
+      }
+      
+      // Check custom food tags
+      for (final tag in foodTags) {
+        if (tag.toLowerCase().contains(term)) {
+          score += 35.0;
+        }
+      }
+    }
+    
+    // 6. Meal time matching
+    for (final term in queryTerms) {
+      if (_isMealTimeKeyword(term)) {
+        final mealCategory = _getMealCategoryFromKeyword(term);
+        if (mealCategory == food.category) {
+          score += 30.0;
+        }
+      }
+    }
+    
+    // 7. Fuzzy matching bonus for partial matches
+    for (final term in queryTerms) {
+      if (term.length >= 3) {
+        if (_fuzzyMatch(foodName, term)) {
+          score += 15.0;
+        }
+        if (_fuzzyMatch(foodDescription, term)) {
+          score += 10.0;
+        }
+      }
+    }
+    
+    return score;
+  }
+
+  List<String> _generateFoodTags(FoodRecordModel food) {
+    final tags = <String>[];
+    final name = food.name.toLowerCase();
+    
+    // Ingredient-based tags
+    if (name.contains('æble')) tags.addAll(['frugt', 'vitamin', 'fiber']);
+    if (name.contains('banan')) tags.addAll(['frugt', 'kalium', 'energi']);
+    if (name.contains('brød')) tags.addAll(['kulhydrat', 'fiber', 'morgenmad']);
+    if (name.contains('ris')) tags.addAll(['kulhydrat', 'basis', 'frokost', 'aftensmad']);
+    if (name.contains('pasta')) tags.addAll(['kulhydrat', 'italiensk', 'aftensmad']);
+    if (name.contains('kylling')) tags.addAll(['protein', 'magert', 'frokost', 'aftensmad']);
+    if (name.contains('laks')) tags.addAll(['protein', 'omega3', 'fisk', 'aftensmad']);
+    if (name.contains('yoghurt')) tags.addAll(['protein', 'probiotika', 'morgenmad', 'snack']);
+    if (name.contains('ost')) tags.addAll(['protein', 'calcium', 'fedt']);
+    if (name.contains('salat')) tags.addAll(['grøntsager', 'fiber', 'vitaminer', 'frokost']);
+    if (name.contains('kartoffel')) tags.addAll(['kulhydrat', 'kalium', 'aftensmad']);
+    if (name.contains('tomat')) tags.addAll(['grøntsager', 'lycopin', 'vitamin']);
+    if (name.contains('gulerod')) tags.addAll(['grøntsager', 'betacaroten', 'fiber']);
+    
+    // Preparation method tags
+    if (name.contains('grillet')) tags.add('grillet');
+    if (name.contains('kogt')) tags.add('kogt');
+    if (name.contains('bagt')) tags.add('bagt');
+    if (name.contains('stegt')) tags.add('stegt');
+    
+    // Meal timing tags
+    if (name.contains('morgenmad') || name.contains('müsli') || name.contains('havre')) {
+      tags.add('morgenmad');
+    }
+    
+    return tags;
+  }
+
+  String _getCategoryDisplayName(FoodCategory category) {
+    switch (category) {
+      case FoodCategory.breakfast:
+        return 'Morgenmad';
+      case FoodCategory.lunch:
+        return 'Frokost';
+      case FoodCategory.dinner:
+        return 'Aftensmad';
+      case FoodCategory.snack:
+        return 'Snack';
+      case FoodCategory.dessert:
+        return 'Dessert';
+      case FoodCategory.drink:
+        return 'Drikkevare';
+      case FoodCategory.other:
+        return 'Andet';
+    }
+  }
+
+  bool _isMealTimeKeyword(String term) {
+    final mealKeywords = [
+      'morgenmad', 'morgen', 'breakfast',
+      'frokost', 'lunch', 'middag',
+      'aftensmad', 'aften', 'dinner',
+      'snack', 'mellemmåltid'
+    ];
+    return mealKeywords.contains(term);
+  }
+
+  FoodCategory? _getMealCategoryFromKeyword(String term) {
+    switch (term) {
+      case 'morgenmad':
+      case 'morgen':
+      case 'breakfast':
+        return FoodCategory.breakfast;
+      case 'frokost':
+      case 'lunch':
+      case 'middag':
+        return FoodCategory.lunch;
+      case 'aftensmad':
+      case 'aften':
+      case 'dinner':
+        return FoodCategory.dinner;
+      case 'snack':
+      case 'mellemmåltid':
+        return FoodCategory.snack;
+      default:
+        return null;
+    }
+  }
+
+  bool _fuzzyMatch(String text, String pattern) {
+    if (pattern.length > text.length) return false;
+    
+    int textIndex = 0;
+    for (int i = 0; i < pattern.length; i++) {
+      while (textIndex < text.length && text[textIndex] != pattern[i]) {
+        textIndex++;
+      }
+      if (textIndex >= text.length) return false;
+      textIndex++;
+    }
+    return true;
   }
 
   @override
@@ -403,6 +621,26 @@ class FoodDatabaseService implements IFoodDatabaseService {
       return Success(null);
     } catch (e) {
       print('🍽️ FoodDatabaseService: Error deleting food: $e');
+      return Failure(FoodDatabaseError.storage);
+    }
+  }
+
+  @override
+  Future<Result<void, FoodDatabaseError>> clearAllFoods() async {
+    try {
+      await _ensureInitialized();
+      
+      final foodCount = _foods.length;
+      _foods.clear();
+      _recentFoodIds.clear();
+      
+      await _saveFoods();
+      await _saveRecentFoods();
+      
+      print('🍽️ FoodDatabaseService: Cleared all $foodCount foods from database');
+      return Success(null);
+    } catch (e) {
+      print('🍽️ FoodDatabaseService: Error clearing all foods: $e');
       return Failure(FoodDatabaseError.storage);
     }
   }

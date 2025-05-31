@@ -38,8 +38,15 @@ _$FoodRecordModelImpl _$$FoodRecordModelImplFromJson(
           ?.map((e) => ServingSize.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
+  source:
+      $enumDecodeNullable(_$FoodSourceEnumMap, json['source']) ??
+      FoodSource.userCreated,
+  sourceProvider: json['sourceProvider'] as String? ?? '',
   isCustom: json['isCustom'] as bool? ?? false,
   createdBy: json['createdBy'] as String? ?? '',
+  tags:
+      (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
   createdAt: DateTime.parse(json['createdAt'] as String),
   updatedAt: json['updatedAt'] == null
       ? null
@@ -58,8 +65,11 @@ Map<String, dynamic> _$$FoodRecordModelImplToJson(
   'fatPer100g': instance.fatPer100g,
   'category': _$FoodCategoryEnumMap[instance.category]!,
   'servingSizes': instance.servingSizes,
+  'source': _$FoodSourceEnumMap[instance.source]!,
+  'sourceProvider': instance.sourceProvider,
   'isCustom': instance.isCustom,
   'createdBy': instance.createdBy,
+  'tags': instance.tags,
   'createdAt': instance.createdAt.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
 };
@@ -72,4 +82,10 @@ const _$FoodCategoryEnumMap = {
   FoodCategory.drink: 'drink',
   FoodCategory.dessert: 'dessert',
   FoodCategory.other: 'other',
+};
+
+const _$FoodSourceEnumMap = {
+  FoodSource.userCreated: 'userCreated',
+  FoodSource.onlineDatabase: 'onlineDatabase',
+  FoodSource.imported: 'imported',
 };

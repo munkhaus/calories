@@ -62,6 +62,37 @@ class ServingSize with _$ServingSize {
   factory ServingSize.fromJson(Map<String, dynamic> json) => _$ServingSizeFromJson(json);
 }
 
+/// Source of the food data
+enum FoodSource {
+  userCreated,
+  onlineDatabase,
+  imported,
+}
+
+extension FoodSourceExtension on FoodSource {
+  String get displayName {
+    switch (this) {
+      case FoodSource.userCreated:
+        return 'Bruger';
+      case FoodSource.onlineDatabase:
+        return 'Online';
+      case FoodSource.imported:
+        return 'Importeret';
+    }
+  }
+
+  String get emoji {
+    switch (this) {
+      case FoodSource.userCreated:
+        return '👤';
+      case FoodSource.onlineDatabase:
+        return '🌐';
+      case FoodSource.imported:
+        return '📥';
+    }
+  }
+}
+
 @freezed
 class FoodRecordModel with _$FoodRecordModel {
   const FoodRecordModel._();
@@ -76,8 +107,11 @@ class FoodRecordModel with _$FoodRecordModel {
     @Default(0.0) double fatPer100g,
     @Default(FoodCategory.other) FoodCategory category,
     @Default([]) List<ServingSize> servingSizes,
+    @Default(FoodSource.userCreated) FoodSource source,
+    @Default('') String sourceProvider,
     @Default(false) bool isCustom,
     @Default('') String createdBy,
+    @Default([]) List<String> tags,
     required DateTime createdAt,
     DateTime? updatedAt,
   }) = _FoodRecordModel;

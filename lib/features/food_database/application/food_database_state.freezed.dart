@@ -19,11 +19,11 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$FoodDatabaseState {
   DataState<List<FoodRecordModel>> get foodsDataState =>
       throw _privateConstructorUsedError;
+  String get errorMessage => throw _privateConstructorUsedError;
   String get searchQuery => throw _privateConstructorUsedError;
   FoodCategory? get selectedCategory => throw _privateConstructorUsedError;
   FoodRecordModel? get editingFood => throw _privateConstructorUsedError;
   bool get isAddingFood => throw _privateConstructorUsedError;
-  String get errorMessage => throw _privateConstructorUsedError;
 
   /// Create a copy of FoodDatabaseState
   /// with the given fields replaced by the non-null parameter values.
@@ -41,11 +41,11 @@ abstract class $FoodDatabaseStateCopyWith<$Res> {
   @useResult
   $Res call({
     DataState<List<FoodRecordModel>> foodsDataState,
+    String errorMessage,
     String searchQuery,
     FoodCategory? selectedCategory,
     FoodRecordModel? editingFood,
     bool isAddingFood,
-    String errorMessage,
   });
 
   $FoodRecordModelCopyWith<$Res>? get editingFood;
@@ -67,11 +67,11 @@ class _$FoodDatabaseStateCopyWithImpl<$Res, $Val extends FoodDatabaseState>
   @override
   $Res call({
     Object? foodsDataState = null,
+    Object? errorMessage = null,
     Object? searchQuery = null,
     Object? selectedCategory = freezed,
     Object? editingFood = freezed,
     Object? isAddingFood = null,
-    Object? errorMessage = null,
   }) {
     return _then(
       _value.copyWith(
@@ -79,6 +79,10 @@ class _$FoodDatabaseStateCopyWithImpl<$Res, $Val extends FoodDatabaseState>
                 ? _value.foodsDataState
                 : foodsDataState // ignore: cast_nullable_to_non_nullable
                       as DataState<List<FoodRecordModel>>,
+            errorMessage: null == errorMessage
+                ? _value.errorMessage
+                : errorMessage // ignore: cast_nullable_to_non_nullable
+                      as String,
             searchQuery: null == searchQuery
                 ? _value.searchQuery
                 : searchQuery // ignore: cast_nullable_to_non_nullable
@@ -95,10 +99,6 @@ class _$FoodDatabaseStateCopyWithImpl<$Res, $Val extends FoodDatabaseState>
                 ? _value.isAddingFood
                 : isAddingFood // ignore: cast_nullable_to_non_nullable
                       as bool,
-            errorMessage: null == errorMessage
-                ? _value.errorMessage
-                : errorMessage // ignore: cast_nullable_to_non_nullable
-                      as String,
           )
           as $Val,
     );
@@ -130,11 +130,11 @@ abstract class _$$FoodDatabaseStateImplCopyWith<$Res>
   @useResult
   $Res call({
     DataState<List<FoodRecordModel>> foodsDataState,
+    String errorMessage,
     String searchQuery,
     FoodCategory? selectedCategory,
     FoodRecordModel? editingFood,
     bool isAddingFood,
-    String errorMessage,
   });
 
   @override
@@ -156,11 +156,11 @@ class __$$FoodDatabaseStateImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? foodsDataState = null,
+    Object? errorMessage = null,
     Object? searchQuery = null,
     Object? selectedCategory = freezed,
     Object? editingFood = freezed,
     Object? isAddingFood = null,
-    Object? errorMessage = null,
   }) {
     return _then(
       _$FoodDatabaseStateImpl(
@@ -168,6 +168,10 @@ class __$$FoodDatabaseStateImplCopyWithImpl<$Res>
             ? _value.foodsDataState
             : foodsDataState // ignore: cast_nullable_to_non_nullable
                   as DataState<List<FoodRecordModel>>,
+        errorMessage: null == errorMessage
+            ? _value.errorMessage
+            : errorMessage // ignore: cast_nullable_to_non_nullable
+                  as String,
         searchQuery: null == searchQuery
             ? _value.searchQuery
             : searchQuery // ignore: cast_nullable_to_non_nullable
@@ -184,10 +188,6 @@ class __$$FoodDatabaseStateImplCopyWithImpl<$Res>
             ? _value.isAddingFood
             : isAddingFood // ignore: cast_nullable_to_non_nullable
                   as bool,
-        errorMessage: null == errorMessage
-            ? _value.errorMessage
-            : errorMessage // ignore: cast_nullable_to_non_nullable
-                  as String,
       ),
     );
   }
@@ -198,15 +198,18 @@ class __$$FoodDatabaseStateImplCopyWithImpl<$Res>
 class _$FoodDatabaseStateImpl extends _FoodDatabaseState {
   const _$FoodDatabaseStateImpl({
     required this.foodsDataState,
+    this.errorMessage = '',
     this.searchQuery = '',
     this.selectedCategory = null,
     this.editingFood = null,
     this.isAddingFood = false,
-    this.errorMessage = '',
   }) : super._();
 
   @override
   final DataState<List<FoodRecordModel>> foodsDataState;
+  @override
+  @JsonKey()
+  final String errorMessage;
   @override
   @JsonKey()
   final String searchQuery;
@@ -219,13 +222,10 @@ class _$FoodDatabaseStateImpl extends _FoodDatabaseState {
   @override
   @JsonKey()
   final bool isAddingFood;
-  @override
-  @JsonKey()
-  final String errorMessage;
 
   @override
   String toString() {
-    return 'FoodDatabaseState(foodsDataState: $foodsDataState, searchQuery: $searchQuery, selectedCategory: $selectedCategory, editingFood: $editingFood, isAddingFood: $isAddingFood, errorMessage: $errorMessage)';
+    return 'FoodDatabaseState(foodsDataState: $foodsDataState, errorMessage: $errorMessage, searchQuery: $searchQuery, selectedCategory: $selectedCategory, editingFood: $editingFood, isAddingFood: $isAddingFood)';
   }
 
   @override
@@ -235,6 +235,8 @@ class _$FoodDatabaseStateImpl extends _FoodDatabaseState {
             other is _$FoodDatabaseStateImpl &&
             (identical(other.foodsDataState, foodsDataState) ||
                 other.foodsDataState == foodsDataState) &&
+            (identical(other.errorMessage, errorMessage) ||
+                other.errorMessage == errorMessage) &&
             (identical(other.searchQuery, searchQuery) ||
                 other.searchQuery == searchQuery) &&
             (identical(other.selectedCategory, selectedCategory) ||
@@ -242,20 +244,18 @@ class _$FoodDatabaseStateImpl extends _FoodDatabaseState {
             (identical(other.editingFood, editingFood) ||
                 other.editingFood == editingFood) &&
             (identical(other.isAddingFood, isAddingFood) ||
-                other.isAddingFood == isAddingFood) &&
-            (identical(other.errorMessage, errorMessage) ||
-                other.errorMessage == errorMessage));
+                other.isAddingFood == isAddingFood));
   }
 
   @override
   int get hashCode => Object.hash(
     runtimeType,
     foodsDataState,
+    errorMessage,
     searchQuery,
     selectedCategory,
     editingFood,
     isAddingFood,
-    errorMessage,
   );
 
   /// Create a copy of FoodDatabaseState
@@ -273,16 +273,18 @@ class _$FoodDatabaseStateImpl extends _FoodDatabaseState {
 abstract class _FoodDatabaseState extends FoodDatabaseState {
   const factory _FoodDatabaseState({
     required final DataState<List<FoodRecordModel>> foodsDataState,
+    final String errorMessage,
     final String searchQuery,
     final FoodCategory? selectedCategory,
     final FoodRecordModel? editingFood,
     final bool isAddingFood,
-    final String errorMessage,
   }) = _$FoodDatabaseStateImpl;
   const _FoodDatabaseState._() : super._();
 
   @override
   DataState<List<FoodRecordModel>> get foodsDataState;
+  @override
+  String get errorMessage;
   @override
   String get searchQuery;
   @override
@@ -291,8 +293,6 @@ abstract class _FoodDatabaseState extends FoodDatabaseState {
   FoodRecordModel? get editingFood;
   @override
   bool get isAddingFood;
-  @override
-  String get errorMessage;
 
   /// Create a copy of FoodDatabaseState
   /// with the given fields replaced by the non-null parameter values.

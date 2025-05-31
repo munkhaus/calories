@@ -229,8 +229,11 @@ mixin _$FoodRecordModel {
   double get fatPer100g => throw _privateConstructorUsedError;
   FoodCategory get category => throw _privateConstructorUsedError;
   List<ServingSize> get servingSizes => throw _privateConstructorUsedError;
+  FoodSource get source => throw _privateConstructorUsedError;
+  String get sourceProvider => throw _privateConstructorUsedError;
   bool get isCustom => throw _privateConstructorUsedError;
   String get createdBy => throw _privateConstructorUsedError;
+  List<String> get tags => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
 
@@ -261,8 +264,11 @@ abstract class $FoodRecordModelCopyWith<$Res> {
     double fatPer100g,
     FoodCategory category,
     List<ServingSize> servingSizes,
+    FoodSource source,
+    String sourceProvider,
     bool isCustom,
     String createdBy,
+    List<String> tags,
     DateTime createdAt,
     DateTime? updatedAt,
   });
@@ -292,8 +298,11 @@ class _$FoodRecordModelCopyWithImpl<$Res, $Val extends FoodRecordModel>
     Object? fatPer100g = null,
     Object? category = null,
     Object? servingSizes = null,
+    Object? source = null,
+    Object? sourceProvider = null,
     Object? isCustom = null,
     Object? createdBy = null,
+    Object? tags = null,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -335,6 +344,14 @@ class _$FoodRecordModelCopyWithImpl<$Res, $Val extends FoodRecordModel>
                 ? _value.servingSizes
                 : servingSizes // ignore: cast_nullable_to_non_nullable
                       as List<ServingSize>,
+            source: null == source
+                ? _value.source
+                : source // ignore: cast_nullable_to_non_nullable
+                      as FoodSource,
+            sourceProvider: null == sourceProvider
+                ? _value.sourceProvider
+                : sourceProvider // ignore: cast_nullable_to_non_nullable
+                      as String,
             isCustom: null == isCustom
                 ? _value.isCustom
                 : isCustom // ignore: cast_nullable_to_non_nullable
@@ -343,6 +360,10 @@ class _$FoodRecordModelCopyWithImpl<$Res, $Val extends FoodRecordModel>
                 ? _value.createdBy
                 : createdBy // ignore: cast_nullable_to_non_nullable
                       as String,
+            tags: null == tags
+                ? _value.tags
+                : tags // ignore: cast_nullable_to_non_nullable
+                      as List<String>,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -376,8 +397,11 @@ abstract class _$$FoodRecordModelImplCopyWith<$Res>
     double fatPer100g,
     FoodCategory category,
     List<ServingSize> servingSizes,
+    FoodSource source,
+    String sourceProvider,
     bool isCustom,
     String createdBy,
+    List<String> tags,
     DateTime createdAt,
     DateTime? updatedAt,
   });
@@ -406,8 +430,11 @@ class __$$FoodRecordModelImplCopyWithImpl<$Res>
     Object? fatPer100g = null,
     Object? category = null,
     Object? servingSizes = null,
+    Object? source = null,
+    Object? sourceProvider = null,
     Object? isCustom = null,
     Object? createdBy = null,
+    Object? tags = null,
     Object? createdAt = null,
     Object? updatedAt = freezed,
   }) {
@@ -449,6 +476,14 @@ class __$$FoodRecordModelImplCopyWithImpl<$Res>
             ? _value._servingSizes
             : servingSizes // ignore: cast_nullable_to_non_nullable
                   as List<ServingSize>,
+        source: null == source
+            ? _value.source
+            : source // ignore: cast_nullable_to_non_nullable
+                  as FoodSource,
+        sourceProvider: null == sourceProvider
+            ? _value.sourceProvider
+            : sourceProvider // ignore: cast_nullable_to_non_nullable
+                  as String,
         isCustom: null == isCustom
             ? _value.isCustom
             : isCustom // ignore: cast_nullable_to_non_nullable
@@ -457,6 +492,10 @@ class __$$FoodRecordModelImplCopyWithImpl<$Res>
             ? _value.createdBy
             : createdBy // ignore: cast_nullable_to_non_nullable
                   as String,
+        tags: null == tags
+            ? _value._tags
+            : tags // ignore: cast_nullable_to_non_nullable
+                  as List<String>,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -483,11 +522,15 @@ class _$FoodRecordModelImpl extends _FoodRecordModel {
     this.fatPer100g = 0.0,
     this.category = FoodCategory.other,
     final List<ServingSize> servingSizes = const [],
+    this.source = FoodSource.userCreated,
+    this.sourceProvider = '',
     this.isCustom = false,
     this.createdBy = '',
+    final List<String> tags = const [],
     required this.createdAt,
     this.updatedAt,
   }) : _servingSizes = servingSizes,
+       _tags = tags,
        super._();
 
   factory _$FoodRecordModelImpl.fromJson(Map<String, dynamic> json) =>
@@ -528,10 +571,25 @@ class _$FoodRecordModelImpl extends _FoodRecordModel {
 
   @override
   @JsonKey()
+  final FoodSource source;
+  @override
+  @JsonKey()
+  final String sourceProvider;
+  @override
+  @JsonKey()
   final bool isCustom;
   @override
   @JsonKey()
   final String createdBy;
+  final List<String> _tags;
+  @override
+  @JsonKey()
+  List<String> get tags {
+    if (_tags is EqualUnmodifiableListView) return _tags;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_tags);
+  }
+
   @override
   final DateTime createdAt;
   @override
@@ -539,7 +597,7 @@ class _$FoodRecordModelImpl extends _FoodRecordModel {
 
   @override
   String toString() {
-    return 'FoodRecordModel(id: $id, name: $name, description: $description, caloriesPer100g: $caloriesPer100g, proteinPer100g: $proteinPer100g, carbsPer100g: $carbsPer100g, fatPer100g: $fatPer100g, category: $category, servingSizes: $servingSizes, isCustom: $isCustom, createdBy: $createdBy, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'FoodRecordModel(id: $id, name: $name, description: $description, caloriesPer100g: $caloriesPer100g, proteinPer100g: $proteinPer100g, carbsPer100g: $carbsPer100g, fatPer100g: $fatPer100g, category: $category, servingSizes: $servingSizes, source: $source, sourceProvider: $sourceProvider, isCustom: $isCustom, createdBy: $createdBy, tags: $tags, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -565,10 +623,14 @@ class _$FoodRecordModelImpl extends _FoodRecordModel {
               other._servingSizes,
               _servingSizes,
             ) &&
+            (identical(other.source, source) || other.source == source) &&
+            (identical(other.sourceProvider, sourceProvider) ||
+                other.sourceProvider == sourceProvider) &&
             (identical(other.isCustom, isCustom) ||
                 other.isCustom == isCustom) &&
             (identical(other.createdBy, createdBy) ||
                 other.createdBy == createdBy) &&
+            const DeepCollectionEquality().equals(other._tags, _tags) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
@@ -588,8 +650,11 @@ class _$FoodRecordModelImpl extends _FoodRecordModel {
     fatPer100g,
     category,
     const DeepCollectionEquality().hash(_servingSizes),
+    source,
+    sourceProvider,
     isCustom,
     createdBy,
+    const DeepCollectionEquality().hash(_tags),
     createdAt,
     updatedAt,
   );
@@ -622,8 +687,11 @@ abstract class _FoodRecordModel extends FoodRecordModel {
     final double fatPer100g,
     final FoodCategory category,
     final List<ServingSize> servingSizes,
+    final FoodSource source,
+    final String sourceProvider,
     final bool isCustom,
     final String createdBy,
+    final List<String> tags,
     required final DateTime createdAt,
     final DateTime? updatedAt,
   }) = _$FoodRecordModelImpl;
@@ -651,9 +719,15 @@ abstract class _FoodRecordModel extends FoodRecordModel {
   @override
   List<ServingSize> get servingSizes;
   @override
+  FoodSource get source;
+  @override
+  String get sourceProvider;
+  @override
   bool get isCustom;
   @override
   String get createdBy;
+  @override
+  List<String> get tags;
   @override
   DateTime get createdAt;
   @override
