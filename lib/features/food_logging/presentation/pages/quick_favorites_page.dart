@@ -517,7 +517,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
       
       if (mounted) {
-        // Show simple success message
+        // Show simple success message and navigate back to dashboard
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${favorite.foodName} tilføjet'),
@@ -525,6 +525,9 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
             duration: Duration(seconds: 2),
           ),
         );
+        
+        // Navigate back to dashboard
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
@@ -559,7 +562,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
       
       if (mounted) {
-        // Show simple success message
+        // Show simple success message and navigate back to dashboard
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${favorite.activityName} tilføjet'),
@@ -567,6 +570,9 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
             duration: Duration(seconds: 2),
           ),
         );
+        
+        // Navigate back to dashboard
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) {
