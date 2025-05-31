@@ -8,6 +8,7 @@ import '../../onboarding/application/onboarding_notifier.dart';
 import '../../activity/application/activity_notifier.dart';
 import '../../activity/presentation/widgets/todays_activities_widget.dart';
 import '../widgets/calorie_overview_widget.dart';
+import '../widgets/date_navigation_widget.dart';
 import '../widgets/recent_meals_widget.dart';
 import '../widgets/daily_settings_widget.dart';
 import '../widgets/weight_progress_widget.dart';
@@ -159,6 +160,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                       const DailySettingsWidget(),
                       KSizes.spacingVerticalXL,
                     ],
+                    
+                    // Date navigation widget - always show
+                    const DateNavigationWidget(),
                     
                     // Calorie overview widget (main card with date functionality)
                     const CalorieOverviewWidget(),

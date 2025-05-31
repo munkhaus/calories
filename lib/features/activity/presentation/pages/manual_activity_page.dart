@@ -494,25 +494,16 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
         notes: notes,
       );
 
-      final success = await widget.notifier.logActivity(activity);
+      await widget.notifier.logActivity(activity);
 
       if (mounted) {
-        if (success) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$activityName er logget'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Kunne ikke logge aktivitet'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$activityName er logget'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

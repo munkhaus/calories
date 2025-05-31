@@ -225,13 +225,18 @@ class _ManualCalorieEntryWidgetState extends State<ManualCalorieEntryWidget> {
         notes: 'Manuelt angivet kalorieforbrug',
       );
 
-      final success = await widget.notifier.logActivity(activity);
-      
-      if (success) {
+      await widget.notifier.logActivity(activity);
+
+      if (mounted) {
         _caloriesController.clear();
         widget.onCaloriesLogged();
-      } else {
-        _showErrorSnackBar('Kunne ikke logge kalorier');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${activity.activityName} er logget'),
+            backgroundColor: AppColors.success,
+          ),
+        );
       }
     } catch (e) {
       _showErrorSnackBar('Fejl ved logning af kalorier');

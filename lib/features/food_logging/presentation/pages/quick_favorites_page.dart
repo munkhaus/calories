@@ -606,19 +606,17 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
 
         // Create an ActivityNotifier instance to log the activity
         final activityNotifier = ref.read(activityNotifierProvider);
-        final success = await activityNotifier.logActivity(activityLog);
+        await activityNotifier.logActivity(activityLog);
 
-        if (success) {
-          // Update favorite usage
-          final updatedFavorite = favorite.withUpdatedUsage();
-          await _activityService.updateFavorite(updatedFavorite);
+        // Update favorite usage
+        final updatedFavorite = favorite.withUpdatedUsage();
+        await _activityService.updateFavorite(updatedFavorite);
 
-          print('⭐ FavoriteActivityService: Updated favorite: ${favorite.activityName}');
-          
-          // Refresh all providers to update home tab data
-          ref.read(foodLoggingProvider.notifier).refresh();
-          await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
-        }
+        print('⭐ FavoriteActivityService: Updated favorite: ${favorite.activityName}');
+        
+        // Refresh all providers to update home tab data
+        ref.read(foodLoggingProvider.notifier).refresh();
+        await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
       }
       
       if (mounted) {

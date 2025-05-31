@@ -25,6 +25,16 @@ class ActivityNotifier extends ChangeNotifier {
     _instances.add(this);
   }
   
+  bool _isDisposed = false;
+
+  void _updateState(ActivityState newState) {
+    if (_isDisposed) return; // Don't update if disposed
+    _state = newState;
+    notifyListeners();
+  }
+  
+  bool get mounted => !_isDisposed;
+  
   @override
   void dispose() {
     _isDisposed = true;
@@ -61,14 +71,6 @@ class ActivityNotifier extends ChangeNotifier {
   ActivityState get state => _state;
   DateTime get selectedDate => _selectedDate;
   
-  bool _isDisposed = false;
-
-  void _updateState(ActivityState newState) {
-    if (_isDisposed) return; // Don't update if disposed
-    _state = newState;
-    notifyListeners();
-  }
-
   /// Set the selected date and reload activities
   Future<void> setSelectedDate(DateTime date) async {
     _selectedDate = date;
@@ -143,25 +145,43 @@ class ActivityNotifier extends ChangeNotifier {
 
   /// Load activities for specific date
   Future<void> loadActivitiesForDate(DateTime date) async {
+    if (!mounted) return; // Don't proceed if disposed
+    
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    if (!mounted) return; // Check again before state update
+    
     _updateState(_state.copyWith(
       todaysActivitiesState: const DataState.loading(),
     ));
 
-    final result = await _service.getActivityLogsForDate(1, date); // TODO: Get real user ID
-    
-    if (result.isSuccess) {
+    try {
+      final result = await _service.getActivityLogsForDate(1, normalizedDate); // TODO: Get real user ID
+      
+      if (!mounted) return; // Don't proceed if disposed during async operation
+      
+      if (result.isSuccess) {
+        _updateState(_state.copyWith(
+          todaysActivitiesState: DataState.success(result.success),
+        ));
+      } else {
+        _updateState(_state.copyWith(
+          todaysActivitiesState: const DataState.error('Kunne ikke indlæse aktiviteter'),
+        ));
+      }
+    } catch (e) {
+      if (!mounted) return; // Don't proceed if disposed during error handling
+      
       _updateState(_state.copyWith(
-        todaysActivitiesState: DataState.success(result.success),
-      ));
-    } else {
-      _updateState(_state.copyWith(
-        todaysActivitiesState: const DataState.error('Kunne ikke indlæse aktiviteter'),
+        todaysActivitiesState: DataState.error(e.toString()),
       ));
     }
   }
 
   /// Load today's activity logs (deprecated - use loadActivitiesForDate)
   Future<void> loadTodaysActivities() async {
+    if (!mounted) return; // Don't proceed if disposed
+    
     await loadActivitiesForDate(DateTime.now());
   }
 
@@ -213,31 +233,49 @@ class ActivityNotifier extends ChangeNotifier {
     await loadTotalCaloriesWithBmrForDate(dailyBmr, DateTime.now());
   }
 
-  /// Log an activity
-  Future<bool> logActivity(UserActivityLogModel activity) async {
-    _updateState(_state.copyWith(isLoggingActivity: true));
-
-    final result = await _service.logActivity(activity);
+  /// Log activity and refresh data
+  Future<void> logActivity(UserActivityLogModel activity) async {
+    if (!mounted) return; // Don't proceed if disposed
     
-    _updateState(_state.copyWith(isLoggingActivity: false));
+    _updateState(_state.copyWith(
+      isLoggingActivity: true,
+    ));
 
-    if (result.isSuccess) {
-      // Refresh today's data after logging - use BMR if available
-      await Future.wait([
-        loadActivitiesForDate(_selectedDate),
-        _currentBmr != null 
-          ? loadTotalCaloriesWithBmr(_currentBmr!)
-          : loadCaloriesBurnedForDate(_selectedDate),
-      ]);
+    try {
+      final result = await _service.logActivity(activity);
       
-      // Refresh the activity calories provider if ref is available
-      if (onActivityChanged != null) {
-        onActivityChanged!();
+      if (!mounted) return; // Don't proceed if disposed during async operation
+      
+      if (result.isSuccess) {
+        // Reload activities for the current date
+        await loadActivitiesForDate(_selectedDate);
+        
+        // Also reload calories if we're tracking BMR
+        if (_currentBmr != null) {
+          await loadTotalCaloriesWithBmrForDate(_currentBmr!, _selectedDate);
+        } else {
+          await loadCaloriesBurnedForDate(_selectedDate);
+        }
+        
+        // Notify calorie changes
+        if (onActivityChanged != null) {
+          onActivityChanged!();
+        }
+      } else {
+        if (!mounted) return; // Check again before error update
+        
+        _updateState(_state.copyWith(
+          isLoggingActivity: false,
+          todaysActivitiesState: const DataState.error('Kunne ikke tilføje aktivitet'),
+        ));
       }
+    } catch (e) {
+      if (!mounted) return; // Don't proceed if disposed during error handling
       
-      return true;
-    } else {
-      return false;
+      _updateState(_state.copyWith(
+        isLoggingActivity: false,
+        todaysActivitiesState: DataState.error(e.toString()),
+      ));
     }
   }
 
@@ -314,16 +352,15 @@ class ActivityNotifier extends ChangeNotifier {
 
   /// Refresh all data
   Future<void> refresh() async {
-    // Check if disposed before proceeding by catching any errors
-    try {
-      if (_currentBmr != null) {
-        await initializeWithBmr(_currentBmr!);
-      } else {
-        await initialize();
-      }
-    } catch (e) {
-      print('🔍 ActivityNotifier: Refresh failed (possibly disposed): $e');
-      // Don't throw error, just log it
-    }
+    if (!mounted) return; // Don't proceed if disposed
+    
+    await loadActivitiesForDate(_selectedDate);
+  }
+
+  void updateSelectedDate(DateTime date) {
+    if (!mounted) return; // Don't proceed if disposed
+    
+    _selectedDate = date;
+    loadActivitiesForDate(date);
   }
 } 

@@ -298,9 +298,9 @@ class _DetailedActivityRegistrationPageState extends ConsumerState<DetailedActiv
         );
 
         // Log the activity using ActivityNotifier
-        final success = await activityNotifier.logActivity(activityLog);
+        await activityNotifier.logActivity(activityLog);
         
-        if (success && mounted) {
+        if (mounted) {
           // Show success message and go back
           Navigator.of(context).pop(true); // Return true to indicate success
           
@@ -308,14 +308,6 @@ class _DetailedActivityRegistrationPageState extends ConsumerState<DetailedActiv
             SnackBar(
               content: Text('$name registreret! ($duration min, $estimatedCalories kcal)'),
               backgroundColor: AppColors.success,
-            ),
-          );
-        } else if (mounted) {
-          // Show error message
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Kunne ikke registrere aktivitet'),
-              backgroundColor: AppColors.error,
             ),
           );
         }

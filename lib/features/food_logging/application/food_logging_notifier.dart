@@ -50,12 +50,16 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
     super.dispose();
   }
 
+  bool get mounted => !_isDisposed;
+
   /// Indlæser måltider for en specifik dato
   Future<void> loadMealsForDate(DateTime date) async {
     if (_isDisposed) return; // Don't proceed if disposed
     
     // Standardisér datoen til midnat
     final normalizedDate = DateTime(date.year, date.month, date.day);
+    
+    if (!mounted) return; // Check again before state update
     
     state = state.copyWith(
       isLoading: true, 
@@ -66,22 +70,65 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
     try {
       const userId = 1; // TODO: Get actual user ID
       final meals = await FoodLoggingService.getFoodLogsForDate(userId, normalizedDate);
-      if (!_isDisposed) {
-        state = state.copyWith(
-          mealsForDate: meals,
-          isLoading: false,
-          lastUpdate: DateTime.now(),
-        );
-      }
+      
+      if (!mounted) return; // Don't update state if disposed during async operation
+      
+      state = state.copyWith(
+        mealsForDate: meals,
+        isLoading: false,
+        lastUpdate: DateTime.now(),
+        selectedDate: normalizedDate,
+      );
+      
+      print('🍽️ FoodLoggingNotifier: Indlæst ${meals.length} måltider for ${_formatDate(normalizedDate)}');
     } catch (e) {
-      if (!_isDisposed) {
-        state = state.copyWith(
-          isLoading: false,
-          error: e.toString(),
-          lastUpdate: DateTime.now(),
-        );
-      }
+      if (!mounted) return; // Don't update state if disposed during async operation
+      
+      print('❌ FoodLoggingNotifier: Fejl ved indlæsning af måltider: $e');
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Kunne ikke indlæse måltider',
+        selectedDate: normalizedDate,
+      );
     }
+  }
+
+  /// Helper method to format date for logging
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  /// Opdaterer til en specifik dato
+  Future<void> selectDate(DateTime date) async {
+    if (!mounted) return;
+    
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    print('📅 FoodLoggingNotifier: Skifter til dato ${_formatDate(normalizedDate)}');
+    await loadMealsForDate(normalizedDate);
+  }
+
+  /// Forrige dag
+  Future<void> previousDay() async {
+    if (!mounted) return;
+    
+    final previousDate = state.selectedDate.subtract(const Duration(days: 1));
+    await selectDate(previousDate);
+  }
+
+  /// Næste dag
+  Future<void> nextDay() async {
+    if (!mounted) return;
+    
+    final nextDate = state.selectedDate.add(const Duration(days: 1));
+    await selectDate(nextDate);
+  }
+
+  /// Opdaterer data fra storage (efter registration af ny mad)
+  Future<void> refresh() async {
+    if (!mounted) return;
+    
+    print('🔄 FoodLoggingNotifier: Opdaterer data fra storage...');
+    await loadMealsForDate(state.selectedDate);
   }
 
   /// Indlæser måltider for i dag (legacy method for bagudkompatibilitet)
@@ -129,10 +176,6 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
         state = state.copyWith(error: e.toString());
       }
     }
-  }
-
-  Future<void> refresh() async {
-    await loadMealsForDate(state.selectedDate);
   }
 
   void clearError() {

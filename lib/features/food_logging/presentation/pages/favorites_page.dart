@@ -594,36 +594,25 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with TickerProvid
 
       // Create an ActivityNotifier instance to log the activity
       final activityNotifier = ActivityNotifier();
-      final success = await activityNotifier.logActivity(activityLog);
+      await activityNotifier.logActivity(activityLog);
 
-      if (success) {
-        // Update favorite usage
-        final updatedFavorite = favorite.withUpdatedUsage();
-        await _activityService.updateFavorite(updatedFavorite);
+      // Update favorite usage
+      final updatedFavorite = favorite.withUpdatedUsage();
+      await _activityService.updateFavorite(updatedFavorite);
 
-        // Refresh all ActivityNotifier instances globally
-        await ActivityNotifier.refreshAllInstances();
+      // Refresh all ActivityNotifier instances globally
+      await ActivityNotifier.refreshAllInstances();
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${favorite.activityName} er tilføjet som aktivitet!'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-          
-          // Refresh favorites to show updated usage
-          _loadFavorites();
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Kunne ikke tilføje aktivitet'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${favorite.activityName} er tilføjet som aktivitet!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        
+        // Refresh favorites to show updated usage
+        _loadFavorites();
       }
     } catch (e) {
       if (mounted) {

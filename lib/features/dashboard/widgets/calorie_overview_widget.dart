@@ -9,7 +9,7 @@ import '../../food_logging/application/food_logging_notifier.dart';
 import '../application/selected_date_provider.dart';
 import '../application/date_aware_providers.dart';
 
-/// Widget showing daily calorie intake vs goal with circular progress and stats
+/// Widget showing daily calorie intake vs goal with contextual guidance and actionable insights
 class CalorieOverviewWidget extends ConsumerWidget {
   const CalorieOverviewWidget({super.key});
  
@@ -23,43 +23,43 @@ class CalorieOverviewWidget extends ConsumerWidget {
     ref.watch(dateAwareActivityProvider);
     
     // Calculate target calories dynamically based on current profile state
-    // This ensures that leisure activity toggle immediately affects calories
     final currentTdee = _calculateCurrentTdee(userProfile);
     final dynamicTargetCalories = _calculateDynamicTargetCalories(userProfile, currentTdee);
     
     final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider).toDouble();
     final totalAvailableCalories = dynamicTargetCalories + activityCalories;
     
-    // Get consumed calories - use provider that will update automatically
+    // Get consumed calories
     final consumedCalories = ref.watch(totalCaloriesForSelectedDateProvider);
     
     // Calculate remaining calories and progress
     final remainingCalories = totalAvailableCalories - consumedCalories;
     
-    // Prevent division by zero and invalid progress during initial load
+    // Calculate time-based context
+    final timeContext = _calculateTimeContext();
+    final caloriesByTimeOfDay = _calculateExpectedCaloriesByTime(totalAvailableCalories);
+    final isAheadOfPace = consumedCalories < caloriesByTimeOfDay;
+    
+    // Calculate next meal suggestion
+    final nextMealSuggestion = _calculateNextMealSuggestion(remainingCalories, timeContext);
+    
+    // Prevent division by zero and invalid progress
     double progress = 0.0;
     if (totalAvailableCalories > 0 && !totalAvailableCalories.isNaN && !consumedCalories.isNaN) {
       progress = consumedCalories / totalAvailableCalories;
     }
     
-    final displayProgress = progress.clamp(0.0, 1.2); // Allow overflow visualization
+    final displayProgress = progress.clamp(0.0, 1.2);
     final hasExceededGoal = consumedCalories > totalAvailableCalories;
     
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.white.withOpacity(0.95),
-          ],
-        ),
+        gradient: _getContextualGradient(progress, isAheadOfPace),
         borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: _getProgressColor(displayProgress).withOpacity(0.15),
             blurRadius: KSizes.blurRadiusXL,
             offset: const Offset(0, 8),
           ),
@@ -74,31 +74,28 @@ class CalorieOverviewWidget extends ConsumerWidget {
         padding: const EdgeInsets.all(KSizes.margin6x),
         child: Column(
           children: [
-            // Header section with improved typography
+            // Enhanced header with contextual status
             Row(
               children: [
-                // Modern icon container
+                // Dynamic status icon
                 Container(
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.secondary,
-                      ],
+                      colors: _getStatusIconColors(progress, isAheadOfPace),
                     ),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: _getProgressColor(displayProgress).withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: Icon(
-                    MdiIcons.fire,
+                    _getStatusIcon(progress, isAheadOfPace),
                     color: Colors.white,
                     size: KSizes.iconM,
                   ),
@@ -106,63 +103,35 @@ class CalorieOverviewWidget extends ConsumerWidget {
                 
                 const SizedBox(width: KSizes.margin3x),
                 
-                // Title and date in same row
                 Expanded(
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Dagens kalorier',
                         style: TextStyle(
-                          fontSize: KSizes.fontSizeXL,
+                          fontSize: KSizes.fontSizeL,
                           fontWeight: KSizes.fontWeightBold,
                           color: AppColors.textPrimary,
                         ),
                       ),
                       
-                      const SizedBox(width: KSizes.margin3x),
+                      SizedBox(height: KSizes.margin1x),
                       
-                      // Date selector with modern design
-                      GestureDetector(
-                        onTap: () => _showDatePicker(context, ref),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: KSizes.margin2x,
-                            vertical: KSizes.margin1x,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(KSizes.radiusM),
-                            border: Border.all(
-                              color: AppColors.primary.withOpacity(0.2),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                MdiIcons.calendar,
-                                size: KSizes.iconXS,
-                                color: AppColors.primary,
-                              ),
-                              const SizedBox(width: KSizes.margin1x),
-                              Text(
-                                selectedDateNotifier.formattedDate,
-                                style: TextStyle(
-                                  fontSize: KSizes.fontSizeS,
-                                  color: AppColors.primary,
-                                  fontWeight: KSizes.fontWeightSemiBold,
-                                ),
-                              ),
-                            ],
-                          ),
+                      // Contextual status message
+                      Text(
+                        _getContextualStatusMessage(progress, isAheadOfPace, timeContext, remainingCalories),
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: _getStatusColor(progress, isAheadOfPace),
+                          fontWeight: KSizes.fontWeightMedium,
                         ),
                       ),
                     ],
                   ),
                 ),
                 
-                // Info button only
+                // Info button
                 _buildControlButton(
                   icon: MdiIcons.informationOutline,
                   onTap: () => _showCalorieDetails(context, userProfile),
@@ -171,34 +140,16 @@ class CalorieOverviewWidget extends ConsumerWidget {
               ],
             ),
             
-            const SizedBox(height: KSizes.margin2x),
-            
-            // Navigation controls in separate row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildControlButton(
-                  icon: MdiIcons.chevronLeft,
-                  onTap: selectedDateNotifier.previousDay,
-                ),
-                const SizedBox(width: KSizes.margin4x),
-                _buildControlButton(
-                  icon: MdiIcons.chevronRight,
-                  onTap: selectedDateNotifier.nextDay,
-                ),
-              ],
-            ),
-            
             SizedBox(height: KSizes.margin6x),
             
-            // Enhanced circular progress with modern design
+            // Enhanced progress visualization with better context
             Stack(
               alignment: Alignment.center,
               children: [
-                // Background circle with stronger contrast
+                // Background circle with pace indicator
                 Container(
-                  width: 180,
-                  height: 180,
+                  width: 200,
+                  height: 200,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.surface.withOpacity(0.8),
@@ -206,23 +157,33 @@ class CalorieOverviewWidget extends ConsumerWidget {
                       color: AppColors.border.withOpacity(0.2),
                       width: 2,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withOpacity(0.1),
-                        blurRadius: 16,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
                   ),
                 ),
                 
-                // Progress indicator with stronger contrast
+                // Pace indicator (expected consumption by time of day)
+                if (caloriesByTimeOfDay > 0) ...[
+                  SizedBox(
+                    width: 180,
+                    height: 180,
+                    child: CircularProgressIndicator(
+                      value: (caloriesByTimeOfDay / totalAvailableCalories).clamp(0.0, 1.0),
+                      strokeWidth: 4,
+                      backgroundColor: Colors.transparent,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.textSecondary.withOpacity(0.3),
+                      ),
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ),
+                ],
+                
+                // Main progress indicator
                 SizedBox(
-                  width: 160,
-                  height: 160,
+                  width: 180,
+                  height: 180,
                   child: CircularProgressIndicator(
                     value: displayProgress,
-                    strokeWidth: 14,
+                    strokeWidth: 16,
                     backgroundColor: AppColors.surface.withOpacity(0.6),
                     valueColor: AlwaysStoppedAnimation<Color>(
                       _getProgressColor(displayProgress),
@@ -231,10 +192,10 @@ class CalorieOverviewWidget extends ConsumerWidget {
                   ),
                 ),
                 
-                // Center content with improved contrast and background
+                // Center content with actionable information
                 Container(
-                  width: 140,
-                  height: 140,
+                  width: 160,
+                  height: 160,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: Colors.white.withOpacity(0.95),
@@ -250,31 +211,31 @@ class CalorieOverviewWidget extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      // Primary number - remaining calories instead of consumed
                       Text(
-                        '${consumedCalories.toInt()}',
+                        hasExceededGoal 
+                            ? '+${(-remainingCalories).toInt()}'
+                            : '${remainingCalories.toInt()}',
                         style: TextStyle(
-                          fontSize: 44,
+                          fontSize: 42,
                           fontWeight: FontWeight.w900,
-                          color: AppColors.textPrimary,
+                          color: _getProgressColor(displayProgress),
                           letterSpacing: -1,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.1),
-                              offset: const Offset(0, 1),
-                              blurRadius: 2,
-                            ),
-                          ],
                         ),
                       ),
+                      
                       Text(
-                        'af ${totalAvailableCalories.toInt()} kcal',
+                        hasExceededGoal ? 'over målet' : 'kcal tilbage',
                         style: TextStyle(
-                          fontSize: KSizes.fontSizeM,
+                          fontSize: KSizes.fontSizeS,
                           color: AppColors.textSecondary,
-                          fontWeight: KSizes.fontWeightBold,
+                          fontWeight: KSizes.fontWeightMedium,
                         ),
                       ),
-                      SizedBox(height: KSizes.margin1x),
+                      
+                      SizedBox(height: KSizes.margin2x),
+                      
+                      // Actionable insight
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: KSizes.margin2x,
@@ -289,14 +250,13 @@ class CalorieOverviewWidget extends ConsumerWidget {
                           ),
                         ),
                         child: Text(
-                          hasExceededGoal 
-                              ? 'Over målet!' 
-                              : '${(displayProgress * 100).toInt()}% af målet',
+                          nextMealSuggestion,
                           style: TextStyle(
                             fontSize: KSizes.fontSizeXS,
                             color: _getProgressColor(displayProgress),
                             fontWeight: KSizes.fontWeightBold,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ],
@@ -307,28 +267,32 @@ class CalorieOverviewWidget extends ConsumerWidget {
             
             SizedBox(height: KSizes.margin8x),
             
-            // Modern stats cards
+            // Enhanced stat cards with more actionable information
             Row(
               children: [
                 Expanded(
-                  child: _buildModernStatCard(
-                    label: 'Tilbage',
-                    value: hasExceededGoal 
-                        ? '+${(-remainingCalories).toInt()}'
-                        : '${remainingCalories.toInt()}',
-                    color: hasExceededGoal ? AppColors.error : AppColors.success,
-                    icon: hasExceededGoal ? MdiIcons.trendingUp : MdiIcons.target,
+                  child: _buildEnhancedStatCard(
+                    label: 'Spist i dag',
+                    value: '${consumedCalories.toInt()}',
+                    unit: 'kcal',
+                    subtitle: '${(progress * 100).toInt()}% af målet',
+                    color: _getProgressColor(displayProgress),
+                    icon: MdiIcons.silverwareForkKnife,
+                    trend: isAheadOfPace ? 'over pace' : 'under pace',
                   ),
                 ),
                 
                 SizedBox(width: KSizes.margin4x),
                 
                 Expanded(
-                  child: _buildModernStatCard(
+                  child: _buildEnhancedStatCard(
                     label: 'Aktivitet',
                     value: '+${activityCalories.toInt()}',
+                    unit: 'kcal',
+                    subtitle: 'ekstra budget',
                     color: AppColors.secondary,
                     icon: MdiIcons.runFast,
+                    trend: activityCalories > 0 ? 'active' : 'sedentary',
                   ),
                 ),
               ],
@@ -380,11 +344,14 @@ class CalorieOverviewWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildModernStatCard({
+  Widget _buildEnhancedStatCard({
     required String label,
     required String value,
+    required String unit,
+    required String subtitle,
     required Color color,
     required IconData icon,
+    required String trend,
   }) {
     return Container(
       padding: const EdgeInsets.all(KSizes.margin4x),
@@ -440,6 +407,17 @@ class CalorieOverviewWidget extends ConsumerWidget {
             ),
             textAlign: TextAlign.center,
           ),
+          
+          SizedBox(height: KSizes.margin1x),
+          
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeXS,
+              color: AppColors.textTertiary,
+            ),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
@@ -454,33 +432,6 @@ class CalorieOverviewWidget extends ConsumerWidget {
     if (progress >= 1.0) return AppColors.error;
     if (progress >= 0.8) return AppColors.warning; 
     return AppColors.primary;
-  }
-
-  void _showDatePicker(BuildContext context, WidgetRef ref) async {
-    final selectedDate = ref.read(selectedDateProvider);
-    final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
-    
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)), // 1 year back
-      lastDate: DateTime.now().add(const Duration(days: 30)), // 30 days forward
-      locale: const Locale('da', 'DK'),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: AppColors.primary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    
-    if (pickedDate != null) {
-      selectedDateNotifier.selectDate(pickedDate);
-    }
   }
 
   void _showCalorieDetails(BuildContext context, UserProfileModel userProfile) {
@@ -766,6 +717,154 @@ class CalorieOverviewWidget extends ConsumerWidget {
 
     // Safety bounds
     return targetCalories.clamp(800.0, 4000.0);
+  }
+
+  String _calculateTimeContext() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    
+    if (hour >= 5 && hour < 10) return 'morning';
+    if (hour >= 10 && hour < 14) return 'midday';
+    if (hour >= 14 && hour < 18) return 'afternoon';
+    if (hour >= 18 && hour < 22) return 'evening';
+    return 'night';
+  }
+
+  double _calculateExpectedCaloriesByTime(double totalCalories) {
+    final now = DateTime.now();
+    final hour = now.hour;
+    final minute = now.minute;
+    final totalMinutesInDay = 24 * 60;
+    final currentMinutes = hour * 60 + minute;
+    
+    // Assume most calories are consumed between 6 AM and 10 PM (16 hours)
+    final activeStartHour = 6;
+    final activeEndHour = 22;
+    
+    if (hour < activeStartHour) return 0.0;
+    if (hour >= activeEndHour) return totalCalories;
+    
+    final activeMinutes = (activeEndHour - activeStartHour) * 60;
+    final minutesSinceActiveStart = (hour - activeStartHour) * 60 + minute;
+    
+    // Progressive consumption: lighter breakfast, heavier lunch/dinner
+    double progressFactor;
+    if (hour < 12) {
+      // Morning: slower consumption
+      progressFactor = (minutesSinceActiveStart / activeMinutes) * 0.6;
+    } else if (hour < 18) {
+      // Afternoon: faster consumption
+      progressFactor = 0.6 + ((minutesSinceActiveStart - 6*60) / activeMinutes) * 0.3;
+    } else {
+      // Evening: final consumption
+      progressFactor = 0.9 + ((minutesSinceActiveStart - 12*60) / activeMinutes) * 0.1;
+    }
+    
+    return totalCalories * progressFactor.clamp(0.0, 1.0);
+  }
+
+  String _calculateNextMealSuggestion(double remainingCalories, String timeContext) {
+    if (remainingCalories <= 0) return 'Målet nået!';
+    
+    switch (timeContext) {
+      case 'morning':
+        if (remainingCalories > 800) return 'Plads til morgenmad';
+        if (remainingCalories > 400) return 'Let morgenmad';
+        return 'Kaffe + snack';
+        
+      case 'midday':
+        if (remainingCalories > 1200) return 'Plads til stor frokost';
+        if (remainingCalories > 600) return 'Normal frokost';
+        return 'Let frokost';
+        
+      case 'afternoon':
+        if (remainingCalories > 800) return 'Healthy snack tid';
+        if (remainingCalories > 400) return 'Let mellemmåltid';
+        return 'Små snacks';
+        
+      case 'evening':
+        if (remainingCalories > 600) return 'Plads til aftensmad';
+        if (remainingCalories > 300) return 'Let aftensmad';
+        return 'Meget let måltid';
+        
+      default:
+        return 'Godt arbejde i dag!';
+    }
+  }
+  
+  LinearGradient _getContextualGradient(double progress, bool isAheadOfPace) {
+    if (progress > 1.0) {
+      // Over goal - red gradient
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          AppColors.error.withOpacity(0.1),
+          Colors.white.withOpacity(0.95),
+        ],
+      );
+    } else if (isAheadOfPace) {
+      // Ahead of pace - orange gradient
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          AppColors.warning.withOpacity(0.1),
+          Colors.white.withOpacity(0.95),
+        ],
+      );
+    } else {
+      // On track - green gradient
+      return LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          AppColors.success.withOpacity(0.1),
+          Colors.white.withOpacity(0.95),
+        ],
+      );
+    }
+  }
+  
+  String _getContextualStatusMessage(double progress, bool isAheadOfPace, String timeContext, double remainingCalories) {
+    if (progress > 1.0) {
+      return 'Over målet - vælg lette alternativer resten af dagen';
+    }
+    
+    final timeMessage = switch (timeContext) {
+      'morning' => 'God morgen!',
+      'midday' => 'Midt på dagen',
+      'afternoon' => 'Eftermiddag',
+      'evening' => 'Aftentime',
+      _ => 'Sent på aftenen',
+    };
+    
+    if (isAheadOfPace) {
+      return '$timeMessage - Du spiser hurtigere end normalt';
+    } else if (progress < 0.3) {
+      return '$timeMessage - Husk at spise nok i dag';
+    } else {
+      return '$timeMessage - Du er godt på vej';
+    }
+  }
+  
+  Color _getStatusColor(double progress, bool isAheadOfPace) {
+    if (progress > 1.0) return AppColors.error;
+    if (isAheadOfPace) return AppColors.warning;
+    if (progress < 0.3) return AppColors.info;
+    return AppColors.success;
+  }
+  
+  List<Color> _getStatusIconColors(double progress, bool isAheadOfPace) {
+    final baseColor = _getStatusColor(progress, isAheadOfPace);
+    return [baseColor, baseColor.withOpacity(0.8)];
+  }
+  
+  IconData _getStatusIcon(double progress, bool isAheadOfPace) {
+    if (progress > 1.0) return MdiIcons.alertCircle;
+    if (isAheadOfPace) return MdiIcons.speedometer;
+    if (progress < 0.3) return MdiIcons.silverwareForkKnife;
+    return MdiIcons.checkCircle;
   }
 }
 

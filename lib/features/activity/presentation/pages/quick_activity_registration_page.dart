@@ -513,21 +513,14 @@ class _QuickActivityRegistrationPageState extends ConsumerState<QuickActivityReg
           notes: 'Manuelt angivet kalorieforbrug',
         );
 
-        final success = await ref.read(activityNotifierProvider).logActivity(activity);
+        await ref.read(activityNotifierProvider).logActivity(activity);
         
-        if (success) {
+        if (mounted) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('$result kalorier er registreret!'),
               backgroundColor: AppColors.success,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Kunne ikke registrere kalorier'),
-              backgroundColor: AppColors.error,
             ),
           );
         }
