@@ -6,7 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/domain/user_profile_model.dart';
 
-/// Compact widget for daily settings toggles
+/// Separate widget for daily settings toggles
 class DailySettingsWidget extends ConsumerWidget {
   const DailySettingsWidget({super.key});
 
@@ -22,59 +22,86 @@ class DailySettingsWidget extends ConsumerWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin3x), // Reduced padding
+      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusL), // Smaller radius
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
         boxShadow: [
           BoxShadow(
-            color: AppColors.info.withOpacity(0.06), // Lighter shadow
-            blurRadius: KSizes.blurRadiusM, // Smaller blur
-            offset: const Offset(0, 2), // Smaller offset
+            color: AppColors.info.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Compact header - just icon and title on one line
+          // Header
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(KSizes.margin1x), // Much smaller padding
+                padding: const EdgeInsets.all(KSizes.margin3x),
                 decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1), // Simpler background
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.info,
+                      AppColors.info.withOpacity(0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.info.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Icon(
                   MdiIcons.tune,
-                  color: AppColors.info,
-                  size: KSizes.iconS, // Smaller icon
+                  color: Colors.white,
+                  size: KSizes.iconL,
                 ),
               ),
-              const SizedBox(width: KSizes.margin2x), // Less spacing
-              Text(
-                'Dagens indstillinger',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL, // Smaller font
-                  fontWeight: KSizes.fontWeightBold,
-                  color: AppColors.textPrimary,
+              const SizedBox(width: KSizes.margin4x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dagens indstillinger ⚙️',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeXL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Juster for dagens aktivitetsniveau',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
           
-          const SizedBox(height: KSizes.margin3x), // Reduced spacing
+          const SizedBox(height: KSizes.margin6x),
           
-          // Compact toggle sections
+          // Toggle sections
           Column(
             children: [
-              _CompactWorkDayToggle(userProfile: userProfile),
+              _WorkDayToggleSection(userProfile: userProfile),
               
-              if (_shouldShowLeisureToggle(userProfile)) ...[
-                const SizedBox(height: KSizes.margin2x), // Less spacing between toggles
-                _CompactLeisureActivityToggle(userProfile: userProfile),
-              ],
+              const SizedBox(height: KSizes.margin4x),
+              
+              if (_shouldShowLeisureToggle(userProfile))
+                _LeisureActivityToggleSection(userProfile: userProfile),
             ],
           ),
         ],
@@ -87,11 +114,11 @@ class DailySettingsWidget extends ConsumerWidget {
   }
 }
 
-/// Compact work day toggle
-class _CompactWorkDayToggle extends ConsumerWidget {
+/// Work day toggle section
+class _WorkDayToggleSection extends ConsumerWidget {
   final UserProfileModel userProfile;
 
-  const _CompactWorkDayToggle({required this.userProfile});
+  const _WorkDayToggleSection({required this.userProfile});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,66 +129,90 @@ class _CompactWorkDayToggle extends ConsumerWidget {
         : userProfile.isCurrentlyWorkDay;
     
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KSizes.margin3x,
-        vertical: KSizes.margin2x, // Much less vertical padding
-      ),
+      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.3), // Lighter background
+        color: AppColors.surface.withOpacity(0.5),
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: AppColors.border.withOpacity(0.15), // Lighter border
+          color: AppColors.border.withOpacity(0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          // Compact icon
-          Icon(
-            isWorkDay ? MdiIcons.briefcase : MdiIcons.home,
-            color: isWorkDay ? AppColors.primary : AppColors.secondary,
-            size: KSizes.iconS, // Smaller icon
-          ),
-          
-          const SizedBox(width: KSizes.margin2x),
-          
-          // Compact text
-          Expanded(
-            child: Text(
-              isWorkDay ? 'Arbejdsdag' : 'Hjemme/fridag',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeM,
-                fontWeight: KSizes.fontWeightSemiBold, // Slightly less bold
-                color: AppColors.textPrimary,
-              ),
+          // Icon and labels
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin2x),
+            decoration: BoxDecoration(
+              color: (isWorkDay ? AppColors.primary : AppColors.secondary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(KSizes.radiusS),
+            ),
+            child: Icon(
+              isWorkDay ? MdiIcons.briefcase : MdiIcons.home,
+              color: isWorkDay ? AppColors.primary : AppColors.secondary,
+              size: KSizes.iconM,
             ),
           ),
           
-          // Compact toggle switch
+          const SizedBox(width: KSizes.margin3x),
+          
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isWorkDay ? 'Arbejdsdag' : 'Hjemme/fridag',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  isWorkDay 
+                      ? 'Højere aktivitetsniveau på arbejde'
+                      : 'Lavere aktivitetsniveau derhjemme',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Toggle switch
           GestureDetector(
             onTap: () {
               notifier.updateWeekdayDetection(false);
               notifier.updateCurrentWorkDayStatus(!isWorkDay);
             },
             child: Container(
-              width: 40, // Smaller switch
-              height: 24, // Smaller switch
+              width: 48,
+              height: 28,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 color: isWorkDay 
                     ? AppColors.primary 
-                    : AppColors.border.withOpacity(0.4),
+                    : AppColors.border.withOpacity(0.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 200),
                 alignment: isWorkDay ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  width: 20, // Smaller thumb
-                  height: 20, // Smaller thumb
+                  width: 24,
+                  height: 24,
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -180,11 +231,11 @@ class _CompactWorkDayToggle extends ConsumerWidget {
   }
 }
 
-/// Compact leisure activity toggle
-class _CompactLeisureActivityToggle extends ConsumerWidget {
+/// Leisure activity toggle section
+class _LeisureActivityToggleSection extends ConsumerWidget {
   final UserProfileModel userProfile;
 
-  const _CompactLeisureActivityToggle({required this.userProfile});
+  const _LeisureActivityToggleSection({required this.userProfile});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,65 +243,89 @@ class _CompactLeisureActivityToggle extends ConsumerWidget {
     final isLeisureEnabled = userProfile.isLeisureActivityEnabledToday;
     
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: KSizes.margin3x,
-        vertical: KSizes.margin2x, // Much less vertical padding
-      ),
+      padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.3), // Lighter background
+        color: AppColors.surface.withOpacity(0.5),
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: AppColors.border.withOpacity(0.15), // Lighter border
+          color: AppColors.border.withOpacity(0.2),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          // Compact icon
-          Icon(
-            isLeisureEnabled ? MdiIcons.run : MdiIcons.sleep,
-            color: isLeisureEnabled ? AppColors.success : AppColors.textSecondary,
-            size: KSizes.iconS, // Smaller icon
-          ),
-          
-          const SizedBox(width: KSizes.margin2x),
-          
-          // Compact text
-          Expanded(
-            child: Text(
-              isLeisureEnabled ? 'Fritidsaktivitet tæller' : 'Ingen fritidsaktivitet',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeM,
-                fontWeight: KSizes.fontWeightSemiBold, // Slightly less bold
-                color: AppColors.textPrimary,
-              ),
+          // Icon and labels
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin2x),
+            decoration: BoxDecoration(
+              color: (isLeisureEnabled ? AppColors.success : AppColors.textSecondary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(KSizes.radiusS),
+            ),
+            child: Icon(
+              isLeisureEnabled ? MdiIcons.run : MdiIcons.sleep,
+              color: isLeisureEnabled ? AppColors.success : AppColors.textSecondary,
+              size: KSizes.iconM,
             ),
           ),
           
-          // Compact toggle switch
+          const SizedBox(width: KSizes.margin3x),
+          
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isLeisureEnabled ? 'Fritidsaktivitet tæller' : 'Ingen fritidsaktivitet',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  isLeisureEnabled 
+                      ? 'Motion og fritidsaktiviteter medregnes'
+                      : 'Kun hvile og grundaktiviteter i dag',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Toggle switch
           GestureDetector(
             onTap: () {
               notifier.updateLeisureActivityForToday(!isLeisureEnabled);
             },
             child: Container(
-              width: 40, // Smaller switch
-              height: 24, // Smaller switch
+              width: 48,
+              height: 28,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 color: isLeisureEnabled 
                     ? AppColors.success 
-                    : AppColors.border.withOpacity(0.4),
+                    : AppColors.border.withOpacity(0.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 200),
                 alignment: isLeisureEnabled ? Alignment.centerRight : Alignment.centerLeft,
                 child: Container(
-                  width: 20, // Smaller thumb
-                  height: 20, // Smaller thumb
+                  width: 24,
+                  height: 24,
                   margin: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
