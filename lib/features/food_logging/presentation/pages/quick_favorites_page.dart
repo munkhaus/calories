@@ -9,6 +9,7 @@ import '../../../activity/domain/favorite_activity_model.dart';
 import '../../../activity/infrastructure/favorite_activity_service.dart';
 import '../../../dashboard/application/date_aware_providers.dart';
 import '../../application/food_logging_notifier.dart';
+import '../../application/pending_food_cubit.dart';
 import './food_favorite_detail_page.dart';
 import '../../../activity/presentation/pages/activity_favorite_detail_page.dart';
 import '../../domain/user_food_log_model.dart';
@@ -487,49 +488,56 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
   /// Use food favorite
   Future<void> _useFoodFavorite(FavoriteFoodModel favorite) async {
     try {
-      // Show immediate feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Expanded(child: Text('Tilføjer ${favorite.foodName}...')),
-            ],
+                SizedBox(width: KSizes.margin2x),
+                Flexible(child: Text('Tilføjer ${favorite.foodName}...')),
+              ],
+            ),
+            backgroundColor: AppColors.info,
+            duration: Duration(milliseconds: 1500),
           ),
-          backgroundColor: AppColors.primary,
-          duration: Duration(seconds: 1),
-        ),
-      );
+        );
+        
+        // Convert favorite to UserFoodLogModel and log directly
+        final foodLog = UserFoodLogModel(
+          userId: 1,
+          foodName: favorite.foodName,
+          mealType: favorite.mealType,
+          quantity: favorite.quantity,
+          servingUnit: favorite.servingUnit,
+          calories: favorite.calories,
+          protein: favorite.protein,
+          fat: favorite.fat,
+          carbs: favorite.carbs,
+          loggedAt: DateTime.now().toIso8601String(),
+        );
 
-      // Convert favorite to UserFoodLogModel and log directly
-      final foodLog = UserFoodLogModel(
-        userId: 1,
-        foodName: favorite.foodName,
-        mealType: favorite.mealType,
-        quantity: favorite.quantity,
-        servingUnit: favorite.servingUnit,
-        calories: favorite.calories,
-        protein: favorite.protein,
-        fat: favorite.fat,
-        carbs: favorite.carbs,
-        loggedAt: DateTime.now().toIso8601String(),
-      );
-
-      // Log the food
-      await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
-
-      // Update favorite usage in background
-      final updatedFavorite = favorite.withUpdatedUsage();
-      _foodService.updateFavorite(updatedFavorite);
-
+        // Log the food using the provider
+        await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
+        
+        // Update favorite usage
+        final updatedFavorite = favorite.withUpdatedUsage();
+        await _foodService.updateFavorite(updatedFavorite);
+        
+        print('⭐ FavoriteFoodService: Updated favorite: ${favorite.foodName}');
+        
+        // Refresh all providers to update home tab data
+        ref.read(foodLoggingProvider.notifier).refresh();
+        await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
+      }
+      
       if (mounted) {
         // Clear any existing snackbars
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -540,7 +548,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(child: Text('${favorite.foodName} er tilføjet som måltid!')),
+                Flexible(child: Text('${favorite.foodName} er tilføjet som måltid!')),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -571,60 +579,57 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
   /// Use activity favorite
   Future<void> _useActivityFavorite(FavoriteActivityModel favorite) async {
     try {
-      // Show immediate feedback
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Expanded(child: Text('Tilføjer ${favorite.activityName}...')),
-            ],
-          ),
-          backgroundColor: AppColors.secondary,
-          duration: Duration(seconds: 1),
-        ),
-      );
-
-      // Convert favorite to UserActivityLogModel
-      final activityLog = UserActivityLogModel(
-        userId: 1,
-        activityName: favorite.activityName,
-        inputType: favorite.inputType,
-        durationMinutes: favorite.durationMinutes,
-        distanceKm: favorite.distanceKm,
-        intensity: favorite.intensity,
-        caloriesBurned: favorite.caloriesBurned,
-        loggedAt: DateTime.now().toIso8601String(),
-        notes: favorite.notes,
-      );
-
-      // Create ActivityNotifier and log activity
-      final activityNotifier = ref.read(activityNotifierProvider);
-      await activityNotifier.logActivity(activityLog);
-
-      // Update favorite usage in background
-      final updatedFavorite = favorite.withUpdatedUsage();
-      _activityService.updateFavorite(updatedFavorite);
-
       if (mounted) {
-        // Clear any existing snackbars
-        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: KSizes.margin2x),
+                Flexible(child: Text('Tilføjer ${favorite.activityName}...')),
+              ],
+            ),
+            backgroundColor: AppColors.info,
+            duration: Duration(milliseconds: 1500),
+          ),
+        );
         
+        // Convert favorite to UserActivityLogModel and log directly
+        final activityLog = favorite.toUserActivityLog();
+
+        // Create an ActivityNotifier instance to log the activity
+        final activityNotifier = ref.read(activityNotifierProvider);
+        final success = await activityNotifier.logActivity(activityLog);
+
+        if (success) {
+          // Update favorite usage
+          final updatedFavorite = favorite.withUpdatedUsage();
+          await _activityService.updateFavorite(updatedFavorite);
+
+          print('⭐ FavoriteActivityService: Updated favorite: ${favorite.activityName}');
+          
+          // Refresh all providers to update home tab data
+          ref.read(foodLoggingProvider.notifier).refresh();
+          await ref.read(pendingFoodProvider.notifier).loadPendingFoods();
+        }
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(child: Text('${favorite.activityName} er tilføjet som aktivitet!')),
+                Flexible(child: Text('${favorite.activityName} er tilføjet som aktivitet!')),
               ],
             ),
             backgroundColor: AppColors.success,

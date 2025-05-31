@@ -2,14 +2,46 @@ import 'package:result_type/result_type.dart';
 import '../domain/i_favorite_food_service.dart';
 import '../domain/favorite_food_model.dart';
 import '../domain/user_food_log_model.dart';
+import '../../../core/infrastructure/storage_service.dart';
 
-/// Implementation of favorite food service with in-memory storage
+/// Implementation of favorite food service with persistent storage
 class FavoriteFoodService implements IFavoriteFoodService {
   // Static list to simulate database storage
-  static final List<FavoriteFoodModel> _favorites = [];
+  static List<FavoriteFoodModel> _favorites = [];
+  static bool _isInitialized = false;
+  
+  /// Initialize service and load persisted data
+  static Future<void> initialize() async {
+    if (_isInitialized) return;
+    
+    _favorites = await StorageService.loadList(
+      StorageService.favoriteFoodsKey,
+      FavoriteFoodModel.fromJson,
+    );
+    
+    _isInitialized = true;
+    print('⭐ FavoriteFoodService: Loaded ${_favorites.length} favorites from storage');
+  }
+  
+  /// Save favorites to persistent storage
+  static Future<void> _saveFavorites() async {
+    final success = await StorageService.saveList(
+      StorageService.favoriteFoodsKey,
+      _favorites,
+      (favorite) => favorite.toJson(),
+    );
+    
+    if (success) {
+      print('⭐ FavoriteFoodService: Saved ${_favorites.length} favorites to storage');
+    } else {
+      print('❌ FavoriteFoodService: Failed to save favorites');
+    }
+  }
 
   @override
   Future<Result<List<FavoriteFoodModel>, FavoriteFoodError>> getFavorites() async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       
@@ -27,6 +59,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
 
   @override
   Future<Result<FavoriteFoodModel, FavoriteFoodError>> addToFavorites(FavoriteFoodModel favorite) async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       
@@ -43,6 +77,7 @@ class FavoriteFoodService implements IFavoriteFoodService {
       
       // Add to favorites
       _favorites.add(favorite);
+      await _saveFavorites(); // Save to persistent storage
       
       print('⭐ FavoriteFoodService: Added favorite: ${favorite.foodName}');
       return Success(favorite);
@@ -54,6 +89,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
 
   @override
   Future<Result<bool, FavoriteFoodError>> removeFromFavorites(String id) async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       
@@ -63,6 +100,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
       }
       
       final removed = _favorites.removeAt(index);
+      await _saveFavorites(); // Save to persistent storage
+      
       print('⭐ FavoriteFoodService: Removed favorite: ${removed.foodName}');
       return Success(true);
     } catch (e) {
@@ -73,6 +112,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
 
   @override
   Future<Result<FavoriteFoodModel, FavoriteFoodError>> updateFavorite(FavoriteFoodModel favorite) async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       
@@ -82,6 +123,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
       }
       
       _favorites[index] = favorite;
+      await _saveFavorites(); // Save to persistent storage
+      
       print('⭐ FavoriteFoodService: Updated favorite: ${favorite.foodName}');
       return Success(favorite);
     } catch (e) {
@@ -92,6 +135,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
 
   @override
   Future<bool> isFavorite(String foodName, int calories) async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 50));
       
@@ -109,6 +154,8 @@ class FavoriteFoodService implements IFavoriteFoodService {
 
   @override
   Future<Result<List<FavoriteFoodModel>, FavoriteFoodError>> getMostUsedFavorites({int limit = 10}) async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       
@@ -132,11 +179,20 @@ class FavoriteFoodService implements IFavoriteFoodService {
   /// Clear all favorites (for testing)
   static void clearAllFavorites() {
     _favorites.clear();
+    _saveFavorites(); // Save empty list to storage
     print('⭐ FavoriteFoodService: Cleared all favorites');
   }
 
   /// Add test favorites for demonstration
-  static void addTestFavorites() {
+  static void addTestFavorites() async {
+    await initialize();
+    
+    // Only add test favorites if there are no existing favorites
+    if (_favorites.isNotEmpty) {
+      print('⭐ FavoriteFoodService: Favorites already exist, skipping test data');
+      return;
+    }
+    
     final testFavorites = [
       FavoriteFoodModel(
         id: 'test_1',
@@ -197,6 +253,7 @@ class FavoriteFoodService implements IFavoriteFoodService {
     ];
     
     _favorites.addAll(testFavorites);
+    await _saveFavorites(); // Save to persistent storage
     print('⭐ FavoriteFoodService: Added ${testFavorites.length} test favorites');
   }
 

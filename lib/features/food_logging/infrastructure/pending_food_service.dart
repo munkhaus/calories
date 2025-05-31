@@ -2,235 +2,313 @@ import 'package:result_type/result_type.dart';
 import '../domain/i_pending_food_service.dart';
 import '../domain/pending_food_model.dart';
 import 'camera_service.dart';
+import '../../../core/infrastructure/storage_service.dart';
+import 'package:image_picker/image_picker.dart';
 
-/// Implementation of pending food service with real camera integration
+/// Implementation of pending food service with in-memory storage
 class PendingFoodService implements IPendingFoodService {
   // Static list to simulate database storage
-  static final List<PendingFoodModel> _pendingFoods = [];
-
-  // Constructor - no longer clears data automatically
-  PendingFoodService() {
-    print('🍎 PendingFoodService: Service initialized, current items: ${_pendingFoods.length}');
-  }
-
-  @override
-  Future<Result<PendingFoodModel, PendingFoodError>> captureFood() async {
+  static List<PendingFoodModel> _pendingFoods = [];
+  static bool _isInitialized = false;
+  
+  /// Initialize service and load persisted data
+  static Future<void> initialize() async {
+    if (_isInitialized) return;
+    
     try {
-      // Use real camera service
-      final cameraResult = await CameraService.capturePhoto();
-      
-      if (cameraResult.isFailure) {
-        // Map camera errors to pending food errors
-        switch (cameraResult.failure) {
-          case CameraError.userCancelled:
-            return Failure(PendingFoodError.userCancelled);
-          case CameraError.permissionDenied:
-            return Failure(PendingFoodError.permissionDenied);
-          case CameraError.cameraNotAvailable:
-            return Failure(PendingFoodError.cameraUnavailable);
-          case CameraError.imageSaveFailed:
-            return Failure(PendingFoodError.imageSave);
-          case CameraError.unknown:
-          default:
-            return Failure(PendingFoodError.unknown);
-        }
-      }
-
-      // Create pending food with real image path (now as a list)
-      final pendingFood = PendingFoodModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePaths: [cameraResult.success], // Put single image in list
-        capturedAt: DateTime.now(),
-        notes: '',
+      _pendingFoods = await StorageService.loadList(
+        StorageService.pendingFoodsKey,
+        PendingFoodModel.fromJson,
       );
-
-      // Add to list
-      _pendingFoods.add(pendingFood);
-
-      return Success(pendingFood);
+      
+      _isInitialized = true;
+      print('🍎 PendingFoodService: Service initialized, current items: ${_pendingFoods.length}');
+      
+      // Only save if we loaded data successfully or if the list was already empty
+      // This prevents accidentally overwriting data with an empty list
+      if (_pendingFoods.isNotEmpty) {
+        print('🍎 PendingFoodService: Loaded ${_pendingFoods.length} pending foods from storage');
+      } else {
+        print('🍎 PendingFoodService: No pending foods found in storage (empty start)');
+      }
     } catch (e) {
-      return Failure(PendingFoodError.unknown);
+      print('❌ PendingFoodService: Error during initialization: $e');
+      _pendingFoods = [];
+      _isInitialized = true;
     }
   }
-
-  /// Alternative method to pick from gallery
-  Future<Result<PendingFoodModel, PendingFoodError>> pickFromGallery() async {
-    try {
-      // Use camera service gallery picker
-      final cameraResult = await CameraService.pickFromGallery();
-      
-      if (cameraResult.isFailure) {
-        // Map camera errors to pending food errors
-        switch (cameraResult.failure) {
-          case CameraError.userCancelled:
-            return Failure(PendingFoodError.userCancelled);
-          case CameraError.permissionDenied:
-            return Failure(PendingFoodError.permissionDenied);
-          case CameraError.imageSaveFailed:
-            return Failure(PendingFoodError.imageSave);
-          case CameraError.unknown:
-          default:
-            return Failure(PendingFoodError.unknown);
-        }
-      }
-
-      // Create pending food with real image path (now as a list)
-      final pendingFood = PendingFoodModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        imagePaths: [cameraResult.success], // Put single image in list
-        capturedAt: DateTime.now(),
-        notes: '',
-      );
-
-      // Add to list
-      _pendingFoods.add(pendingFood);
-
-      return Success(pendingFood);
-    } catch (e) {
-      return Failure(PendingFoodError.unknown);
+  
+  /// Save pending foods to persistent storage
+  static Future<void> _savePendingFoods() async {
+    final success = await StorageService.saveList(
+      StorageService.pendingFoodsKey,
+      _pendingFoods,
+      (food) => food.toJson(),
+    );
+    
+    if (success) {
+      print('🍎 PendingFoodService: Saved ${_pendingFoods.length} pending foods to storage');
+    } else {
+      print('❌ PendingFoodService: Failed to save pending foods');
     }
   }
-
-  /// NEW: Add image to existing pending food
-  Future<Result<PendingFoodModel, PendingFoodError>> addImageToPendingFood(String pendingFoodId) async {
-    try {
-      // Take photo first
-      final cameraResult = await CameraService.capturePhoto();
-      
-      if (cameraResult.isFailure) {
-        switch (cameraResult.failure) {
-          case CameraError.userCancelled:
-            return Failure(PendingFoodError.userCancelled);
-          case CameraError.permissionDenied:
-            return Failure(PendingFoodError.permissionDenied);
-          case CameraError.cameraNotAvailable:
-            return Failure(PendingFoodError.cameraUnavailable);
-          case CameraError.imageSaveFailed:
-            return Failure(PendingFoodError.imageSave);
-          case CameraError.unknown:
-          default:
-            return Failure(PendingFoodError.unknown);
-        }
-      }
-
-      // Find the pending food to add image to
-      final index = _pendingFoods.indexWhere((item) => item.id == pendingFoodId);
-      if (index == -1) {
-        return Failure(PendingFoodError.notFound);
-      }
-
-      // Add the new image to the list
-      final updatedImagePaths = List<String>.from(_pendingFoods[index].imagePaths);
-      updatedImagePaths.add(cameraResult.success);
-
-      // Update the pending food with new image list
-      _pendingFoods[index] = _pendingFoods[index].copyWith(
-        imagePaths: updatedImagePaths,
-      );
-
-      return Success(_pendingFoods[index]);
-    } catch (e) {
-      return Failure(PendingFoodError.unknown);
-    }
+  
+  /// Initialize with empty list (ONLY for testing or explicit data clearing)
+  static void initializeEmpty() {
+    _pendingFoods = [];
+    _isInitialized = true;
+    print('🍎 PendingFoodService: Service initialized with empty data (testing mode)');
+    
+    _savePendingFoods(); // Save empty list to storage
   }
-
-  /// NEW: Get the most recent unprocessed pending food (for adding more images to same meal)
-  Future<Result<PendingFoodModel?, PendingFoodError>> getMostRecentPendingFood() async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 50));
-      
-      final unprocessed = _pendingFoods
-          .where((item) => !item.isProcessed)
-          .toList()
-        ..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
-      
-      return Success(unprocessed.isNotEmpty ? unprocessed.first : null);
-    } catch (e) {
-      return Failure(PendingFoodError.database);
-    }
+  
+  /// Clear all pending foods (for testing or explicit user action)
+  static Future<void> clearAllPendingFoods() async {
+    _pendingFoods.clear();
+    await _savePendingFoods();
+    print('🍎 PendingFoodService: Cleared all pending foods');
   }
 
   @override
   Future<Result<List<PendingFoodModel>, PendingFoodError>> getPendingFoods() async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 100));
       
-      // Return only unprocessed items, sorted by newest first
-      final unprocessed = _pendingFoods
-          .where((item) => !item.isProcessed)
-          .toList()
+      // Return a copy of the list to prevent external modifications
+      final sortedFoods = List<PendingFoodModel>.from(_pendingFoods)
         ..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
       
-      print('🍎 PendingFoodService: getPendingFoods() returning ${unprocessed.length} items');
+      print('🍎 PendingFoodService: getPendingFoods() returning ${sortedFoods.length} items');
       print('🍎 PendingFoodService: Total items in storage: ${_pendingFoods.length}');
       
-      return Success(unprocessed);
+      return Success(sortedFoods);
     } catch (e) {
-      print('🍎 PendingFoodService: getPendingFoods() error: $e');
+      print('🍎 PendingFoodService: Error getting pending foods: $e');
       return Failure(PendingFoodError.database);
     }
   }
 
   @override
   Future<Result<PendingFoodModel, PendingFoodError>> getPendingFoodById(String id) async {
+    await initialize();
+    
     try {
       await Future.delayed(const Duration(milliseconds: 50));
       
-      final item = _pendingFoods.firstWhere(
-        (item) => item.id == id,
-        orElse: () => throw Exception('Not found'),
+      final food = _pendingFoods.firstWhere(
+        (food) => food.id == id,
+        orElse: () => throw Exception('Food not found'),
       );
-      return Success(item);
+      
+      return Success(food);
     } catch (e) {
+      print('🍎 PendingFoodService: Error getting food by id: $e');
       return Failure(PendingFoodError.notFound);
     }
   }
 
-  @override
-  Future<Result<bool, PendingFoodError>> markAsProcessed(String id) async {
+  /// Get the most recently captured pending food
+  Future<Result<PendingFoodModel?, PendingFoodError>> getMostRecentPendingFood() async {
+    await initialize();
+    
     try {
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 50));
       
-      final index = _pendingFoods.indexWhere((item) => item.id == id);
-      if (index == -1) {
-        return Failure(PendingFoodError.notFound);
+      if (_pendingFoods.isEmpty) {
+        return Success(null);
       }
-
-      _pendingFoods[index] = _pendingFoods[index].copyWith(isProcessed: true);
-      return Success(true);
+      
+      // Sort by capturedAt and return the most recent
+      final sortedFoods = List<PendingFoodModel>.from(_pendingFoods)
+        ..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
+      
+      return Success(sortedFoods.first);
     } catch (e) {
-      return Failure(PendingFoodError.validation);
+      print('🍎 PendingFoodService: Error getting most recent food: $e');
+      return Failure(PendingFoodError.database);
+    }
+  }
+
+  @override
+  Future<Result<PendingFoodModel, PendingFoodError>> captureFood() async {
+    await initialize();
+    
+    try {
+      // Capture image using camera service
+      final result = await CameraService.capturePhoto();
+      
+      if (result.isFailure) {
+        // Map camera errors to pending food errors
+        switch (result.failure) {
+          case CameraError.userCancelled:
+            return Failure(PendingFoodError.userCancelled);
+          case CameraError.permissionDenied:
+            return Failure(PendingFoodError.permissionDenied);
+          case CameraError.cameraNotAvailable:
+            return Failure(PendingFoodError.cameraUnavailable);
+          case CameraError.imageSaveFailed:
+            return Failure(PendingFoodError.imageSave);
+          case CameraError.unknown:
+          default:
+            return Failure(PendingFoodError.unknown);
+        }
+      }
+      
+      final imagePath = result.success;
+      
+      // Create new pending food item
+      final pendingFood = PendingFoodModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imagePaths: [imagePath],
+        capturedAt: DateTime.now(),
+      );
+      
+      // Add to list
+      _pendingFoods.add(pendingFood);
+      
+      await _savePendingFoods(); // Save to persistent storage
+      
+      print('🍎 PendingFoodService: Added new pending food with ID ${pendingFood.id}');
+      return Success(pendingFood);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error capturing food: $e');
+      return Failure(PendingFoodError.unknown);
+    }
+  }
+  
+  @override
+  Future<Result<PendingFoodModel, PendingFoodError>> pickFromGallery() async {
+    await initialize();
+    
+    try {
+      // Pick image from gallery using camera service
+      final result = await CameraService.pickFromGallery();
+      
+      if (result.isFailure) {
+        // Map camera errors to pending food errors
+        switch (result.failure) {
+          case CameraError.userCancelled:
+            return Failure(PendingFoodError.userCancelled);
+          case CameraError.permissionDenied:
+            return Failure(PendingFoodError.permissionDenied);
+          case CameraError.imageSaveFailed:
+            return Failure(PendingFoodError.imageSave);
+          case CameraError.unknown:
+          default:
+            return Failure(PendingFoodError.unknown);
+        }
+      }
+      
+      final imagePath = result.success;
+      
+      // Create new pending food item
+      final pendingFood = PendingFoodModel(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        imagePaths: [imagePath],
+        capturedAt: DateTime.now(),
+      );
+      
+      // Add to list
+      _pendingFoods.add(pendingFood);
+      
+      await _savePendingFoods(); // Save to persistent storage
+      
+      print('🍎 PendingFoodService: Added new pending food from gallery with ID ${pendingFood.id}');
+      return Success(pendingFood);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error capturing from gallery: $e');
+      return Failure(PendingFoodError.unknown);
+    }
+  }
+  
+  Future<Result<String, PendingFoodError>> captureFromGallery() async {
+    // Use pickFromGallery and return just the ID for compatibility
+    final result = await pickFromGallery();
+    if (result.isSuccess) {
+      return Success(result.success.id);
+    } else {
+      return Failure(result.failure);
     }
   }
 
   @override
   Future<Result<bool, PendingFoodError>> deletePendingFood(String id) async {
+    await initialize();
+    
     try {
-      await Future.delayed(const Duration(milliseconds: 100));
+      // Find and remove the item
+      final index = _pendingFoods.indexWhere((food) => food.id == id);
       
-      final index = _pendingFoods.indexWhere((item) => item.id == id);
       if (index == -1) {
         return Failure(PendingFoodError.notFound);
       }
-
-      final item = _pendingFoods[index];
       
-      // Delete all image files
-      for (final imagePath in item.imagePaths) {
+      // Delete associated images
+      final food = _pendingFoods[index];
+      for (final imagePath in food.imagePaths) {
         if (imagePath.isNotEmpty && !imagePath.startsWith('mock_')) {
           await CameraService.deleteImage(imagePath);
         }
       }
-
+      
+      // Remove from list
       _pendingFoods.removeAt(index);
+      
+      await _savePendingFoods(); // Save to persistent storage
+      
+      print('🍎 PendingFoodService: Deleted pending food with ID $id');
       return Success(true);
     } catch (e) {
-      return Failure(PendingFoodError.database);
+      print('🍎 PendingFoodService: Error deleting food: $e');
+      return Failure(PendingFoodError.unknown);
     }
   }
 
-  /// Add notes to pending food item
+  @override
+  Future<Result<bool, PendingFoodError>> markAsProcessed(String id) async {
+    await initialize();
+    
+    try {
+      // Find the item
+      final index = _pendingFoods.indexWhere((food) => food.id == id);
+      
+      if (index == -1) {
+        return Failure(PendingFoodError.notFound);
+      }
+      
+      // Update as processed
+      final updatedFood = _pendingFoods[index].copyWith(isProcessed: true);
+      _pendingFoods[index] = updatedFood;
+      
+      await _savePendingFoods(); // Save to persistent storage
+      
+      print('🍎 PendingFoodService: Marked food $id as processed');
+      return Success(true);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error marking as processed: $e');
+      return Failure(PendingFoodError.unknown);
+    }
+  }
+
+  @override
+  Future<Result<int, PendingFoodError>> getUnprocessedCount() async {
+    await initialize();
+    
+    try {
+      final count = _pendingFoods.where((food) => !food.isProcessed).length;
+      return Success(count);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error getting unprocessed count: $e');
+      return Failure(PendingFoodError.database);
+    }
+  }
+  
+  @override
   Future<Result<PendingFoodModel, PendingFoodError>> addNotes(String id, String notes) async {
+    await initialize();
+    
     try {
       // Find the item
       final item = _pendingFoods.firstWhere(
@@ -244,6 +322,8 @@ class PendingFoodService implements IPendingFoodService {
       // Replace in list
       final index = _pendingFoods.indexWhere((food) => food.id == id);
       _pendingFoods[index] = updatedItem;
+      
+      await _savePendingFoods(); // Save to persistent storage
 
       print('🍎 PendingFoodService: Added notes to item $id');
       return Success(updatedItem);
@@ -255,14 +335,60 @@ class PendingFoodService implements IPendingFoodService {
 
   /// Add a new pending food element directly
   Future<Result<PendingFoodModel, PendingFoodError>> addPendingFood(PendingFoodModel pendingFood) async {
+    await initialize();
+    
     try {
       // Add to list
       _pendingFoods.add(pendingFood);
+      
+      await _savePendingFoods(); // Save to persistent storage
+      
       print('🍎 PendingFoodService: Added new pending food with ID ${pendingFood.id} and ${pendingFood.imagePaths.length} images');
       return Success(pendingFood);
     } catch (e) {
       print('🍎 PendingFoodService: Error adding pending food: $e');
       return Failure(PendingFoodError.unknown);
+    }
+  }
+
+  /// Add an additional image to an existing pending food
+  Future<Result<PendingFoodModel, PendingFoodError>> addImageToPendingFood(String pendingFoodId) async {
+    await initialize();
+    
+    try {
+      // Find the existing pending food
+      final existingIndex = _pendingFoods.indexWhere((food) => food.id == pendingFoodId);
+      if (existingIndex == -1) {
+        return Failure(PendingFoodError.notFound);
+      }
+      
+      // Capture new image
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+      
+      if (image == null) {
+        return Failure(PendingFoodError.userCancelled);
+      }
+      
+      // Update the existing pending food with additional image path
+      final existingFood = _pendingFoods[existingIndex];
+      final updatedImagePaths = List<String>.from(existingFood.imagePaths)..add(image.path);
+      final updatedFood = existingFood.copyWith(
+        imagePaths: updatedImagePaths,
+        capturedAt: DateTime.now(), // Update capture time
+      );
+      
+      _pendingFoods[existingIndex] = updatedFood;
+      await _savePendingFoods();
+      
+      print('🍎 PendingFoodService: Added image to pending food ${pendingFoodId}, now has ${updatedFood.imageCount} images');
+      return Success(updatedFood);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error adding image to pending food: $e');
+      return Failure(PendingFoodError.imageCapture);
     }
   }
 
@@ -277,6 +403,7 @@ class PendingFoodService implements IPendingFoodService {
       }
     }
     _pendingFoods.clear();
+    _savePendingFoods(); // Save empty list to storage
   }
 
   static List<PendingFoodModel> get allItems => List.unmodifiable(_pendingFoods);

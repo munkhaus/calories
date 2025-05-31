@@ -35,15 +35,25 @@ class FoodLoggingState {
 }
 
 class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
+  bool _isDisposed = false;
+  
   FoodLoggingNotifier() : super(FoodLoggingState(
     lastUpdate: DateTime.now(),
     selectedDate: DateTime.now(),
   )) {
     loadMealsForDate(state.selectedDate);
   }
+  
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
 
   /// Indlæser måltider for en specifik dato
   Future<void> loadMealsForDate(DateTime date) async {
+    if (_isDisposed) return; // Don't proceed if disposed
+    
     // Standardisér datoen til midnat
     final normalizedDate = DateTime(date.year, date.month, date.day);
     
@@ -56,17 +66,21 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
     try {
       const userId = 1; // TODO: Get actual user ID
       final meals = await FoodLoggingService.getFoodLogsForDate(userId, normalizedDate);
-      state = state.copyWith(
-        mealsForDate: meals,
-        isLoading: false,
-        lastUpdate: DateTime.now(),
-      );
+      if (!_isDisposed) {
+        state = state.copyWith(
+          mealsForDate: meals,
+          isLoading: false,
+          lastUpdate: DateTime.now(),
+        );
+      }
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-        lastUpdate: DateTime.now(),
-      );
+      if (!_isDisposed) {
+        state = state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+          lastUpdate: DateTime.now(),
+        );
+      }
     }
   }
 
@@ -76,32 +90,44 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
   }
 
   Future<void> logFood(UserFoodLogModel foodLog) async {
+    if (_isDisposed) return; // Don't proceed if disposed
+    
     try {
       await FoodLoggingService.logFood(foodLog);
       // Reload meals after logging for the selected date
       await loadMealsForDate(state.selectedDate);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(error: e.toString());
+      }
     }
   }
 
   Future<void> deleteFood(int logEntryId) async {
+    if (_isDisposed) return; // Don't proceed if disposed
+    
     try {
       await FoodLoggingService.deleteFood(logEntryId);
       // Reload meals after deleting for the selected date
       await loadMealsForDate(state.selectedDate);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(error: e.toString());
+      }
     }
   }
 
   Future<void> updateFood(UserFoodLogModel foodLog) async {
+    if (_isDisposed) return; // Don't proceed if disposed
+    
     try {
       await FoodLoggingService.updateFood(foodLog);
       // Reload meals after updating for the selected date
       await loadMealsForDate(state.selectedDate);
     } catch (e) {
-      state = state.copyWith(error: e.toString());
+      if (!_isDisposed) {
+        state = state.copyWith(error: e.toString());
+      }
     }
   }
 
@@ -110,6 +136,7 @@ class FoodLoggingNotifier extends StateNotifier<FoodLoggingState> {
   }
 
   void clearError() {
+    if (_isDisposed) return; // Don't proceed if disposed
     state = state.copyWith(error: null);
   }
 

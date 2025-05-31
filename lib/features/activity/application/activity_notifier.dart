@@ -27,6 +27,7 @@ class ActivityNotifier extends ChangeNotifier {
   
   @override
   void dispose() {
+    _isDisposed = true;
     _instances.remove(this);
     super.dispose();
   }
@@ -59,8 +60,11 @@ class ActivityNotifier extends ChangeNotifier {
 
   ActivityState get state => _state;
   DateTime get selectedDate => _selectedDate;
+  
+  bool _isDisposed = false;
 
   void _updateState(ActivityState newState) {
+    if (_isDisposed) return; // Don't update if disposed
     _state = newState;
     notifyListeners();
   }

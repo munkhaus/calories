@@ -1,10 +1,11 @@
 import '../domain/activity_item_model.dart';
 import '../domain/user_activity_log_model.dart';
+import '../../../core/infrastructure/storage_service.dart';
 
 /// Simple in-memory database service for activity data
 class ActivityDatabaseService {
   static final List<ActivityItemModel> _activities = <ActivityItemModel>[];
-  static final List<UserActivityLogModel> _activityLogs = <UserActivityLogModel>[];
+  static List<UserActivityLogModel> _activityLogs = <UserActivityLogModel>[];
   static bool _isInitialized = false;
 
   /// Initialize the database with sample data
@@ -12,7 +13,30 @@ class ActivityDatabaseService {
     if (_isInitialized) return;
     
     await _insertSampleActivities();
+    
+    // Load persisted activity logs
+    _activityLogs = await StorageService.loadList(
+      StorageService.activityLogsKey,
+      UserActivityLogModel.fromJson,
+    );
+    
     _isInitialized = true;
+    print('🏃 ActivityDatabaseService: Loaded ${_activityLogs.length} activity logs from storage');
+  }
+  
+  /// Save activity logs to persistent storage
+  static Future<void> _saveActivityLogs() async {
+    final success = await StorageService.saveList(
+      StorageService.activityLogsKey,
+      _activityLogs,
+      (log) => log.toJson(),
+    );
+    
+    if (success) {
+      print('🏃 ActivityDatabaseService: Saved ${_activityLogs.length} activity logs to storage');
+    } else {
+      print('❌ ActivityDatabaseService: Failed to save activity logs');
+    }
   }
 
   /// Insert sample activities data
@@ -110,9 +134,6 @@ class ActivityDatabaseService {
 
     _activities.clear();
     _activities.addAll(sampleActivities);
-
-    // Clear any existing activity logs - start with clean data
-    _activityLogs.clear();
   }
 
   // Activity Item Operations
@@ -175,7 +196,7 @@ class ActivityDatabaseService {
   static Future<int> logActivity(UserActivityLogModel activity) async {
     await initialize();
     
-    final newId = _activityLogs.length + 1;
+    final newId = _getNextId();
     final now = DateTime.now().toIso8601String();
     
     final logWithId = activity.copyWith(
@@ -186,7 +207,18 @@ class ActivityDatabaseService {
     );
     
     _activityLogs.add(logWithId);
+    await _saveActivityLogs(); // Save to persistent storage
     return newId;
+  }
+  
+  static int _getNextId() {
+    if (_activityLogs.isEmpty) return 1;
+    
+    final maxId = _activityLogs
+        .map((log) => log.logEntryId)
+        .reduce((max, id) => id > max ? id : max);
+    
+    return maxId + 1;
   }
 
   static Future<List<UserActivityLogModel>> getActivityLogsForDate(
@@ -297,6 +329,7 @@ class ActivityDatabaseService {
     final index = _activityLogs.indexWhere((log) => log.logEntryId == logEntryId);
     if (index >= 0) {
       _activityLogs.removeAt(index);
+      await _saveActivityLogs(); // Save to persistent storage
       return true;
     }
     return false;
@@ -311,6 +344,7 @@ class ActivityDatabaseService {
         updatedAt: DateTime.now().toIso8601String(),
       );
       _activityLogs[index] = updatedActivity;
+      await _saveActivityLogs(); // Save to persistent storage
       return true;
     }
     return false;
@@ -319,6 +353,7 @@ class ActivityDatabaseService {
   // Helper methods for development and testing
   static void clearAllData() {
     _activityLogs.clear();
+    _saveActivityLogs(); // Save empty list to storage
     _isInitialized = false;
   }
 

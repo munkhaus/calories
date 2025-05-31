@@ -1,5 +1,6 @@
 import '../domain/food_item_model.dart';
 import '../domain/user_food_log_model.dart';
+import '../../../core/infrastructure/storage_service.dart';
 
 class FoodLoggingService {
   // Mock data for demonstration - in real app this would use SQLite
@@ -94,7 +95,36 @@ class FoodLoggingService {
     ),
   ];
 
-  static final List<UserFoodLogModel> _foodLogs = <UserFoodLogModel>[];
+  static List<UserFoodLogModel> _foodLogs = <UserFoodLogModel>[];
+  static bool _isInitialized = false;
+  
+  /// Initialize service and load persisted data
+  static Future<void> initialize() async {
+    if (_isInitialized) return;
+    
+    _foodLogs = await StorageService.loadList(
+      StorageService.foodLogsKey,
+      UserFoodLogModel.fromJson,
+    );
+    
+    _isInitialized = true;
+    print('🍎 FoodLoggingService: Loaded ${_foodLogs.length} food logs from storage');
+  }
+  
+  /// Save food logs to persistent storage
+  static Future<void> _saveFoodLogs() async {
+    final success = await StorageService.saveList(
+      StorageService.foodLogsKey,
+      _foodLogs,
+      (log) => log.toJson(),
+    );
+    
+    if (success) {
+      print('🍎 FoodLoggingService: Saved ${_foodLogs.length} food logs to storage');
+    } else {
+      print('❌ FoodLoggingService: Failed to save food logs');
+    }
+  }
 
   // Food Item Operations
   static Future<List<FoodItemModel>> searchFoodItems(String query) async {
@@ -143,9 +173,10 @@ class FoodLoggingService {
 
   // Food Log Operations
   static Future<int> logFood(UserFoodLogModel foodLog) async {
+    await initialize();
     await Future.delayed(const Duration(milliseconds: 200));
     
-    final newId = _foodLogs.length + 1;
+    final newId = _getNextId();
     final logWithId = foodLog.copyWith(
       logEntryId: newId,
       loggedAt: DateTime.now().toIso8601String(),
@@ -154,13 +185,25 @@ class FoodLoggingService {
     );
     
     _foodLogs.add(logWithId);
+    await _saveFoodLogs(); // Save to persistent storage
     return newId;
+  }
+  
+  static int _getNextId() {
+    if (_foodLogs.isEmpty) return 1;
+    
+    final maxId = _foodLogs
+        .map((log) => log.logEntryId)
+        .reduce((max, id) => id > max ? id : max);
+    
+    return maxId + 1;
   }
 
   static Future<List<UserFoodLogModel>> getFoodLogsForDate(
     int userId, 
     DateTime date,
   ) async {
+    await initialize();
     await Future.delayed(const Duration(milliseconds: 150));
     
     final dateString = date.toIso8601String().split('T')[0];
@@ -176,6 +219,7 @@ class FoodLoggingService {
     DateTime date,
     MealType mealType,
   ) async {
+    await initialize();
     await Future.delayed(const Duration(milliseconds: 150));
     
     final dateString = date.toIso8601String().split('T')[0];
@@ -192,6 +236,7 @@ class FoodLoggingService {
     int userId,
     DateTime date,
   ) async {
+    await initialize();
     await Future.delayed(const Duration(milliseconds: 100));
     
     final logs = await getFoodLogsForDate(userId, date);
@@ -217,17 +262,20 @@ class FoodLoggingService {
   }
 
   static Future<bool> deleteFoodLog(int logEntryId) async {
+    await initialize();
     await Future.delayed(const Duration(milliseconds: 100));
     
     final index = _foodLogs.indexWhere((log) => log.logEntryId == logEntryId);
     if (index >= 0) {
       _foodLogs.removeAt(index);
+      await _saveFoodLogs(); // Save to persistent storage
       return true;
     }
     return false;
   }
 
   static Future<bool> updateFoodLog(UserFoodLogModel foodLog) async {
+    await initialize();
     await Future.delayed(const Duration(milliseconds: 100));
     
     final index = _foodLogs.indexWhere((log) => log.logEntryId == foodLog.logEntryId);
@@ -235,6 +283,7 @@ class FoodLoggingService {
       _foodLogs[index] = foodLog.copyWith(
         updatedAt: DateTime.now().toIso8601String(),
       );
+      await _saveFoodLogs(); // Save to persistent storage
       return true;
     }
     return false;
@@ -242,6 +291,7 @@ class FoodLoggingService {
 
   // Get today's logged meals
   static Future<List<UserFoodLogModel>> getTodaysMeals() async {
+    await initialize();
     // Simulate delay for demo
     await Future.delayed(Duration(milliseconds: 500));
     
@@ -257,16 +307,14 @@ class FoodLoggingService {
   // Clear all data (for demo/testing)
   static void clearAllData() {
     _foodLogs.clear();
+    _saveFoodLogs(); // Save empty list to storage
   }
 
   static Future<void> deleteFood(int logEntryId) async {
-    _foodLogs.removeWhere((meal) => meal.logEntryId == logEntryId);
+    await deleteFoodLog(logEntryId);
   }
 
   static Future<void> updateFood(UserFoodLogModel updatedFoodLog) async {
-    final index = _foodLogs.indexWhere((meal) => meal.logEntryId == updatedFoodLog.logEntryId);
-    if (index != -1) {
-      _foodLogs[index] = updatedFoodLog;
-    }
+    await updateFoodLog(updatedFoodLog);
   }
 } 

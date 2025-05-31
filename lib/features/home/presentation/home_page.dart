@@ -183,6 +183,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "home_fab",
         onPressed: () => _captureQuickFood(context),
         backgroundColor: AppColors.warning,
         foregroundColor: Colors.white,
@@ -1098,7 +1099,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               SizedBox(width: KSizes.margin3x),
-              Expanded(child: Text('Åbner galleri...')),
+              Flexible(child: Text('Åbner galleri...')),
             ],
           ),
           backgroundColor: AppColors.info,
@@ -1116,7 +1117,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(child: Text('Billede valgt! Kategoriser det når du er klar.')),
+                Flexible(child: Text('Billede valgt! Kategoriser det når du er klar.')),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -1132,7 +1133,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Icon(MdiIcons.alertCircle, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(child: Text('Kunne ikke vælge billede')),
+                Flexible(child: Text('Kunne ikke vælge billede')),
               ],
             ),
             backgroundColor: AppColors.error,
@@ -1160,7 +1161,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               SizedBox(width: KSizes.margin3x),
-              Expanded(child: Text('Tager billede...')),
+              Flexible(child: Text('Tager billede...')),
             ],
           ),
           backgroundColor: AppColors.warning,
@@ -1178,7 +1179,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(child: Text('Billede taget! Kategoriser det når du er klar.')),
+                Flexible(child: Text('Billede taget! Kategoriser det når du er klar.')),
               ],
             ),
             backgroundColor: AppColors.success,
@@ -1202,7 +1203,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Icon(MdiIcons.alertCircle, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(child: Text('Kunne ikke tage billede')),
+                Flexible(child: Text('Kunne ikke tage billede')),
               ],
             ),
             backgroundColor: AppColors.error,

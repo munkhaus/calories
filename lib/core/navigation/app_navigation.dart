@@ -144,6 +144,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
         )).toList(),
       ),
       floatingActionButton: _currentIndex == 0 ? FloatingActionButton(
+        heroTag: "nav_fab",
         onPressed: () => _showMainCategoryDialog(context),
         backgroundColor: AppColors.warning,
         foregroundColor: Colors.white,
@@ -176,7 +177,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
                 ),
               ),
               SizedBox(width: KSizes.margin3x),
-              Expanded(
+              Flexible(
                 child: Text('Tager billede...'),
               ),
             ],
@@ -199,7 +200,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(
+                Flexible(
                   child: Text('Billede taget! Kategoriser det når du er klar.'),
                 ),
               ],
@@ -224,7 +225,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
               children: [
                 Icon(MdiIcons.alertCircle, color: Colors.white),
                 SizedBox(width: KSizes.margin2x),
-                Expanded(
+                Flexible(
                   child: Text('Kunne ikke tage billede'),
                 ),
               ],
