@@ -10,23 +10,31 @@ class ActivityDatabaseService {
 
   /// Initialize the database with sample data
   static Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      print('🏃 ActivityDatabaseService: Already initialized with ${_activityLogs.length} activity logs');
+      return;
+    }
+    
+    print('🏃 ActivityDatabaseService: Starting initialization...');
     
     await _insertSampleActivities();
+    print('🏃 ActivityDatabaseService: Inserted ${_activities.length} sample activities');
     
     // Load persisted activity logs
     _activityLogs = await StorageService.loadList(
       StorageService.activityLogsKey,
       UserActivityLogModel.fromJson,
     );
+    print('🏃 ActivityDatabaseService: Loaded ${_activityLogs.length} persisted activity logs');
     
     // Add test activity logs if none exist
     if (_activityLogs.isEmpty) {
+      print('🏃 ActivityDatabaseService: No existing logs, adding test data...');
       await _addTestActivityLogs();
     }
     
     _isInitialized = true;
-    print('🏃 ActivityDatabaseService: Loaded ${_activityLogs.length} activity logs from storage');
+    print('🏃 ActivityDatabaseService: Initialization complete with ${_activityLogs.length} activity logs');
   }
   
   /// Save activity logs to persistent storage

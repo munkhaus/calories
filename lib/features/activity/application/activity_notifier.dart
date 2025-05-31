@@ -89,14 +89,23 @@ class ActivityNotifier extends ChangeNotifier {
     ]);
   }
 
-  /// Initialize with BMR for total calorie calculation
-  Future<void> initializeWithBmr(double dailyBmr) async {
-    _currentBmr = dailyBmr; // Track BMR for future refreshes
+  /// Initialize with BMR calculation
+  Future<void> initializeWithBmr(double bmr) async {
+    print('🔥 ActivityNotifier: Initializing with BMR: $bmr');
+    
+    // Explicit initialization of the database service
+    await _service.getAvailableActivities(); // This will trigger database initialization
+    
+    _currentBmr = bmr;
+    _selectedDate = DateTime.now();
+    
+    // Load activity data
     await Future.wait([
-      loadCommonActivities(),
-      loadActivitiesForDate(_selectedDate),
-      loadTotalCaloriesWithBmrForDate(dailyBmr, _selectedDate),
+      loadTodaysActivities(),
+      loadTotalCaloriesWithBmr(bmr),
     ]);
+    
+    print('🔥 ActivityNotifier: Initialization complete');
   }
 
   /// Load common/popular activities
@@ -150,6 +159,7 @@ class ActivityNotifier extends ChangeNotifier {
     if (!mounted) return; // Don't proceed if disposed
     
     final normalizedDate = DateTime(date.year, date.month, date.day);
+    print('🔥 ActivityNotifier: Loading activities for date: $normalizedDate');
     
     if (!mounted) return; // Check again before state update
     
@@ -159,19 +169,23 @@ class ActivityNotifier extends ChangeNotifier {
 
     try {
       final result = await _service.getActivityLogsForDate(1, normalizedDate); // TODO: Get real user ID
+      print('🔥 ActivityNotifier: Service result - isSuccess: ${result.isSuccess}');
       
       if (!mounted) return; // Don't proceed if disposed during async operation
       
       if (result.isSuccess) {
+        print('🔥 ActivityNotifier: Found ${result.success.length} activities for $normalizedDate');
         _updateState(_state.copyWith(
           todaysActivitiesState: DataState.success(result.success),
         ));
       } else {
+        print('🔥 ActivityNotifier: Failed to load activities - ${result.failure}');
         _updateState(_state.copyWith(
           todaysActivitiesState: const DataState.error('Kunne ikke indlæse aktiviteter'),
         ));
       }
     } catch (e) {
+      print('🔥 ActivityNotifier: Exception loading activities: $e');
       if (!mounted) return; // Don't proceed if disposed during error handling
       
       _updateState(_state.copyWith(

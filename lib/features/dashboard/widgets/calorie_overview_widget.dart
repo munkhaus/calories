@@ -425,23 +425,37 @@ class CalorieOverviewWidget extends ConsumerWidget {
   Color _getProgressColor(double progress) {
     // Handle invalid progress values during initial load
     if (progress.isNaN || progress.isInfinite) {
-      return const Color(0xFF4CAF50); // Green for default
+      return const Color(0xFF81C784); // Light green for default
     }
     
     // Clamp progress to reasonable bounds
     progress = progress.clamp(0.0, 1.2);
     
-    // Create gradual color transition from green to orange to red
-    // Green zone is much larger when there are many calories remaining
-    if (progress <= 0.8) {
-      // Many calories remaining: Green
+    // Create smooth gradual color transition from very light green to dark red
+    if (progress <= 0.3) {
+      // Very many calories remaining: Very light green
+      return const Color(0xFFA5D6A7); // Very light green
+    } else if (progress <= 0.5) {
+      // Many calories remaining: Light green
+      return const Color(0xFF81C784); // Light green
+    } else if (progress <= 0.7) {
+      // Some calories remaining: Medium green
+      return const Color(0xFF66BB6A); // Medium green
+    } else if (progress <= 0.8) {
+      // Getting close: Standard green
       return const Color(0xFF4CAF50); // Standard green
     } else if (progress <= 0.9) {
-      // Getting close to goal: Orange
+      // Close to goal: Light orange
+      return const Color(0xFFFFB74D); // Light orange
+    } else if (progress <= 0.95) {
+      // Very close to goal: Orange
       return const Color(0xFFFF9800); // Orange
     } else if (progress <= 1.0) {
-      // Very close to goal: Dark orange  
+      // Almost at goal: Dark orange
       return const Color(0xFFFF5722); // Dark orange
+    } else if (progress <= 1.05) {
+      // Slightly over goal: Light red
+      return const Color(0xFFEF5350); // Light red
     } else if (progress <= 1.1) {
       // Over goal: Red
       return const Color(0xFFF44336); // Red
@@ -810,37 +824,44 @@ class CalorieOverviewWidget extends ConsumerWidget {
   }
   
   LinearGradient _getContextualGradient(double progress, bool isAheadOfPace) {
-    if (progress > 1.0) {
-      // Over goal - red gradient
-      return LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          AppColors.error.withOpacity(0.1),
-          Colors.white.withOpacity(0.95),
-        ],
-      );
-    } else if (isAheadOfPace) {
-      // Ahead of pace - orange gradient
-      return LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          AppColors.warning.withOpacity(0.1),
-          Colors.white.withOpacity(0.95),
-        ],
-      );
-    } else {
-      // On track - green gradient
-      return LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          AppColors.success.withOpacity(0.1),
-          Colors.white.withOpacity(0.95),
-        ],
-      );
+    // Handle invalid progress values during initial load
+    if (progress.isNaN || progress.isInfinite) {
+      progress = 0.0;
     }
+    
+    // Clamp progress to reasonable bounds
+    progress = progress.clamp(0.0, 1.2);
+    
+    // Get the main color based on progress (same logic as _getProgressColor)
+    Color mainColor;
+    if (progress <= 0.8) {
+      // Many calories remaining: Green
+      mainColor = const Color(0xFF4CAF50); // Standard green
+    } else if (progress <= 0.9) {
+      // Getting close to goal: Orange
+      mainColor = const Color(0xFFFF9800); // Orange
+    } else if (progress <= 1.0) {
+      // Very close to goal: Dark orange  
+      mainColor = const Color(0xFFFF5722); // Dark orange
+    } else if (progress <= 1.1) {
+      // Over goal: Red
+      mainColor = const Color(0xFFF44336); // Red
+    } else {
+      // Way over goal: Dark red
+      mainColor = const Color(0xFFD32F2F); // Dark red
+    }
+    
+    // Create smooth gradient using the progress-based color
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        mainColor.withOpacity(0.15), // Stronger color at top-left
+        mainColor.withOpacity(0.05), // Lighter color in middle
+        Colors.white.withOpacity(0.95), // White at bottom-right
+      ],
+      stops: const [0.0, 0.6, 1.0],
+    );
   }
   
   String _getContextualStatusMessage(double progress, bool isAheadOfPace, String timeContext, double remainingCalories) {

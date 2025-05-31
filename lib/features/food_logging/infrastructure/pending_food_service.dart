@@ -63,7 +63,7 @@ class PendingFoodService implements IPendingFoodService {
   }
   
   /// Clear all pending foods (for testing or explicit user action)
-  static Future<void> clearAllPendingFoods() async {
+  static Future<void> clearAll() async {
     _pendingFoods.clear();
     await _savePendingFoods();
     print('🍎 PendingFoodService: Cleared all pending foods');
@@ -74,16 +74,18 @@ class PendingFoodService implements IPendingFoodService {
     await initialize();
     
     try {
-      await Future.delayed(const Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 50));
       
-      // Return a copy of the list to prevent external modifications
-      final sortedFoods = List<PendingFoodModel>.from(_pendingFoods)
+      // Filter out processed items and sort by capture time (newest first)
+      final unprocessedFoods = _pendingFoods
+          .where((food) => !food.isProcessed)
+          .toList()
         ..sort((a, b) => b.capturedAt.compareTo(a.capturedAt));
       
-      print('🍎 PendingFoodService: getPendingFoods() returning ${sortedFoods.length} items');
+      print('🍎 PendingFoodService: getPendingFoods() returning ${unprocessedFoods.length} unprocessed items');
       print('🍎 PendingFoodService: Total items in storage: ${_pendingFoods.length}');
       
-      return Success(sortedFoods);
+      return Success(unprocessedFoods);
     } catch (e) {
       print('🍎 PendingFoodService: Error getting pending foods: $e');
       return Failure(PendingFoodError.database);
@@ -278,13 +280,20 @@ class PendingFoodService implements IPendingFoodService {
         return Failure(PendingFoodError.notFound);
       }
       
-      // Update as processed
-      final updatedFood = _pendingFoods[index].copyWith(isProcessed: true);
-      _pendingFoods[index] = updatedFood;
+      // Delete associated images before removing the item
+      final food = _pendingFoods[index];
+      for (final imagePath in food.imagePaths) {
+        if (imagePath.isNotEmpty && !imagePath.startsWith('mock_')) {
+          await CameraService.deleteImage(imagePath);
+        }
+      }
+      
+      // Remove from list (instead of just marking as processed)
+      _pendingFoods.removeAt(index);
       
       await _savePendingFoods(); // Save to persistent storage
       
-      print('🍎 PendingFoodService: Marked food $id as processed');
+      print('🍎 PendingFoodService: Deleted processed food $id and its ${food.imagePaths.length} images');
       return Success(true);
     } catch (e) {
       print('🍎 PendingFoodService: Error marking as processed: $e');
@@ -393,18 +402,56 @@ class PendingFoodService implements IPendingFoodService {
   }
 
   // Helper methods for testing/development
-  static void clearAll() {
-    // Clean up all image files before clearing list
-    for (final item in _pendingFoods) {
-      for (final imagePath in item.imagePaths) {
-        if (imagePath.isNotEmpty && !imagePath.startsWith('mock_')) {
-          CameraService.deleteImage(imagePath);
+  static List<PendingFoodModel> get allItems => List.unmodifiable(_pendingFoods);
+  
+  /// Add test pending food for debugging
+  Future<Result<PendingFoodModel, PendingFoodError>> addTestPendingFood() async {
+    await initialize();
+    
+    try {
+      // Create test pending food with mock image
+      final testFood = PendingFoodModel(
+        id: 'test_${DateTime.now().millisecondsSinceEpoch}',
+        imagePaths: ['mock_test_image_${DateTime.now().millisecondsSinceEpoch}.jpg'],
+        capturedAt: DateTime.now(),
+        notes: 'Test pending food for debugging',
+      );
+      
+      // Add to list
+      _pendingFoods.add(testFood);
+      
+      await _savePendingFoods();
+      
+      print('🍎 PendingFoodService: Added test pending food with ID ${testFood.id}');
+      return Success(testFood);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error adding test pending food: $e');
+      return Failure(PendingFoodError.unknown);
+    }
+  }
+  
+  /// Clear all pending foods (for debugging)
+  Future<Result<bool, PendingFoodError>> clearAllPendingFoods() async {
+    await initialize();
+    
+    try {
+      // Clean up all image files before clearing list
+      for (final item in _pendingFoods) {
+        for (final imagePath in item.imagePaths) {
+          if (imagePath.isNotEmpty && !imagePath.startsWith('mock_')) {
+            await CameraService.deleteImage(imagePath);
+          }
         }
       }
+      
+      _pendingFoods.clear();
+      await _savePendingFoods();
+      
+      print('🍎 PendingFoodService: Cleared all pending foods');
+      return Success(true);
+    } catch (e) {
+      print('🍎 PendingFoodService: Error clearing pending foods: $e');
+      return Failure(PendingFoodError.unknown);
     }
-    _pendingFoods.clear();
-    _savePendingFoods(); // Save empty list to storage
   }
-
-  static List<PendingFoodModel> get allItems => List.unmodifiable(_pendingFoods);
 } 
