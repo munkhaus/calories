@@ -1,125 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../shared/widgets/app_page_header.dart';
-import '../widgets/food_item_card.dart';
 import '../widgets/meal_type_selector.dart';
-import '../../domain/food_item_model.dart';
 import '../../domain/user_food_log_model.dart';
-import '../../infrastructure/food_logging_service.dart';
-import 'food_portion_page.dart';
+import '../../domain/favorite_food_model.dart';
+import '../../application/food_search_cubit.dart';
+import '../../application/food_search_state.dart';
+import '../../application/food_logging_notifier.dart';
+import '../../../food_database/domain/online_food_models.dart';
 
-class FoodSearchPage extends StatefulWidget {
+/// Smart food addition page that combines search and actions
+class AddFoodPage extends ConsumerStatefulWidget {
   final MealType? initialMealType;
 
-  const FoodSearchPage({
+  const AddFoodPage({
     super.key,
     this.initialMealType,
   });
 
   @override
-  State<FoodSearchPage> createState() => _FoodSearchPageState();
+  ConsumerState<AddFoodPage> createState() => _AddFoodPageState();
 }
 
-class _FoodSearchPageState extends State<FoodSearchPage> 
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _AddFoodPageState extends ConsumerState<AddFoodPage> {
   final TextEditingController _searchController = TextEditingController();
-  
-  List<FoodItemModel> _searchResults = [];
-  List<FoodItemModel> _recentFoods = [];
-  List<FoodItemModel> _popularFoods = [];
-  
-  bool _isSearching = false;
-  bool _isLoadingRecent = true;
-  bool _isLoadingPopular = true;
-  
   MealType _selectedMealType = MealType.morgenmad;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
     _selectedMealType = widget.initialMealType ?? MealType.none;
-    _loadInitialData();
+    
+    // Initialize the search cubit
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🍽️ AddFoodPage: Initializing FoodSearchCubit');
+      ref.read(foodSearchProvider.notifier).initialize();
+    });
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadInitialData() async {
-    await Future.wait([
-      _loadRecentFoods(),
-      _loadPopularFoods(),
-    ]);
-  }
-
-  Future<void> _loadRecentFoods() async {
-    setState(() => _isLoadingRecent = true);
-    try {
-      final foods = await FoodLoggingService.getRecentFoodItems(limit: 10);
-      setState(() {
-        _recentFoods = foods;
-        _isLoadingRecent = false;
-      });
-    } catch (e) {
-      setState(() => _isLoadingRecent = false);
-    }
-  }
-
-  Future<void> _loadPopularFoods() async {
-    setState(() => _isLoadingPopular = true);
-    try {
-      final foods = await FoodLoggingService.getPopularFoodItems(limit: 15);
-      setState(() {
-        _popularFoods = foods;
-        _isLoadingPopular = false;
-      });
-    } catch (e) {
-      setState(() => _isLoadingPopular = false);
-    }
-  }
-
-  Future<void> _searchFoods(String query) async {
+  void _onSearchChanged(String query) {
+    print('🍽️ AddFoodPage: Searching for: "$query"');
     if (query.trim().isEmpty) {
-      setState(() {
-        _searchResults = [];
-        _isSearching = false;
-      });
-      return;
+      ref.read(foodSearchProvider.notifier).loadFavoritesByMealType(_selectedMealType);
+    } else {
+      ref.read(foodSearchProvider.notifier).searchFood(query.trim());
     }
-
-    setState(() => _isSearching = true);
-    
-    try {
-      final foods = await FoodLoggingService.searchFoodItems(query.trim());
-      setState(() {
-        _searchResults = foods;
-        _isSearching = false;
-      });
-    } catch (e) {
-      setState(() => _isSearching = false);
-    }
-  }
-
-  void _onFoodSelected(FoodItemModel food) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => FoodPortionPage(
-          foodItem: food,
-          mealType: _selectedMealType,
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final searchState = ref.watch(foodSearchProvider);
+    
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -157,9 +97,9 @@ class _FoodSearchPageState extends State<FoodSearchPage>
                     const SizedBox(width: KSizes.margin4x),
                     Expanded(
                       child: StandardPageHeader(
-                        title: 'Find dine fødevarer 🔍',
-                        subtitle: 'Søg og vælg det du har spist',
-                        icon: MdiIcons.magnify,
+                        title: 'Tilføj Mad 🍽️',
+                        subtitle: 'Søg, spis nu eller gem som favorit',
+                        icon: MdiIcons.plus,
                         iconColor: AppColors.primary,
                       ),
                     ),
@@ -179,6 +119,9 @@ class _FoodSearchPageState extends State<FoodSearchPage>
                           selectedMealType: _selectedMealType,
                           onMealTypeChanged: (mealType) {
                             setState(() => _selectedMealType = mealType);
+                            if (_searchController.text.trim().isEmpty) {
+                              ref.read(foodSearchProvider.notifier).loadFavoritesByMealType(mealType);
+                            }
                           },
                         ),
                       ),
@@ -189,45 +132,36 @@ class _FoodSearchPageState extends State<FoodSearchPage>
                         child: TextField(
                           controller: _searchController,
                           decoration: InputDecoration(
-                            hintText: 'Søg efter fødevarer...',
+                            hintText: 'Søg efter mad...',
                             prefixIcon: Icon(
                               MdiIcons.magnify,
                               color: AppColors.textSecondary,
                             ),
                             suffixIcon: _searchController.text.isNotEmpty
                                 ? IconButton(
-                                    icon: Icon(
-                                      MdiIcons.close,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                    icon: Icon(MdiIcons.close),
                                     onPressed: () {
                                       _searchController.clear();
-                                      _searchFoods('');
+                                      _onSearchChanged('');
                                     },
                                   )
                                 : null,
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(KSizes.radiusM),
-                              borderSide: BorderSide(color: AppColors.border),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(KSizes.radiusM),
-                              borderSide: BorderSide(color: AppColors.primary, width: 2),
+                              borderRadius: BorderRadius.circular(KSizes.radiusL),
+                              borderSide: BorderSide.none,
                             ),
                             filled: true,
-                            fillColor: AppColors.surface,
+                            fillColor: Colors.white,
                           ),
-                          onChanged: _searchFoods,
+                          onChanged: _onSearchChanged,
                         ),
                       ),
                       
                       SizedBox(height: KSizes.margin4x),
                       
-                      // Content Tabs or Search Results
+                      // Search Results
                       Expanded(
-                        child: _searchController.text.isEmpty
-                            ? _buildTabContent()
-                            : _buildSearchResults(),
+                        child: _buildSearchResults(searchState),
                       ),
                     ],
                   ),
@@ -240,72 +174,132 @@ class _FoodSearchPageState extends State<FoodSearchPage>
     );
   }
 
-  Widget _buildTabContent() {
+  Widget _buildSearchResults(FoodSearchState state) {
+    if (state.isLoading || state.isSearchingFavorites || state.isSearchingOnline) {
+      return _buildLoadingState(state);
+    }
+
+    if (state.searchQuery.isEmpty) {
+      return _buildQuickSuggestions(state);
+    }
+
+    return _buildCombinedResults(state);
+  }
+
+  Widget _buildLoadingState(FoodSearchState state) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: AppColors.primary),
+          SizedBox(height: KSizes.margin4x),
+          Text(
+            state.isSearchingFavorites 
+                ? 'Søger i favoritter...'
+                : state.isSearchingOnline 
+                    ? 'Søger online...'
+                    : 'Indlæser...',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: KSizes.fontSizeM,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickSuggestions(FoodSearchState state) {
+    if (state.quickSuggestions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              MdiIcons.silverwareForkKnife,
+              size: 64,
+              color: AppColors.textTertiary,
+            ),
+            SizedBox(height: KSizes.margin4x),
+            Text(
+              'Søg efter mad',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: KSizes.margin2x),
+            Text(
+              'Skriv madnavn for at finde og tilføje mad',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textTertiary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Tab Bar
-        Container(
-          margin: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-          child: TabBar(
-            controller: _tabController,
-            labelColor: AppColors.primary,
-            unselectedLabelColor: AppColors.textSecondary,
-            indicatorColor: AppColors.primary,
-            tabs: const [
-              Tab(text: 'Populære'),
-              Tab(text: 'Seneste'),
-              Tab(text: 'Mine'),
-            ],
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+          child: Text(
+            'Hurtige forslag',
+            style: TextStyle(
+              fontSize: KSizes.fontSizeL,
+              fontWeight: KSizes.fontWeightBold,
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
-        
-        SizedBox(height: KSizes.margin2x),
-        
-        // Tab Views
+        SizedBox(height: KSizes.margin3x),
         Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildPopularFoods(),
-              _buildRecentFoods(),
-              _buildMyFoods(),
-            ],
+          child: ListView.builder(
+            itemCount: state.quickSuggestions.length,
+            itemBuilder: (context, index) {
+              final favorite = state.quickSuggestions[index];
+              return _buildFavoriteCard(favorite);
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchResults() {
-    if (_isSearching) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
-      );
-    }
+  Widget _buildCombinedResults(FoodSearchState state) {
+    final hasResults = state.favoriteResults.isNotEmpty || state.onlineResults.isNotEmpty;
     
-    if (_searchResults.isEmpty) {
+    print('🍽️ AddFoodPage: Found ${state.favoriteResults.length} favorites, ${state.onlineResults.length} online results');
+    
+    if (!hasResults) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              MdiIcons.foodOff,
-              size: KSizes.iconXL,
+              MdiIcons.magnify,
+              size: 64,
               color: AppColors.textTertiary,
             ),
             SizedBox(height: KSizes.margin4x),
             Text(
-              'Ingen fødevarer fundet',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              'Ingen resultater',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                fontWeight: KSizes.fontWeightBold,
                 color: AppColors.textSecondary,
               ),
             ),
             SizedBox(height: KSizes.margin2x),
             Text(
-              'Prøv at søge med et andet ord',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              'Prøv en anden søgning',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
                 color: AppColors.textTertiary,
               ),
             ),
@@ -313,125 +307,461 @@ class _FoodSearchPageState extends State<FoodSearchPage>
         ),
       );
     }
-    
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: KSizes.margin2x),
-          child: FoodItemCard(
-            foodItem: _searchResults[index],
-            onTap: () => _onFoodSelected(_searchResults[index]),
-          ),
-        );
-      },
-    );
-  }
 
-  Widget _buildPopularFoods() {
-    if (_isLoadingPopular) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
-      );
-    }
-    
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-      itemCount: _popularFoods.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: KSizes.margin2x),
-          child: FoodItemCard(
-            foodItem: _popularFoods[index],
-            onTap: () => _onFoodSelected(_popularFoods[index]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentFoods() {
-    if (_isLoadingRecent) {
-      return Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-        ),
-      );
-    }
-    
-    if (_recentFoods.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              MdiIcons.clockOutline,
-              size: KSizes.iconXL,
-              color: AppColors.textTertiary,
-            ),
-            SizedBox(height: KSizes.margin4x),
-            Text(
-              'Ingen seneste fødevarer',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: KSizes.margin2x),
-            Text(
-              'Log dine første måltider',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-    
-    return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
-      itemCount: _recentFoods.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: KSizes.margin2x),
-          child: FoodItemCard(
-            foodItem: _recentFoods[index],
-            onTap: () => _onFoodSelected(_recentFoods[index]),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMyFoods() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            MdiIcons.bookmarkPlusOutline,
-            size: KSizes.iconXL,
-            color: AppColors.textTertiary,
-          ),
-          SizedBox(height: KSizes.margin4x),
-          Text(
-            'Mine Fødevarer',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
+    return ListView(
+      children: [
+        // Favorite Results Section
+        if (state.favoriteResults.isNotEmpty) ...[
+          _buildSectionHeader('Mine Favoritter', MdiIcons.star, AppColors.warning),
           SizedBox(height: KSizes.margin2x),
+          ...state.favoriteResults.map((favorite) => _buildFavoriteCard(favorite)).toList(),
+          SizedBox(height: KSizes.margin4x),
+        ],
+        
+        // Online Results Section
+        if (state.onlineResults.isNotEmpty) ...[
+          _buildSectionHeader('Online Søgning', MdiIcons.web, AppColors.info),
+          SizedBox(height: KSizes.margin2x),
+          ...state.onlineResults.map((result) => _buildOnlineResultCard(result)).toList(),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: KSizes.iconM),
+          SizedBox(width: KSizes.margin2x),
           Text(
-            'Kommer snart',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textTertiary,
+            title,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeL,
+              fontWeight: KSizes.fontWeightBold,
+              color: AppColors.textPrimary,
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildFavoriteCard(FavoriteFoodModel favorite) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: KSizes.margin4x,
+        vertical: KSizes.margin2x,
+      ),
+      child: Container(
+        padding: EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.warning.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Food info header
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(KSizes.margin3x),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  ),
+                  child: Icon(
+                    MdiIcons.star,
+                    color: AppColors.warning,
+                    size: KSizes.iconM,
+                  ),
+                ),
+                SizedBox(width: KSizes.margin3x),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        favorite.foodName,
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeL,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: KSizes.margin1x),
+                      Text(
+                        '${favorite.defaultServingCalories} kcal • ${favorite.mealTypeDisplayName}',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin4x),
+            
+            // Action Button
+            SizedBox(
+              width: double.infinity,
+              height: KSizes.buttonHeight,
+              child: ElevatedButton.icon(
+                onPressed: () => _useNow(favorite),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  ),
+                  elevation: 2,
+                ),
+                icon: Icon(MdiIcons.silverwareForkKnife, size: KSizes.iconS),
+                label: Text(
+                  'Spis Nu',
+                  style: TextStyle(
+                    fontWeight: KSizes.fontWeightBold,
+                    fontSize: KSizes.fontSizeM,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOnlineResultCard(OnlineFoodResult result) {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: KSizes.margin4x,
+        vertical: KSizes.margin2x,
+      ),
+      child: Container(
+        padding: EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+          border: Border.all(color: AppColors.info.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.info.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Food info header
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(KSizes.margin3x),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  ),
+                  child: Icon(
+                    MdiIcons.web,
+                    color: AppColors.info,
+                    size: KSizes.iconM,
+                  ),
+                ),
+                SizedBox(width: KSizes.margin3x),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result.name,
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeL,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      SizedBox(height: KSizes.margin1x),
+                      Text(
+                        result.description,
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          color: AppColors.textSecondary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin4x),
+            
+            // Action Buttons Row
+            Row(
+              children: [
+                // Use Now Button
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _useOnlineNow(result),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                    ),
+                    icon: Icon(MdiIcons.silverwareForkKnife, size: KSizes.iconXS),
+                    label: Text(
+                      'Spis Nu',
+                      style: TextStyle(
+                        fontWeight: KSizes.fontWeightMedium,
+                        fontSize: KSizes.fontSizeS,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                SizedBox(width: KSizes.margin2x),
+                
+                // Save Favorite Button
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _saveFavorite(result),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.warning,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                    ),
+                    icon: Icon(MdiIcons.star, size: KSizes.iconXS),
+                    label: Text(
+                      'Gem',
+                      style: TextStyle(
+                        fontWeight: KSizes.fontWeightMedium,
+                        fontSize: KSizes.fontSizeS,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                SizedBox(width: KSizes.margin2x),
+                
+                // Both Button
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _useAndSave(result),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                    ),
+                    icon: Icon(MdiIcons.heartPlus, size: KSizes.iconXS),
+                    label: Text(
+                      'Begge',
+                      style: TextStyle(
+                        fontWeight: KSizes.fontWeightMedium,
+                        fontSize: KSizes.fontSizeS,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _useFavorite(FavoriteFoodModel favorite) async {
+    try {
+      await ref.read(foodSearchProvider.notifier).useFavoriteFood(favorite);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${favorite.foodName} tilføjet til dagbog'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _useOnlineResult(OnlineFoodResult result) async {
+    try {
+      // First get details for the online food
+      await ref.read(foodSearchProvider.notifier).getOnlineFoodDetails(result.id);
+      
+      final searchState = ref.read(foodSearchProvider);
+      if (searchState.selectedOnlineFoodDetails != null) {
+        // Add to favorites with the selected meal type
+        await ref.read(foodSearchProvider.notifier).addOnlineFoodToFavorites(
+          searchState.selectedOnlineFoodDetails!,
+          preferredMealType: _selectedMealType,
+        );
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${result.name} tilføjet til favoritter'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else {
+        throw Exception('Kunne ikke hente maddetaljer');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _useNow(FavoriteFoodModel favorite) async {
+    try {
+      await ref.read(foodSearchProvider.notifier).useFavoriteFood(favorite);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${favorite.foodName} tilføjet til dagbog'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _useOnlineNow(OnlineFoodResult result) async {
+    try {
+      await ref.read(foodSearchProvider.notifier).useOnlineFoodNow(result.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${result.name} tilføjet til dagbog'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveFavorite(OnlineFoodResult result) async {
+    try {
+      await ref.read(foodSearchProvider.notifier).saveFavoriteFood(result.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${result.name} tilføjet til favoritter'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _useAndSave(OnlineFoodResult result) async {
+    try {
+      await ref.read(foodSearchProvider.notifier).useOnlineFoodAndSave(result.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${result.name} tilføjet til favoritter'),
+            backgroundColor: AppColors.success,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 } 

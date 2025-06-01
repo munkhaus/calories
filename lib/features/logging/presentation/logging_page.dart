@@ -86,7 +86,7 @@ class LoggingPage extends ConsumerWidget {
                         
                         // Meal type cards
                         ...MealType.values.map((mealType) {
-                          return MealTypeCard(
+                          return AppOptionCard(
                             title: _getTitleForMealType(mealType),
                             subtitle: _getSubtitleForMealType(mealType),
                             icon: _getIconForMealType(mealType),
@@ -94,7 +94,7 @@ class LoggingPage extends ConsumerWidget {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => FoodSearchPage(initialMealType: mealType),
+                                  builder: (context) => AddFoodPage(initialMealType: mealType),
                                 ),
                               );
                             },

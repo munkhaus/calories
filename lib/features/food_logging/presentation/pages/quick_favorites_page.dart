@@ -14,6 +14,7 @@ import './food_favorite_detail_page.dart';
 import '../../../activity/presentation/pages/activity_favorite_detail_page.dart';
 import '../../domain/user_food_log_model.dart';
 import '../../../activity/domain/user_activity_log_model.dart';
+import './food_search_page.dart';
 
 /// Page for quick selection and management of food and activity favorites
 class QuickFavoritesPage extends ConsumerStatefulWidget {
@@ -73,7 +74,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
 
     try {
       // Load food favorites
-      final foodResult = await _foodService.getFavorites();
+      final foodResult = await _foodService.getAllFavorites();
       if (foodResult.isSuccess && mounted) {
         _foodFavorites = foodResult.success;
       }
@@ -293,7 +294,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      '${favorite.calories} kcal • ${_getMealTypeDisplayName(favorite.mealType)}',
+                      '${favorite.defaultServingCalories} kcal • ${_getMealTypeDisplayName(favorite.preferredMealType)}',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
                         color: AppColors.textSecondary,
@@ -301,7 +302,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      '${favorite.quantity} ${favorite.servingUnit}',
+                      '${favorite.defaultQuantity} ${favorite.defaultServingUnit}',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeS,
                         color: AppColors.textTertiary,
@@ -435,7 +436,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
   void _createNewFoodFavorite() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const FoodFavoriteDetailPage(),
+        builder: (context) => const AddFoodPage(),
       ),
     );
     
@@ -492,18 +493,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
   Future<void> _useFoodFavorite(FavoriteFoodModel favorite) async {
     try {
       // Convert favorite to UserFoodLogModel and log directly
-      final foodLog = UserFoodLogModel(
-        userId: 1,
-        foodName: favorite.foodName,
-        mealType: favorite.mealType,
-        quantity: favorite.quantity,
-        servingUnit: favorite.servingUnit,
-        calories: favorite.calories,
-        protein: favorite.protein,
-        fat: favorite.fat,
-        carbs: favorite.carbs,
-        loggedAt: DateTime.now().toIso8601String(),
-      );
+      final foodLog = favorite.toUserFoodLog();
 
       // Log the food using the provider
       await ref.read(foodLoggingProvider.notifier).logFood(foodLog);

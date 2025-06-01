@@ -6,18 +6,18 @@ import '../theme/app_theme.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
-import '../../features/food_database/presentation/food_database_page.dart';
+import '../../features/activity/presentation/activity_page.dart';
 import '../../features/food_logging/application/pending_food_cubit.dart';
 import '../../features/food_logging/presentation/pages/food_search_page.dart';
 import '../../features/food_logging/presentation/pages/categorize_food_page.dart';
 import '../../features/food_logging/infrastructure/pending_food_service.dart';
+import '../../features/food_logging/domain/pending_food_model.dart';
 import '../../features/activity/presentation/pages/quick_activity_registration_page.dart';
 import '../../features/weight_tracking/application/weight_tracking_notifier.dart';
 import '../../features/weight_tracking/domain/weight_entry_model.dart';
 import '../../features/food_logging/application/food_logging_notifier.dart';
 import '../../features/dashboard/application/date_aware_providers.dart';
 import '../../features/planning/presentation/planning_page.dart';
-import '../../features/activity/presentation/activity_page.dart';
 import '../../features/info/presentation/info_page.dart';
 import '../../features/food_logging/presentation/pages/multi_photo_meal_page.dart';
 import '../../features/food_logging/application/meal_session_cubit.dart';
@@ -26,6 +26,9 @@ import '../../features/activity/presentation/pages/activity_favorites_page.dart'
 import '../../features/activity/presentation/pages/detailed_activity_registration_page.dart';
 import '../../features/food_logging/presentation/pages/quick_photo_session_page.dart';
 import '../../features/food_logging/presentation/pages/quick_favorites_page.dart';
+import '../../features/food_database/presentation/widgets/food_edit_dialog.dart';
+import '../../features/food_database/application/food_database_cubit.dart';
+import '../../features/food_logging/domain/user_food_log_model.dart';
 
 /// Main app navigation with bottom navigation bar
 class AppNavigation extends ConsumerStatefulWidget {
@@ -41,7 +44,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   final List<Widget> _pages = [
     const DashboardPage(),
     const QuickFavoritesPage(initialTab: 0), // Favorites page
-    const FoodDatabasePage(),
+    const ActivityPage(),
     const ProgressPage(),
     const ProfilePage(),
   ];
@@ -56,8 +59,8 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
       label: 'Favoritter',
     ),
     NavigationItem(
-      icon: MdiIcons.database,
-      label: 'Mad',
+      icon: MdiIcons.runFast,
+      label: 'Aktivitet',
     ),
     NavigationItem(
       icon: MdiIcons.chartLine,
@@ -404,17 +407,11 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   }
 
   void _navigateToDetailedRegistration(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => FoodSearchPage(
-          // Ingen forudvalgt måltid - brugeren vælger selv
-          initialMealType: null,
-        ),
-      ),
-    ).then((_) {
-      // Refresh providers when returning from detailed registration
-      _refreshProviders();
-    });
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _ManualFoodEntryDialog(),
+    );
   }
 
   void _navigateToActivityRegistration(BuildContext context) {
@@ -914,6 +911,387 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
       // Refresh providers when returning from photo session
       _refreshProviders();
     });
+  }
+}
+
+/// Simple dialog for manual food entry focused on logging meals
+class _ManualFoodEntryDialog extends ConsumerStatefulWidget {
+  @override
+  ConsumerState<_ManualFoodEntryDialog> createState() => _ManualFoodEntryDialogState();
+}
+
+class _ManualFoodEntryDialogState extends ConsumerState<_ManualFoodEntryDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _caloriesController = TextEditingController();
+  final _gramsController = TextEditingController();
+  
+  bool _isLogging = false;
+  bool _useCaloriesPer100g = false; // Toggle between total calories and calories per 100g
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _caloriesController.dispose();
+    _gramsController.dispose();
+    super.dispose();
+  }
+
+  // Calculate total calories based on mode
+  int _calculateTotalCalories() {
+    final grams = double.tryParse(_gramsController.text.trim()) ?? 100; // Default to 100g if not specified
+    final caloriesValue = int.tryParse(_caloriesController.text.trim()) ?? 0;
+    
+    if (_useCaloriesPer100g && _gramsController.text.trim().isNotEmpty) {
+      // Calculate total calories from calories per 100g
+      return ((caloriesValue * grams) / 100).round();
+    } else {
+      // Use total calories directly
+      return caloriesValue;
+    }
+  }
+
+  // Determine meal type based on current time
+  MealType _getMealTypeFromTime() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    
+    if (hour >= 5 && hour < 11) {
+      return MealType.morgenmad;
+    } else if (hour >= 11 && hour < 16) {
+      return MealType.frokost;
+    } else if (hour >= 16 && hour < 22) {
+      return MealType.aftensmad;
+    } else {
+      return MealType.snack;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+      ),
+      title: Row(
+        children: [
+          Icon(MdiIcons.silverwareForkKnife, color: AppColors.primary),
+          SizedBox(width: KSizes.margin2x),
+          Text('Registrer Mad'),
+        ],
+      ),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Food name
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: 'Navn på mad',
+                  hintText: 'f.eks. Spaghetti Bolognese',
+                  prefixIcon: Icon(MdiIcons.foodVariant),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  ),
+                ),
+                validator: (value) {
+                  if (value?.trim().isEmpty ?? true) {
+                    return 'Indtast navn på maden';
+                  }
+                  return null;
+                },
+                autofocus: true,
+              ),
+              
+              SizedBox(height: KSizes.margin4x),
+              
+              // Calorie input mode toggle
+              Container(
+                padding: EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hvordan vil du angive kalorier?',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightMedium,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin2x),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _useCaloriesPer100g = false;
+                                _caloriesController.clear();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(KSizes.radiusS),
+                            child: Container(
+                              padding: EdgeInsets.all(KSizes.margin2x),
+                              decoration: BoxDecoration(
+                                color: !_useCaloriesPer100g ? AppColors.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(KSizes.radiusS),
+                                border: Border.all(
+                                  color: !_useCaloriesPer100g ? AppColors.primary : AppColors.border,
+                                ),
+                              ),
+                              child: Text(
+                                'Samlet kalorier',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: !_useCaloriesPer100g ? Colors.white : AppColors.textSecondary,
+                                  fontWeight: !_useCaloriesPer100g ? KSizes.fontWeightMedium : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: KSizes.margin2x),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                _useCaloriesPer100g = true;
+                                _caloriesController.clear();
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(KSizes.radiusS),
+                            child: Container(
+                              padding: EdgeInsets.all(KSizes.margin2x),
+                              decoration: BoxDecoration(
+                                color: _useCaloriesPer100g ? AppColors.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(KSizes.radiusS),
+                                border: Border.all(
+                                  color: _useCaloriesPer100g ? AppColors.primary : AppColors.border,
+                                ),
+                              ),
+                              child: Text(
+                                'Kalorier pr. 100g',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: _useCaloriesPer100g ? Colors.white : AppColors.textSecondary,
+                                  fontWeight: _useCaloriesPer100g ? KSizes.fontWeightMedium : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              SizedBox(height: KSizes.margin4x),
+              
+              // Calories input (MAIN FOCUS)
+              TextFormField(
+                controller: _caloriesController,
+                decoration: InputDecoration(
+                  labelText: _useCaloriesPer100g ? 'Kalorier pr. 100g' : 'Samlet kalorier',
+                  hintText: _useCaloriesPer100g ? '250' : '450',
+                  suffixText: 'kcal',
+                  prefixIcon: Icon(MdiIcons.fire, color: Colors.orange),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                  ),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value?.trim().isEmpty ?? true) {
+                    return 'Indtast kalorier';
+                  }
+                  if (int.tryParse(value!) == null) {
+                    return 'Ugyldig tal';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  // Trigger rebuild to update calculated calories display
+                  setState(() {});
+                },
+              ),
+              
+              // Show grams input only if using per 100g mode
+              if (_useCaloriesPer100g) ...[
+                SizedBox(height: KSizes.margin4x),
+                
+                // Grams input (OPTIONAL)
+                TextFormField(
+                  controller: _gramsController,
+                  decoration: InputDecoration(
+                    labelText: 'Mængde (valgfrit)',
+                    hintText: '150',
+                    suffixText: 'gram',
+                    prefixIcon: Icon(MdiIcons.scaleBalance),
+                    helperText: 'Hvis ikke angivet bruges 100g',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    ),
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  validator: (value) {
+                    if (value?.trim().isNotEmpty ?? false) {
+                      final grams = double.tryParse(value!);
+                      if (grams == null || grams <= 0) {
+                        return 'Ugyldig mængde';
+                      }
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    // Trigger rebuild to update calculated calories display
+                    setState(() {});
+                  },
+                ),
+              ],
+              
+              // Show calculated total calories if using per 100g mode
+              if (_useCaloriesPer100g && _caloriesController.text.isNotEmpty) ...[
+                SizedBox(height: KSizes.margin3x),
+                Container(
+                  padding: EdgeInsets.all(KSizes.margin3x),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(MdiIcons.calculator, color: AppColors.success),
+                      SizedBox(width: KSizes.margin2x),
+                      Expanded(
+                        child: Text(
+                          'Samlet kalorier: ${_calculateTotalCalories()} kcal',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeM,
+                            fontWeight: KSizes.fontWeightMedium,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLogging ? null : () => Navigator.of(context).pop(),
+          child: Text('Annuller'),
+        ),
+        ElevatedButton(
+          onPressed: _isLogging ? null : _logFood,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+          ),
+          child: _isLogging
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text('Log Mad'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _logFood() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLogging = true;
+    });
+
+    try {
+      final totalCalories = _calculateTotalCalories();
+      final grams = double.tryParse(_gramsController.text.trim()) ?? 100.0; // Default to 100g if not specified
+      final mealType = _getMealTypeFromTime(); // Auto-determine based on time
+
+      // Create food log entry
+      final foodLog = UserFoodLogModel(
+        userId: 1, // TODO: Get actual user ID
+        customFoodId: DateTime.now().millisecondsSinceEpoch, // Use customFoodId for manual entries
+        foodName: _nameController.text.trim(),
+        mealType: mealType, // Auto-determined from time
+        quantity: grams,
+        servingUnit: 'g', // Always grams
+        calories: totalCalories,
+        protein: 0.0, // Keep simple - no nutrition details
+        fat: 0.0,
+        carbs: 0.0,
+        foodItemSourceType: FoodItemSourceType.custom,
+      );
+
+      // Log the food
+      await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        
+        // Show success message with auto-determined meal type
+        String mealTypeText = _getMealTypeDisplayName(mealType);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${_nameController.text.trim()} logget som ${mealTypeText.toLowerCase()}! (${totalCalories} kcal)'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved logging af mad'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLogging = false;
+        });
+      }
+    }
+  }
+
+  String _getMealTypeDisplayName(MealType type) {
+    switch (type) {
+      case MealType.morgenmad:
+        return 'Morgenmad';
+      case MealType.frokost:
+        return 'Frokost';
+      case MealType.aftensmad:
+        return 'Aftensmad';
+      case MealType.snack:
+        return 'Snack';
+      case MealType.none:
+        return 'Ingen kategori';
+    }
   }
 }
 

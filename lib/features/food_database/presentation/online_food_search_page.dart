@@ -84,10 +84,10 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                               const SizedBox(width: KSizes.margin4x),
                               Expanded(
                                 child: AppPageHeader(
-                                  title: 'Madvaresøgning 🔍',
-                                  subtitle: 'Søg og tilføj nye fødevarer',
+                                  title: 'Online Madvaresøgning',
+                                  subtitle: 'Søg og tilføj til favoritter',
                                   titleIcon: MdiIcons.magnify,
-                                  titleIconColor: AppColors.primary,
+                                  titleIconColor: Colors.white,
                                   showInfoButton: false,
                                 ),
                               ),
@@ -640,7 +640,7 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
           child: OnlineFoodDetailView(
             foodDetails: state.selectedFoodDetails!,
             onAddToDatabase: () async {
-              await cubit.addFoodToDatabase(food);
+              await cubit.addFoodToFavorites(food.id);
               
               if (!mounted) return;
               
@@ -652,67 +652,23 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                                    currentState.errorMessage.contains('findes allerede');
               
               if (!currentState.hasError || isInfoMessage) {
-                // Show success/info message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Row(
-                      children: [
-                        Icon(
-                          isInfoMessage ? MdiIcons.informationOutline : MdiIcons.checkCircle,
-                          color: Colors.white,
-                          size: KSizes.iconM,
-                        ),
-                        SizedBox(width: KSizes.margin2x),
-                        Expanded(
-                          child: Text(
-                            currentState.errorMessage.isNotEmpty 
-                                ? currentState.errorMessage 
-                                : '✅ "${food.name}" tilføjet til database',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
+                    content: Text(
+                      currentState.errorMessage.isNotEmpty 
+                          ? currentState.errorMessage 
+                          : '✅ "${food.name}" tilføjet til favoritter',
                     ),
                     backgroundColor: isInfoMessage ? AppColors.primary : AppColors.success,
                     duration: Duration(seconds: 3),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                    ),
                   ),
                 );
               } else {
-                // Show error message
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Row(
-                      children: [
-                        Icon(
-                          MdiIcons.alertCircle,
-                          color: Colors.white,
-                          size: KSizes.iconM,
-                        ),
-                        SizedBox(width: KSizes.margin2x),
-                        Expanded(
-                          child: Text(
-                            currentState.errorMessage,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    content: Text(currentState.errorMessage),
                     backgroundColor: AppColors.error,
                     duration: Duration(seconds: 4),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                    ),
                     action: SnackBarAction(
                       label: 'Prøv igen',
                       textColor: Colors.white,
@@ -772,7 +728,7 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
   Future<void> _addSelectedFoods(OnlineFoodCubit cubit) async {
     final selectedCount = ref.read(onlineFoodProvider).selectedFoodIds.length;
     
-    await cubit.addSelectedFoodsToDatabase();
+    await cubit.addSelectedFoodsToFavorites();
     
     if (!mounted) return;
     
@@ -783,78 +739,15 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                          state.errorMessage.contains('fandtes allerede') ||
                          state.errorMessage.contains('findes allerede');
     
-    if (!state.hasError || isInfoMessage) {
-      // Show success/info message
+    // Show SnackBar with appropriate styling
+    if (state.errorMessage.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                isInfoMessage ? MdiIcons.informationOutline : MdiIcons.checkCircle,
-                color: Colors.white,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Expanded(
-                child: Text(
-                  state.errorMessage.isNotEmpty 
-                      ? state.errorMessage 
-                      : '$selectedCount fødevarer behandlet',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: isInfoMessage ? AppColors.primary : AppColors.success,
-          duration: Duration(seconds: isInfoMessage ? 4 : 3),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-          ),
-          action: SnackBarAction(
-            label: 'OK',
-            textColor: Colors.white,
-            onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-          ),
-        ),
-      );
-    } else {
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                MdiIcons.alertCircle,
-                color: Colors.white,
-                size: KSizes.iconM,
-              ),
-              SizedBox(width: KSizes.margin2x),
-              Expanded(
-                child: Text(
-                  state.errorMessage,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.error,
-          duration: Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-          ),
-          action: SnackBarAction(
-            label: 'Prøv igen',
-            textColor: Colors.white,
-            onPressed: () => _addSelectedFoods(cubit),
-          ),
+          content: Text(state.errorMessage),
+          backgroundColor: isInfoMessage 
+              ? AppColors.success 
+              : (state.hasError ? AppColors.error : AppColors.success),
+          duration: Duration(seconds: isInfoMessage ? 3 : 4),
         ),
       );
     }

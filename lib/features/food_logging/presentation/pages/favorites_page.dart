@@ -67,7 +67,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
 
     try {
       // Load food favorites
-      final foodResult = await _foodService.getFavorites();
+      final foodResult = await _foodService.getAllFavorites();
       if (foodResult.isSuccess) {
         _foodFavorites = foodResult.success;
       }
@@ -301,12 +301,12 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
               Container(
                 padding: const EdgeInsets.all(KSizes.margin2x),
                 decoration: BoxDecoration(
-                  color: _getMealColor(favorite.mealType).withOpacity(0.1),
+                  color: _getMealColor(favorite.preferredMealType).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(KSizes.radiusS),
                 ),
                 child: Icon(
-                  _getMealIcon(favorite.mealType),
-                  color: _getMealColor(favorite.mealType),
+                  _getMealIcon(favorite.preferredMealType),
+                  color: _getMealColor(favorite.preferredMealType),
                   size: KSizes.iconM,
                 ),
               ),
@@ -327,7 +327,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      '${favorite.mealType.mealTypeDisplayName} • ${favorite.calories} kcal',
+                      '${favorite.mealTypeDisplayName} • ${favorite.defaultServingCalories} kcal',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
                         color: AppColors.textSecondary,
@@ -383,7 +383,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
           
           Row(
             children: [
-              _buildInfoChip('${favorite.quantity} ${favorite.servingUnit}', MdiIcons.scaleBalance),
+              _buildInfoChip('${favorite.defaultQuantity} ${favorite.defaultServingUnit}', MdiIcons.scaleBalance),
               SizedBox(width: KSizes.margin2x),
               _buildInfoChip('Brugt ${favorite.usageCount} gange', MdiIcons.heart),
             ],
@@ -575,18 +575,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage>
   Future<void> _useFoodFavorite(FavoriteFoodModel favorite) async {
     try {
       // Convert favorite to UserFoodLogModel and log directly
-      final foodLog = UserFoodLogModel(
-        userId: 1, // TODO: Get real user ID
-        foodName: favorite.foodName,
-        mealType: favorite.mealType,
-        quantity: favorite.quantity,
-        servingUnit: favorite.servingUnit,
-        calories: favorite.calories,
-        protein: favorite.protein,
-        fat: favorite.fat,
-        carbs: favorite.carbs,
-        loggedAt: DateTime.now().toIso8601String(),
-      );
+      final foodLog = favorite.toUserFoodLog();
 
       // Log the food
       await ref.read(foodLoggingProvider.notifier).logFood(foodLog);

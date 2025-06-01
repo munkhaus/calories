@@ -35,7 +35,7 @@ class _SelectFavoritePageState extends ConsumerState<SelectFavoritePage> {
     });
 
     try {
-      final result = await _favoriteFoodService.getFavorites();
+      final result = await _favoriteFoodService.getAllFavorites();
       if (result.isSuccess) {
         setState(() {
           _favorites = result.success;
@@ -252,7 +252,7 @@ class _SelectFavoritePageState extends ConsumerState<SelectFavoritePage> {
                       Row(
                         children: [
                           Text(
-                            '${favorite.calories} kcal',
+                            '${favorite.defaultServingCalories} kcal',
                             style: TextStyle(
                               fontSize: KSizes.fontSizeS,
                               color: AppColors.primary,
@@ -274,7 +274,7 @@ class _SelectFavoritePageState extends ConsumerState<SelectFavoritePage> {
                       ),
                       SizedBox(height: KSizes.margin1x),
                       Text(
-                        '${favorite.quantity} ${favorite.servingUnit} • Brugt ${favorite.usageCount} gange',
+                        '${favorite.defaultQuantity} ${favorite.defaultServingUnit} • Brugt ${favorite.usageCount} gange',
                         style: TextStyle(
                           fontSize: KSizes.fontSizeXS,
                           color: AppColors.textTertiary,
@@ -368,9 +368,9 @@ class _EditFavoriteDialogState extends State<_EditFavoriteDialog> {
   void initState() {
     super.initState();
     _foodNameController = TextEditingController(text: widget.favorite.foodName);
-    _caloriesController = TextEditingController(text: widget.favorite.calories.toString());
-    _quantityController = TextEditingController(text: widget.favorite.quantity.toString());
-    _selectedMealType = widget.favorite.mealType;
+    _caloriesController = TextEditingController(text: widget.favorite.defaultServingCalories.toString());
+    _quantityController = TextEditingController(text: widget.favorite.defaultQuantity.toString());
+    _selectedMealType = widget.favorite.preferredMealType;
   }
 
   @override
@@ -419,7 +419,7 @@ class _EditFavoriteDialogState extends State<_EditFavoriteDialog> {
               decoration: InputDecoration(
                 labelText: 'Mængde',
                 border: OutlineInputBorder(),
-                suffixText: widget.favorite.servingUnit,
+                suffixText: widget.favorite.defaultServingUnit,
               ),
               keyboardType: TextInputType.numberWithOptions(decimal: true),
             ),
@@ -496,11 +496,12 @@ class _EditFavoriteDialogState extends State<_EditFavoriteDialog> {
     }
 
     // Create updated favorite
+    final caloriesPer100g = (calories * 100 / widget.favorite.defaultServingGrams).round();
     final updatedFavorite = widget.favorite.copyWith(
       foodName: _foodNameController.text.trim(),
-      calories: calories,
-      quantity: quantity,
-      mealType: _selectedMealType,
+      caloriesPer100g: caloriesPer100g,
+      defaultQuantity: quantity,
+      preferredMealType: _selectedMealType,
     );
 
     Navigator.of(context).pop();

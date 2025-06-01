@@ -1,35 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/i_online_food_service.dart';
 import '../domain/online_food_models.dart';
-import '../domain/i_food_database_service.dart';
-import '../domain/food_record_model.dart';
+import '../../food_logging/domain/i_favorite_food_service.dart';
+import '../../food_logging/domain/user_food_log_model.dart';
 import '../infrastructure/llm_food_service.dart';
-import '../infrastructure/food_database_service.dart';
+import '../../food_logging/infrastructure/favorite_food_service.dart';
 import 'online_food_state.dart';
-import 'providers.dart'; // Import shared providers
 
 // Provider for LLM service (only provider)
 final llmFoodServiceProvider = Provider<IOnlineFoodService>((ref) {
   return LLMFoodService();
 });
 
-// Shared provider for FoodDatabaseService
-final foodDatabaseServiceProvider = Provider<IFoodDatabaseService>((ref) {
-  return FoodDatabaseService();
+// Provider for FavoriteFoodService - now the primary food storage
+final favoriteFoodServiceProvider = Provider<IFavoriteFoodService>((ref) {
+  return FavoriteFoodService();
 });
 
-// Online food cubit provider - uses shared database service
+// Online food cubit provider - now uses favorite food service
 final onlineFoodProvider = StateNotifierProvider<OnlineFoodCubit, OnlineFoodState>((ref) {
   final llmService = ref.read(llmFoodServiceProvider);
-  final foodDatabaseService = ref.read(foodDatabaseServiceProvider);
-  return OnlineFoodCubit(llmService, foodDatabaseService);
+  final favoriteFoodService = ref.read(favoriteFoodServiceProvider);
+  return OnlineFoodCubit(llmService, favoriteFoodService);
 });
 
 class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
   final IOnlineFoodService _foodService;
-  final IFoodDatabaseService _foodDatabaseService;
+  final IFavoriteFoodService _favoriteFoodService;
 
-  OnlineFoodCubit(this._foodService, this._foodDatabaseService) 
+  OnlineFoodCubit(this._foodService, this._favoriteFoodService) 
       : super(OnlineFoodState.initial());
 
   /// Initialize the service
@@ -165,6 +164,61 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
     }
   }
 
+  /// Add a single food to favorites
+  Future<void> addFoodToFavorites(String foodId, {
+    MealType? preferredMealType,
+    double? preferredQuantity,
+    String? preferredServingUnit,
+  }) async {
+    print('🌐 OnlineFoodCubit: Adding "$foodId" to favorites');
+    
+    try {
+      // Get details first
+      await getFoodDetails(foodId);
+      
+      final details = state.selectedFoodDetails;
+      if (details == null) {
+        state = state.copyWith(
+          hasError: true,
+          errorMessage: 'Kunne ikke hente madvarens detaljer',
+        );
+        return;
+      }
+      
+      // Add to favorites
+      final result = await _favoriteFoodService.addOnlineFoodToFavorites(
+        details,
+        preferredMealType: preferredMealType,
+        preferredQuantity: preferredQuantity,
+        preferredServingUnit: preferredServingUnit,
+      );
+      
+      if (result.isSuccess) {
+        print('🌐 OnlineFoodCubit: Successfully added "${details.basicInfo.name}" to favorites');
+        state = state.copyWith(
+          hasError: false,
+          errorMessage: '✅ ${details.basicInfo.name} tilføjet til favoritter',
+        );
+      } else {
+        final isAlreadyExists = result.failure == FavoriteFoodError.alreadyExists;
+        print('🌐 OnlineFoodCubit: "${details.basicInfo.name}" ${isAlreadyExists ? "already exists in" : "failed to add to"} favorites');
+        
+        state = state.copyWith(
+          hasError: !isAlreadyExists,
+          errorMessage: isAlreadyExists 
+              ? '✅ ${details.basicInfo.name} findes allerede i favoritter'
+              : '❌ Kunne ikke tilføje ${details.basicInfo.name} til favoritter',
+        );
+      }
+    } catch (e) {
+      print('🌐 OnlineFoodCubit: Add to favorites error: $e');
+      state = state.copyWith(
+        hasError: true,
+        errorMessage: '❌ Fejl ved tilføjelse til favoritter',
+      );
+    }
+  }
+
   /// Toggle selection mode
   void toggleSelectionMode() {
     state = state.copyWith(
@@ -198,233 +252,101 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
     print('🌐 OnlineFoodCubit: Currently selected: ${currentSelected.length}');
     
     // If all are selected, deselect all. Otherwise, select all.
-    final bool allSelected = currentSelected.length == allFoodIds.length &&
-                            allFoodIds.every((id) => currentSelected.contains(id));
-    
-    if (allSelected) {
-      print('🌐 OnlineFoodCubit: All were selected, deselecting all');
-      state = state.copyWith(
-        selectedFoodIds: [],
-        isSelectionMode: true, // Keep selection mode active
-      );
+    List<String> newSelection;
+    if (currentSelected.length == allFoodIds.length && 
+        allFoodIds.every((id) => currentSelected.contains(id))) {
+      // All are selected, so deselect all
+      newSelection = [];
+      print('🌐 OnlineFoodCubit: Deselecting all foods');
     } else {
-      print('🌐 OnlineFoodCubit: Not all selected, selecting all');
-      state = state.copyWith(
-        selectedFoodIds: allFoodIds,
-        isSelectionMode: true,
-      );
+      // Not all are selected, so select all
+      newSelection = allFoodIds;
+      print('🌐 OnlineFoodCubit: Selecting all ${allFoodIds.length} foods');
     }
     
-    print('🌐 OnlineFoodCubit: After toggle - selected: ${state.selectedFoodIds.length}');
+    state = state.copyWith(selectedFoodIds: newSelection);
+    print('🌐 OnlineFoodCubit: New selection count: ${newSelection.length}');
   }
 
-  /// Select all foods
-  void selectAllFoods() {
-    final allFoodIds = state.searchResults.map((food) => food.id).toList();
-    print('🌐 OnlineFoodCubit: selectAllFoods() called');
-    print('🌐 OnlineFoodCubit: Current search results: ${state.searchResults.length}');
-    print('🌐 OnlineFoodCubit: Current selected: ${state.selectedFoodIds.length}');
-    print('🌐 OnlineFoodCubit: About to select all IDs: $allFoodIds');
-    
-    state = state.copyWith(
-      selectedFoodIds: allFoodIds,
-      isSelectionMode: true,
-    );
-    
-    print('🌐 OnlineFoodCubit: After selectAll - selected: ${state.selectedFoodIds.length}');
-    print('🌐 OnlineFoodCubit: Selection mode: ${state.isSelectionMode}');
-  }
+  /// Add selected foods to favorites
+  Future<void> addSelectedFoodsToFavorites() async {
+    if (state.selectedFoodIds.isEmpty) return;
 
-  /// Add single food to database
-  Future<void> addFoodToDatabase(OnlineFoodResult food) async {
-    print('🌐 OnlineFoodCubit: Adding "${food.name}" to database');
-    
+    final selectedIds = List<String>.from(state.selectedFoodIds);
+    print('🌐 OnlineFoodCubit: Adding ${selectedIds.length} selected foods to favorites');
+
     state = state.copyWith(isAddingToDatabase: true);
 
     try {
-      // Get detailed food information
-      final detailsResult = await _foodService.getFoodDetails(food.id);
+      int successCount = 0;
+      int alreadyExistsCount = 0;
+      int errorCount = 0;
       
-      if (detailsResult.isSuccess) {
-        final details = detailsResult.success;
+      for (final foodId in selectedIds) {
+        print('🌐 OnlineFoodCubit: Getting details for "$foodId"');
         
-        // Convert to FoodRecordModel
-        final foodRecord = FoodRecordModel(
-          id: details.basicInfo.id,
-          name: details.basicInfo.name,
-          description: details.basicInfo.description,
-          caloriesPer100g: details.nutrition.calories.round(),
-          proteinPer100g: details.nutrition.protein,
-          carbsPer100g: details.nutrition.carbs,
-          fatPer100g: details.nutrition.fat,
-          category: FoodCategory.other,
-          servingSizes: details.servingSizes.map((serving) => ServingSize(
-            name: serving.name,
-            grams: serving.grams,
-            isDefault: serving.isDefault,
-          )).toList(),
-          source: FoodSource.onlineDatabase,
-          sourceProvider: details.basicInfo.provider,
-          createdAt: DateTime.now(),
-        );
-
-        // Add to database
-        final addResult = await _foodDatabaseService.addFood(foodRecord);
+        final detailsResult = await _foodService.getFoodDetails(foodId);
+        if (detailsResult.isFailure) {
+          print('🌐 OnlineFoodCubit: Failed to get details for "$foodId"');
+          errorCount++;
+          continue;
+        }
+        
+        final details = detailsResult.success;
+        print('🌐 OnlineFoodCubit: Got details for "${details.basicInfo.name}"');
+        
+        print('🌐 OnlineFoodCubit: Adding "${details.basicInfo.name}" to favorites');
+        final addResult = await _favoriteFoodService.addOnlineFoodToFavorites(details);
         
         if (addResult.isSuccess) {
-          print('🌐 OnlineFoodCubit: Successfully added "${food.name}" to database');
-          state = state.copyWith(
-            isAddingToDatabase: false,
-            hasError: false,
-          );
-        } else if (addResult.failure == FoodDatabaseError.alreadyExists) {
-          print('🌐 OnlineFoodCubit: "${food.name}" already exists in database');
-          state = state.copyWith(
-            isAddingToDatabase: false,
-            hasError: false, // Not an error, just info
-            errorMessage: '✅ "${food.name}" er allerede i din database fra tidligere',
-          );
+          successCount++;
+          print('🌐 OnlineFoodCubit: Successfully added "${details.basicInfo.name}" to favorites');
+        } else if (addResult.failure == FavoriteFoodError.alreadyExists) {
+          alreadyExistsCount++;
+          print('🌐 OnlineFoodCubit: "${details.basicInfo.name}" already exists in favorites');
         } else {
-          print('🌐 OnlineFoodCubit: Failed to add "${food.name}" to database: ${addResult.failure}');
-          
-          // Get specific error message based on failure type
-          String errorMessage;
-          switch (addResult.failure) {
-            case FoodDatabaseError.storage:
-              errorMessage = 'Kunne ikke gemme fødevaren lige nu. Prøv igen.';
-              break;
-            case FoodDatabaseError.notFound:
-              errorMessage = 'Fødevaren blev ikke fundet. Prøv at søge igen.';
-              break;
-            default:
-              errorMessage = 'Noget gik galt. Prøv igen om lidt.';
-          }
-          
-          state = state.copyWith(
-            isAddingToDatabase: false,
-            hasError: true,
-            errorMessage: errorMessage,
-          );
+          errorCount++;
+          print('🌐 OnlineFoodCubit: Failed to add "${details.basicInfo.name}" to favorites');
         }
-      } else {
-        print('🌐 OnlineFoodCubit: Failed to get details for "${food.name}"');
-        state = state.copyWith(
-          isAddingToDatabase: false,
-          hasError: true,
-          errorMessage: 'Kunne ikke hente fødevaredetaljer',
-        );
       }
+
+      // Create summary message
+      final messages = <String>[];
+      if (successCount > 0) {
+        messages.add('✅ $successCount nye favoritter tilføjet');
+      }
+      if (alreadyExistsCount > 0) {
+        messages.add('✅ $alreadyExistsCount fandtes allerede i favoritter');
+      }
+      if (errorCount > 0) {
+        messages.add('❌ $errorCount fejlede');
+      }
+
+      final summaryMessage = messages.join('\n');
+      
+      // Determine if this is truly an error or just info
+      final isError = errorCount > 0 && successCount == 0 && alreadyExistsCount == 0;
+      
+      state = state.copyWith(
+        isAddingToDatabase: false,
+        hasError: isError,
+        errorMessage: summaryMessage,
+        isSelectionMode: false, // Exit selection mode
+        selectedFoodIds: [], // Clear selections
+      );
+
+      print('🌐 OnlineFoodCubit: Batch add completed - Success: $successCount, Already exists: $alreadyExistsCount, Errors: $errorCount');
+
     } catch (e) {
-      print('🌐 OnlineFoodCubit: Add food error: $e');
+      print('🌐 OnlineFoodCubit: Batch add error: $e');
       state = state.copyWith(
         isAddingToDatabase: false,
         hasError: true,
-        errorMessage: 'Uventet fejl ved tilføjelse',
+        errorMessage: '❌ Fejl ved tilføjelse til favoritter',
+        isSelectionMode: false,
+        selectedFoodIds: [],
       );
     }
-  }
-
-  /// Add multiple selected foods to database
-  Future<void> addSelectedFoodsToDatabase() async {
-    if (state.selectedFoodIds.isEmpty) return;
-
-    final selectedIds = state.selectedFoodIds;
-    final selectedFoods = state.searchResults
-        .where((food) => selectedIds.contains(food.id))
-        .toList();
-
-    print('🌐 OnlineFoodCubit: Adding ${selectedFoods.length} foods to database');
-    
-    state = state.copyWith(isAddingToDatabase: true);
-
-    int successCount = 0;
-    int failureCount = 0;
-    int alreadyExistsCount = 0;
-    final List<String> failedFoodNames = [];
-
-    for (final food in selectedFoods) {
-      try {
-        // Get detailed food information
-        final detailsResult = await _foodService.getFoodDetails(food.id);
-        
-        if (detailsResult.isSuccess) {
-          final details = detailsResult.success;
-          
-          // Convert to FoodRecordModel
-          final foodRecord = FoodRecordModel(
-            id: details.basicInfo.id,
-            name: details.basicInfo.name,
-            description: details.basicInfo.description,
-            caloriesPer100g: details.nutrition.calories.round(),
-            proteinPer100g: details.nutrition.protein,
-            carbsPer100g: details.nutrition.carbs,
-            fatPer100g: details.nutrition.fat,
-            category: FoodCategory.other,
-            servingSizes: details.servingSizes.map((serving) => ServingSize(
-              name: serving.name,
-              grams: serving.grams,
-              isDefault: serving.isDefault,
-            )).toList(),
-            source: FoodSource.onlineDatabase,
-            sourceProvider: details.basicInfo.provider,
-            createdAt: DateTime.now(),
-          );
-
-          // Add to database
-          final addResult = await _foodDatabaseService.addFood(foodRecord);
-          
-          if (addResult.isSuccess) {
-            successCount++;
-            print('🌐 OnlineFoodCubit: Successfully added "${food.name}" to database');
-          } else if (addResult.failure == FoodDatabaseError.alreadyExists) {
-            alreadyExistsCount++;
-            print('🌐 OnlineFoodCubit: "${food.name}" already exists in database');
-          } else {
-            failureCount++;
-            failedFoodNames.add(food.name);
-            print('🌐 OnlineFoodCubit: Failed to add "${food.name}" to database: ${addResult.failure}');
-          }
-        } else {
-          failureCount++;
-          failedFoodNames.add(food.name);
-          print('🌐 OnlineFoodCubit: Failed to get details for "${food.name}"');
-        }
-      } catch (e) {
-        failureCount++;
-        failedFoodNames.add(food.name);
-        print('🌐 OnlineFoodCubit: Exception adding "${food.name}": $e');
-      }
-    }
-
-    print('🌐 OnlineFoodCubit: Bulk add complete. $successCount new, $alreadyExistsCount existed, $failureCount failed');
-    
-    // Generate appropriate user-friendly message
-    String errorMessage = '';
-    bool hasError = false;
-    
-    if (successCount > 0 && alreadyExistsCount > 0 && failureCount == 0) {
-      // Mixed success and already exists
-      errorMessage = '$successCount nye tilføjet, $alreadyExistsCount fandtes allerede ✅';
-    } else if (successCount == 0 && alreadyExistsCount > 0 && failureCount == 0) {
-      // All already exist
-      errorMessage = 'Alle ${alreadyExistsCount} fødevarer findes allerede i din database ✅';
-    } else if (successCount > 0 && failureCount > 0) {
-      // Mixed success and failure
-      hasError = true;
-      errorMessage = '$successCount tilføjet, $failureCount fejlede';
-    } else if (successCount == 0 && failureCount > 0) {
-      // All failed
-      hasError = true;
-      errorMessage = 'Kunne ikke tilføje fødevarerne. Prøv igen.';
-    }
-    
-    state = state.copyWith(
-      isAddingToDatabase: false,
-      isSelectionMode: hasError, // Keep selection mode only if there were real errors
-      selectedFoodIds: hasError ? state.selectedFoodIds : [], // Keep selections only if there were real errors
-      hasError: hasError,
-      errorMessage: errorMessage,
-    );
   }
 
   /// Dismiss error

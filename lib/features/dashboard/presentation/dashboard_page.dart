@@ -769,7 +769,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
   void _navigateToDetailedRegistration(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => FoodSearchPage(initialMealType: null),
+        builder: (context) => AddFoodPage(initialMealType: null),
       ),
     );
   }

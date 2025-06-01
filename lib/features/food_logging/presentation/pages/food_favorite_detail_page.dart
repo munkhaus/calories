@@ -43,13 +43,13 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     if (_isEditing) {
       final favorite = widget.existingFavorite!;
       _nameController.text = favorite.foodName;
-      _caloriesController.text = favorite.calories.toString();
-      _quantityController.text = favorite.quantity.toString();
-      _servingUnitController.text = favorite.servingUnit;
-      _proteinController.text = favorite.protein.toString();
-      _fatController.text = favorite.fat.toString();
-      _carbsController.text = favorite.carbs.toString();
-      _selectedMealType = favorite.mealType;
+      _caloriesController.text = favorite.caloriesPer100g.toString();
+      _quantityController.text = favorite.defaultQuantity.toString();
+      _servingUnitController.text = favorite.defaultServingUnit;
+      _proteinController.text = favorite.proteinPer100g.toString();
+      _fatController.text = favorite.fatPer100g.toString();
+      _carbsController.text = favorite.carbsPer100g.toString();
+      _selectedMealType = favorite.preferredMealType;
     } else {
       // Set defaults for new favorite
       _quantityController.text = '1';
@@ -410,13 +410,13 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
           // Update existing favorite
           final updatedFavorite = widget.existingFavorite!.copyWith(
             foodName: name,
-            mealType: _selectedMealType,
-            quantity: quantity,
-            servingUnit: servingUnit,
-            calories: calories,
-            protein: protein,
-            fat: fat,
-            carbs: carbs,
+            preferredMealType: _selectedMealType,
+            defaultQuantity: quantity,
+            defaultServingUnit: servingUnit,
+            caloriesPer100g: calories,
+            proteinPer100g: protein,
+            fatPer100g: fat,
+            carbsPer100g: carbs,
           );
           
           final result = await favoriteService.updateFavorite(updatedFavorite);
@@ -443,13 +443,13 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
           final newFavorite = FavoriteFoodModel(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
             foodName: name,
-            mealType: _selectedMealType,
-            quantity: quantity,
-            servingUnit: servingUnit,
-            calories: calories,
-            protein: protein,
-            fat: fat,
-            carbs: carbs,
+            preferredMealType: _selectedMealType,
+            defaultQuantity: quantity,
+            defaultServingUnit: servingUnit,
+            caloriesPer100g: calories,
+            proteinPer100g: protein,
+            fatPer100g: fat,
+            carbsPer100g: carbs,
             usageCount: 0,
             lastUsed: DateTime.now(),
             createdAt: DateTime.now(),

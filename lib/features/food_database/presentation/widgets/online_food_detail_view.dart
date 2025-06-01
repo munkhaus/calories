@@ -267,7 +267,7 @@ class OnlineFoodDetailView extends StatelessWidget {
                                 ),
                                 SizedBox(width: KSizes.margin1x),
                                 Text(
-                                  'Tilføj til database',
+                                  'Tilføj til favoritter',
                                   style: TextStyle(
                                     fontSize: KSizes.fontSizeM,
                                     fontWeight: FontWeight.w600,
