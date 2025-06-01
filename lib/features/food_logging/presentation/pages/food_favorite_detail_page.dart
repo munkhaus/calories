@@ -13,10 +13,12 @@ import '../../../food_database/application/online_food_cubit.dart';
 /// Detailed page for creating and editing food favorites
 class FoodFavoriteDetailPage extends ConsumerStatefulWidget {
   final FavoriteFoodModel? existingFavorite;
+  final bool logOnSave; // New parameter
   
-  const FoodFavoriteDetailPage({
+  FoodFavoriteDetailPage({
     super.key,
     this.existingFavorite,
+    this.logOnSave = false, // Default to false
   });
 
   @override
@@ -37,11 +39,13 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   bool _isLoading = false;
   bool _isEditing = false;
   OnlineFoodDetails? _currentAiFoodDetails; // To store fetched AI result details for saving
+  late bool _logOnSave; // State variable
 
   @override
   void initState() {
     super.initState();
     _isEditing = widget.existingFavorite != null;
+    _logOnSave = widget.logOnSave; // Initialize from widget
 
     // Use selectedFoodDetails from the provider if available for a new favorite
     _currentAiFoodDetails = ref.read(onlineFoodProvider).selectedFoodDetails;
@@ -430,7 +434,10 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     List<FavoriteServingSize> servingSizes = [];
     if (_currentAiFoodDetails != null) {
       servingSizes = _currentAiFoodDetails!.servingSizes.map((s) => FavoriteServingSize.fromOnlineServingInfo(s)).toList();
+    } else if (_isEditing && widget.existingFavorite!.servingSizes.isNotEmpty) {
+      servingSizes = List<FavoriteServingSize>.from(widget.existingFavorite!.servingSizes);
     }
+    
     // Add a default 100g serving if none exist or if it's a manual entry without AI details
     if (servingSizes.where((s) => s.grams == 100.0).isEmpty) {
         servingSizes.add(const FavoriteServingSize(name: '100 gram', grams: 100.0, isDefault: true));
@@ -441,6 +448,22 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     }
     if (servingSizes.isEmpty) { // Fallback if still empty (e.g. manual new entry)
         servingSizes.add(const FavoriteServingSize(name: 'Standard', grams: 100.0, isDefault: true));
+    }
+    
+    DateTime lastUsedDate;
+    int usageCountValue;
+
+    if (_isEditing) {
+      if (_logOnSave) {
+        lastUsedDate = DateTime.now();
+        usageCountValue = widget.existingFavorite!.usageCount + 1;
+      } else {
+        lastUsedDate = widget.existingFavorite!.lastUsed;
+        usageCountValue = widget.existingFavorite!.usageCount;
+      }
+    } else { // New favorite
+        lastUsedDate = DateTime.now(); // Always new date for new fav
+        usageCountValue = _logOnSave ? 1 : 0; // Usage is 1 if logging, 0 if just creating
     }
 
     final favorite = FavoriteFoodModel(
@@ -456,8 +479,8 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       aiSearchQuery: _currentAiFoodDetails?.basicInfo.id,
       sourceProvider: _currentAiFoodDetails?.basicInfo.provider ?? (_isEditing ? widget.existingFavorite!.sourceProvider : FavoriteFoodModel.manualProvider),
       createdAt: _isEditing ? widget.existingFavorite!.createdAt : DateTime.now(),
-      lastUsed: DateTime.now(),
-      usageCount: _isEditing ? widget.existingFavorite!.usageCount + 1 : 1,
+      lastUsed: lastUsedDate,
+      usageCount: usageCountValue,
       // Ensure other nutrition fields are populated if necessary, defaulting to 0
       proteinPer100g: _currentAiFoodDetails?.nutrition.protein ?? (_isEditing ? widget.existingFavorite!.proteinPer100g : 0.0),
       fatPer100g: _currentAiFoodDetails?.nutrition.fat ?? (_isEditing ? widget.existingFavorite!.fatPer100g : 0.0),
@@ -473,6 +496,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     try {
       final favoriteService = FavoriteFoodService();
       if (_isEditing) {
+        // No need to call incrementFavoriteUsage if _logOnSave is false, as usageCount and lastUsed are already set.
         await favoriteService.updateFavorite(favorite);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Favorit opdateret: ${favorite.foodName}'), backgroundColor: AppColors.success),
@@ -484,6 +508,10 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
         );
       }
 
+      // If this save action is also meant to log the food, we would do it here.
+      // For now, this is handled by the page that PUSHED FoodFavoriteDetailPage with logOnSave = true.
+      // However, if this page is popped with a result, the calling page can use that.
+
       setState(() => _isLoading = false);
       if (mounted) {
         if (_currentAiFoodDetails != null) {
@@ -491,7 +519,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
             ref.read(onlineFoodProvider.notifier).clearResults(); // Use clearResults() from OnlineFoodCubit
           });
         }
-        Navigator.of(context).pop(true);
+        Navigator.of(context).pop(favorite); // Return the saved/updated favorite
       }
     } catch (e) {
       setState(() => _isLoading = false);

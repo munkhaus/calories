@@ -26,6 +26,7 @@ import '../../features/activity/presentation/pages/activity_favorites_page.dart'
 import '../../features/activity/presentation/pages/detailed_activity_registration_page.dart';
 import '../../features/food_logging/presentation/pages/quick_photo_session_page.dart';
 import '../../features/food_logging/presentation/pages/quick_favorites_page.dart';
+import '../../features/food_logging/presentation/pages/favorites_page.dart';
 import '../../features/food_database/presentation/widgets/food_edit_dialog.dart';
 import '../../features/food_database/application/food_database_cubit.dart';
 import '../../features/food_logging/domain/user_food_log_model.dart';
@@ -43,7 +44,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
 
   final List<Widget> _pages = [
     const DashboardPage(),
-    const QuickFavoritesPage(), // Favorites page - removed initialTab parameter
+    const FavoritesPage(),
     const ProgressPage(),
     const ProfilePage(),
   ];

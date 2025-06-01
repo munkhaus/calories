@@ -328,6 +328,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                         size: KSizes.iconM,
                       ),
                     ),
+                    SizedBox(height: KSizes.margin1x),
                     Text(
                       feature.title,
                       style: TextStyle(
@@ -343,7 +344,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                         fontSize: KSizes.fontSizeXS,
                         color: Colors.white.withOpacity(0.8),
                         fontWeight: KSizes.fontWeightRegular,
-                        height: 1.0,
+                        height: 1.1,
                       ),
                       textAlign: TextAlign.center,
                     ),
