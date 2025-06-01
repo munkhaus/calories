@@ -179,7 +179,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> with WidgetsBindi
                     
                     // Today's activities section
                     TodaysActivitiesWidget(
-                      notifier: ref.read(activityNotifierProvider),
+                      notifier: ref.watch(activityNotifierProvider),
                       onDeleteActivity: (activity) async {
                         // Handle activity deletion
                         await ref.read(activityNotifierProvider).deleteActivity(activity.logEntryId);

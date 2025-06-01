@@ -1,37 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../domain/favorite_activity_model.dart';
+import '../../domain/user_activity_log_model.dart';
+import '../../infrastructure/favorite_activity_service.dart';
+import '../../../dashboard/application/date_aware_providers.dart';
 
 /// Page for selecting activity favorites
-class ActivityFavoritesPage extends StatefulWidget {
+class ActivityFavoritesPage extends ConsumerStatefulWidget {
   const ActivityFavoritesPage({super.key});
 
   @override
-  State<ActivityFavoritesPage> createState() => _ActivityFavoritesPageState();
+  ConsumerState<ActivityFavoritesPage> createState() => _ActivityFavoritesPageState();
 }
 
-class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
-  final List<ActivityFavorite> _favorites = [
-    ActivityFavorite(
-      id: '1',
-      name: 'Gåtur',
-      description: '30 min - 150 kcal',
-      icon: MdiIcons.walk,
-    ),
-    ActivityFavorite(
-      id: '2', 
-      name: 'Løb',
-      description: '20 min - 250 kcal',
-      icon: MdiIcons.run,
-    ),
-    ActivityFavorite(
-      id: '3',
-      name: 'Cykling',
-      description: '45 min - 300 kcal',
-      icon: MdiIcons.bike,
-    ),
-  ];
+class _ActivityFavoritesPageState extends ConsumerState<ActivityFavoritesPage> {
+  final FavoriteActivityService _favoriteService = FavoriteActivityService();
+  List<FavoriteActivityModel> _favorites = [];
+  bool _isLoading = true;
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    final result = await _favoriteService.getFavorites();
+    
+    if (!mounted) return;
+    
+    if (result.isSuccess) {
+      setState(() {
+        _favorites = result.success;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _favorites = [];
+        _isLoading = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kunne ikke indlæse favoritter'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,18 +101,13 @@ class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
               
               SizedBox(height: KSizes.margin6x),
               
-              // Favorites list
+              // Content
               Expanded(
-                child: _favorites.isEmpty 
-                    ? _buildEmptyState()
-                    : ListView.separated(
-                        itemCount: _favorites.length,
-                        separatorBuilder: (context, index) => SizedBox(height: KSizes.margin3x),
-                        itemBuilder: (context, index) {
-                          final favorite = _favorites[index];
-                          return _buildFavoriteCard(favorite);
-                        },
-                      ),
+                child: _isLoading 
+                    ? _buildLoadingState()
+                    : _favorites.isEmpty 
+                        ? _buildEmptyState()
+                        : _buildFavoritesList(),
               ),
             ],
           ),
@@ -93,14 +116,46 @@ class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
     );
   }
 
-  Widget _buildFavoriteCard(ActivityFavorite favorite) {
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: AppColors.secondary,
+          ),
+          SizedBox(height: KSizes.margin4x),
+          Text(
+            'Indlæser favoritter...',
+            style: TextStyle(
+              fontSize: KSizes.fontSizeM,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFavoritesList() {
+    return ListView.separated(
+      itemCount: _favorites.length,
+      separatorBuilder: (context, index) => SizedBox(height: KSizes.margin3x),
+      itemBuilder: (context, index) {
+        final favorite = _favorites[index];
+        return _buildFavoriteCard(favorite);
+      },
+    );
+  }
+
+  Widget _buildFavoriteCard(FavoriteActivityModel favorite) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(KSizes.radiusL),
       ),
       child: InkWell(
-        onTap: () => _selectFavorite(favorite),
+        onTap: _isProcessing ? null : () => _selectFavorite(favorite),
         borderRadius: BorderRadius.circular(KSizes.radiusL),
         child: Padding(
           padding: EdgeInsets.all(KSizes.margin4x),
@@ -114,7 +169,7 @@ class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
                   borderRadius: BorderRadius.circular(KSizes.radiusM),
                 ),
                 child: Icon(
-                  favorite.icon,
+                  _getIconForActivity(favorite.activityName),
                   color: AppColors.secondary,
                   size: KSizes.iconL,
                 ),
@@ -128,7 +183,7 @@ class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      favorite.name,
+                      favorite.activityName,
                       style: TextStyle(
                         fontSize: KSizes.fontSizeL,
                         fontWeight: KSizes.fontWeightBold,
@@ -137,27 +192,68 @@ class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      favorite.description,
+                      favorite.displayText,
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
                         color: AppColors.textSecondary,
                       ),
                     ),
+                    if (favorite.notes.isNotEmpty) ...[
+                      SizedBox(height: KSizes.margin1x),
+                      Text(
+                        favorite.notes,
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeS,
+                          color: AppColors.textSecondary.withOpacity(0.7),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
               
-              // Arrow
-              Icon(
-                MdiIcons.chevronRight,
-                color: AppColors.textSecondary,
-                size: KSizes.iconM,
-              ),
+              // Arrow or loading
+              if (_isProcessing)
+                SizedBox(
+                  width: KSizes.iconM,
+                  height: KSizes.iconM,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.secondary,
+                  ),
+                )
+              else
+                Icon(
+                  MdiIcons.chevronRight,
+                  color: AppColors.textSecondary,
+                  size: KSizes.iconM,
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  IconData _getIconForActivity(String activityName) {
+    final name = activityName.toLowerCase();
+    
+    if (name.contains('løb') || name.contains('run')) {
+      return MdiIcons.run;
+    } else if (name.contains('cykel') || name.contains('bike')) {
+      return MdiIcons.bike;
+    } else if (name.contains('gå') || name.contains('walk')) {
+      return MdiIcons.walk;
+    } else if (name.contains('svøm') || name.contains('swim')) {
+      return MdiIcons.swim;
+    } else if (name.contains('gym') || name.contains('fitness')) {
+      return MdiIcons.dumbbell;
+    } else if (name.contains('fodbold') || name.contains('football')) {
+      return MdiIcons.soccerField;
+    } else {
+      return MdiIcons.runFast;
+    }
   }
 
   Widget _buildEmptyState() {
@@ -205,30 +301,77 @@ class _ActivityFavoritesPageState extends State<ActivityFavoritesPage> {
     );
   }
 
-  void _selectFavorite(ActivityFavorite favorite) {
-    // TODO: Implement favorite selection - add to activity log
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${favorite.name} registreret!'),
-        backgroundColor: AppColors.success,
-      ),
-    );
-    
-    Navigator.of(context).pop();
+  Future<void> _selectFavorite(FavoriteActivityModel favorite) async {
+    setState(() {
+      _isProcessing = true;
+    });
+
+    try {
+      // Convert favorite to activity log
+      final activityLog = favorite.toUserActivityLog();
+      
+      // Log the activity using the activity notifier
+      await ref.read(activityNotifierProvider.notifier).logActivity(activityLog);
+      
+      // Update the favorite's usage count
+      final updatedFavorite = favorite.withUpdatedUsage();
+      await _favoriteService.updateFavorite(updatedFavorite);
+      
+      // Force refresh of activity calories provider
+      try {
+        final refreshActivityCaloriesFunction = ref.read(activityRefreshCounterProvider.notifier);
+        refreshActivityCaloriesFunction.state = refreshActivityCaloriesFunction.state + 1;
+      } catch (e) {
+        print('⚠️ ActivityFavoritesPage: Could not refresh activity calories: $e');
+      }
+      
+      if (mounted && context.mounted) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.check, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: Text('${favorite.activityName} registreret!'),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        
+        // Navigate back after successful logging
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      print('❌ ActivityFavoritesPage: Error logging activity: $e');
+      
+      if (mounted && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.alertCircle, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: Text('Fejl ved registrering af aktivitet'),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
+    }
   }
-}
-
-/// Model for activity favorite
-class ActivityFavorite {
-  final String id;
-  final String name;
-  final String description;
-  final IconData icon;
-
-  ActivityFavorite({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.icon,
-  });
 } 

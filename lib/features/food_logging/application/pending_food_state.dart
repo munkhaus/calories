@@ -36,8 +36,13 @@ class PendingFoodState {
   // Helper getters for derived states
   bool get isLoadingPendingFoods => pendingFoodsState.isLoading;
   bool get hasPendingFoodsError => pendingFoodsState.hasError;
-  bool get hasPendingFoods => pendingFoodsState.isSuccess && pendingFoodsState.data!.isNotEmpty;
-  List<PendingFoodModel> get pendingFoods => pendingFoodsState.isSuccess ? pendingFoodsState.data! : [];
+  
+  // Only count unprocessed pending foods
+  List<PendingFoodModel> get pendingFoods => pendingFoodsState.isSuccess 
+      ? pendingFoodsState.data!.where((food) => !food.isProcessed).toList()
+      : [];
+  
+  bool get hasPendingFoods => pendingFoods.isNotEmpty;
   int get pendingFoodsCount => pendingFoods.length;
   
   bool get isCaptureLoading => captureState.isLoading;

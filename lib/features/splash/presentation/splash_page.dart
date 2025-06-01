@@ -325,32 +325,36 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                       child: Icon(
                         feature.icon,
                         color: Colors.white,
-                        size: KSizes.iconM,
+                        size: KSizes.iconS,
                       ),
                     ),
                     SizedBox(height: KSizes.margin1x),
-                    Text(
-                      feature.title,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXS,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: Colors.white,
+                    Flexible(
+                      child: Text(
+                        feature.title,
+                        style: TextStyle(
+                          fontSize: 10.0,
+                          fontWeight: KSizes.fontWeightBold,
+                          color: Colors.white,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      feature.subtitle,
-                      style: TextStyle(
-                        fontSize: 10.0,
-                        color: Colors.white.withOpacity(0.8),
-                        fontWeight: KSizes.fontWeightRegular,
-                        height: 1.0,
+                    Flexible(
+                      child: Text(
+                        feature.subtitle,
+                        style: TextStyle(
+                          fontSize: 8.0,
+                          color: Colors.white.withOpacity(0.8),
+                          fontWeight: KSizes.fontWeightRegular,
+                          height: 1.0,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

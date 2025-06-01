@@ -11,7 +11,7 @@ import '../../weight_tracking/domain/weight_entry_model.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 
-/// Simplified progress page focusing on visual progress
+/// Progress page focusing on visual progress
 class ProgressPage extends ConsumerStatefulWidget {
   const ProgressPage({super.key});
 
@@ -82,8 +82,13 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                     
                     const SizedBox(height: KSizes.margin4x),
                     
-                    // Today's stats
+                    // Today's stats (simplified from period stats)
                     _buildTodayStatsRow(foodState, userProfile, weightEntries),
+                    
+                    const SizedBox(height: KSizes.margin4x),
+                    
+                    // Additional metrics
+                    _buildAdditionalMetrics(foodState, userProfile),
                     
                     const SizedBox(height: KSizes.margin4x),
                     
@@ -429,7 +434,7 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
         ),
         
         // Additional metrics based on today's data
-        _buildTodayAdditionalMetrics(todayCalories, todayMeals, weightEntries, userProfile),
+        // Additional metrics section removed for simplification
       ],
     );
   }
@@ -896,14 +901,53 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
             Color progressColor;
             if (isFuture) {
               progressColor = AppColors.surface.withOpacity(0.3);
-            } else if (progress >= 0.9) {
-              progressColor = AppColors.success;
-            } else if (progress >= 0.7) {
-              progressColor = AppColors.warning;
-            } else if (progress >= 0.5) {
-              progressColor = AppColors.primary;
             } else {
-              progressColor = AppColors.error;
+              // Progress er altid mellem 0.0 og 1.2 (0% til 120%)
+              final goalType = userProfile.goalType;
+              
+              if (goalType == GoalType.weightLoss) {
+                // For vægttab: lavere kalorieindtag = bedre
+                // Grøn så længe man er under 100%:
+                if (progress < 1.0) {
+                  progressColor = AppColors.success; // 0-99%: Godt for vægttab (grøn)
+                } else if (progress <= 1.05) {
+                  progressColor = AppColors.warning.withOpacity(0.7); // 100-105%: Omkring målet (lys orange)
+                } else if (progress <= 1.15) {
+                  progressColor = AppColors.warning; // 105-115%: For mange kalorier (orange)
+                } else {
+                  progressColor = AppColors.error; // 115%+: Meget for mange kalorier (rød)
+                }
+              } else if (goalType == GoalType.weightGain || goalType == GoalType.muscleGain) {
+                // For vægtøgning: højere kalorieindtag = bedre
+                if (progress >= 1.0 && progress <= 1.1) {
+                  progressColor = AppColors.success; // 100-110%: Perfekt for vægtøgning (grøn)
+                } else if (progress >= 0.9 && progress < 1.0) {
+                  progressColor = AppColors.primary; // 90-100%: Godt (blå)
+                } else if (progress >= 0.8) {
+                  progressColor = AppColors.warning.withOpacity(0.7); // 80-90%: Lidt lavt (lys orange)
+                } else if (progress >= 0.7) {
+                  progressColor = AppColors.warning; // 70-80%: For lavt (orange)
+                } else if (progress >= 0.6) {
+                  progressColor = Color.lerp(AppColors.warning, AppColors.error, 0.5)!; // 60-70%: Meget lavt (orange-rød)
+                } else {
+                  progressColor = AppColors.error; // Under 60%: Kritisk lavt (rød)
+                }
+              } else {
+                // For vedligeholdelse: tæt på target er bedst
+                if (progress >= 0.95 && progress <= 1.05) {
+                  progressColor = AppColors.success; // 95-105%: Perfekt balance (grøn)
+                } else if (progress >= 0.9 && progress <= 1.1) {
+                  progressColor = AppColors.primary; // 90-110%: Rigtig godt (blå)
+                } else if (progress >= 0.85 && progress <= 1.15) {
+                  progressColor = AppColors.warning.withOpacity(0.7); // 85-115%: Acceptabelt (lys orange)
+                } else if (progress >= 0.75 && progress <= 1.25) {
+                  progressColor = AppColors.warning; // 75-125%: Ikke ideelt (orange)
+                } else if (progress >= 0.6 && progress <= 1.4) {
+                  progressColor = Color.lerp(AppColors.warning, AppColors.error, 0.5)!; // 60-140%: Bekymrende (orange-rød)
+                } else {
+                  progressColor = AppColors.error; // Under 60% eller over 140%: Meget dårligt (rød)
+                }
+              }
             }
             
             return Padding(
@@ -1089,6 +1133,33 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAdditionalMetrics(FoodLoggingState foodState, UserProfileModel userProfile) {
+    // Calculate today's data for metrics
+    final todayCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    final todayMeals = foodState.mealsForDate.length;
+    
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMetricIndicator(
+            'Konsistens',
+            _getConsistencyScore(todayCalories, todayMeals),
+            _getConsistencyScore(todayCalories, todayMeals) >= 80 ? AppColors.success : AppColors.warning,
+          ),
+        ),
+        const SizedBox(width: KSizes.margin3x),
+        Expanded(
+          child: _buildMetricIndicator(
+            'Trend',
+            _getTrendDirection(todayCalories, todayMeals),
+            AppColors.info,
+            showPercentage: false,
+          ),
+        ),
+      ],
     );
   }
 } 

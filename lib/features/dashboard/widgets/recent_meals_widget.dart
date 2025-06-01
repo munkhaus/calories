@@ -168,7 +168,7 @@ class RecentMealsWidget extends ConsumerWidget {
                 Consumer(
                   builder: (context, ref, child) {
                     final pendingState = ref.watch(pendingFoodProvider);
-                    final pendingCount = pendingState.pendingFoodsState.data?.length ?? 0;
+                    final pendingCount = pendingState.pendingFoodsCount;
                     
                     if (pendingCount == 0) return const SizedBox.shrink();
                     
@@ -639,13 +639,45 @@ class RecentMealsWidget extends ConsumerWidget {
                   Navigator.pop(context);
                   final shouldDelete = await _showDeleteConfirmDialog(context, meal);
                   if (shouldDelete == true) {
-                    ref.read(foodLoggingProvider.notifier).deleteFood(meal.logEntryId);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${meal.foodName} er slettet'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
+                    try {
+                      ref.read(foodLoggingProvider.notifier).deleteFood(meal.logEntryId);
+                      
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(MdiIcons.check, color: Colors.white),
+                                SizedBox(width: KSizes.margin2x),
+                                Expanded(
+                                  child: Text('${meal.foodName} slettet!'),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: AppColors.success,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Row(
+                              children: [
+                                Icon(MdiIcons.alertCircle, color: Colors.white),
+                                SizedBox(width: KSizes.margin2x),
+                                Expanded(
+                                  child: Text('Fejl ved sletning af måltid'),
+                                ),
+                              ],
+                            ),
+                            backgroundColor: AppColors.error,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
                   }
                 },
               ),
