@@ -5,9 +5,11 @@ import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
+import '../../onboarding/domain/user_profile_model.dart';
 import '../../weight_tracking/application/weight_tracking_notifier.dart';
+import '../../weight_tracking/domain/weight_entry_model.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
-import '../../activity/application/activity_notifier.dart';
+import '../../food_logging/domain/user_food_log_model.dart';
 
 /// Simplified progress page focusing on visual progress
 class ProgressPage extends ConsumerStatefulWidget {
@@ -36,6 +38,7 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
     final weightEntries = ref.watch(weightTrackingProvider).entries;
+    final foodState = ref.watch(foodLoggingProvider);
     
     // Calculate simple metrics
     final currentWeight = weightEntries.isNotEmpty ? weightEntries.first.weightKg : userProfile.currentWeightKg;
@@ -75,17 +78,17 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                     const SizedBox(height: KSizes.margin4x),
                     
                     // Quick stats row
-                    _buildQuickStatsRow(),
+                    _buildQuickStatsRow(foodState, userProfile),
                     
                     const SizedBox(height: KSizes.margin4x),
                     
                     // Recent achievements
-                    _buildAchievementsCard(),
+                    _buildAchievementsCard(foodState, weightEntries, userProfile),
                     
                     const SizedBox(height: KSizes.margin4x),
                     
                     // Weekly summary
-                    _buildWeeklySummaryCard(),
+                    _buildWeeklySummaryCard(foodState, userProfile),
                     
                     // Bottom padding
                     const SizedBox(height: 100),
@@ -269,14 +272,23 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     );
   }
 
-  Widget _buildQuickStatsRow() {
+  Widget _buildQuickStatsRow(FoodLoggingState foodState, UserProfileModel userProfile) {
+    // Calculate total calories manually from meals for today
+    final totalCaloriesToday = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    
+    // Calculate progress percentage based on target
+    final targetCalories = userProfile.targetCalories > 0 ? userProfile.targetCalories : 2000;
+    final progressPercentage = targetCalories > 0 
+        ? ((totalCaloriesToday / targetCalories) * 100).clamp(0, 120).toInt()
+        : 0;
+    
     return Row(
       children: [
         Expanded(
           child: _buildQuickStatCard(
-            'Gns. kalorier',
-            '1,750',
-            'kcal/dag',
+            'Dagens kalorier',
+            '$totalCaloriesToday',
+            'af $targetCalories kcal',
             AppColors.primary,
             MdiIcons.fire,
           ),
@@ -284,20 +296,20 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
         const SizedBox(width: KSizes.margin3x),
         Expanded(
           child: _buildQuickStatCard(
-            'Aktivitet',
-            '4/7',
-            'dage denne uge',
+            'Måltider',
+            '${foodState.mealsForDate.length}',
+            'logget i dag',
             AppColors.secondary,
-            MdiIcons.runFast,
+            MdiIcons.silverwareVariant,
           ),
         ),
         const SizedBox(width: KSizes.margin3x),
         Expanded(
           child: _buildQuickStatCard(
             'Målopfyldelse',
-            '86%',
-            'i snit',
-            AppColors.success,
+            '$progressPercentage%',
+            'af dagens mål',
+            progressPercentage >= 90 ? AppColors.success : progressPercentage >= 70 ? AppColors.warning : AppColors.error,
             MdiIcons.target,
           ),
         ),
@@ -361,12 +373,50 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     );
   }
 
-  Widget _buildAchievementsCard() {
-    final achievements = [
-      {'icon': MdiIcons.fire, 'text': '7 dage i træk med logging', 'color': AppColors.warning},
-      {'icon': MdiIcons.target, 'text': 'Nåede kaloriemål 5/7 dage', 'color': AppColors.success},
-      {'icon': MdiIcons.trendingDown, 'text': '1.2 kg tabt denne måned', 'color': AppColors.primary},
-    ];
+  Widget _buildAchievementsCard(FoodLoggingState foodState, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
+    // Calculate real achievements from data
+    final totalCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    final mealsLogged = foodState.mealsForDate.length;
+    final weightLost = weightEntries.isNotEmpty ? 
+        (userProfile.currentWeightKg - weightEntries.first.weightKg).abs() : 0.0;
+    
+    final achievements = <Map<String, dynamic>>[];
+    
+    // Add achievements based on real data
+    if (mealsLogged >= 3) {
+      achievements.add({
+        'icon': MdiIcons.fire, 
+        'text': '$mealsLogged måltider logget i dag', 
+        'color': AppColors.warning
+      });
+    }
+    
+    if (totalCalories > 0 && userProfile.targetCalories > 0) {
+      final percentage = ((totalCalories / userProfile.targetCalories) * 100).round();
+      if (percentage >= 80) {
+        achievements.add({
+          'icon': MdiIcons.target, 
+          'text': 'Nåede $percentage% af kaloriemål', 
+          'color': AppColors.success
+        });
+      }
+    }
+    
+    if (weightLost > 0) {
+      achievements.add({
+        'icon': MdiIcons.trendingDown, 
+        'text': '${weightLost.toStringAsFixed(1)} kg fremgang', 
+        'color': AppColors.primary
+      });
+    }
+    
+    // Fallback achievements if no real ones
+    if (achievements.isEmpty) {
+      achievements.addAll([
+        {'icon': MdiIcons.heart, 'text': 'Velkommen til din rejse', 'color': AppColors.primary},
+        {'icon': MdiIcons.trophy, 'text': 'Start med at logge dine måltider', 'color': AppColors.secondary},
+      ]);
+    }
 
     return Container(
       width: double.infinity,
@@ -432,12 +482,14 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                   ),
                 ),
                 const SizedBox(width: KSizes.margin3x),
-                Text(
-                  achievement['text'] as String,
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    color: AppColors.textPrimary,
-                    fontWeight: KSizes.fontWeightMedium,
+                Expanded(
+                  child: Text(
+                    achievement['text'] as String,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeM,
+                      color: AppColors.textPrimary,
+                      fontWeight: KSizes.fontWeightMedium,
+                    ),
                   ),
                 ),
               ],
@@ -448,7 +500,11 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     );
   }
 
-  Widget _buildWeeklySummaryCard() {
+  Widget _buildWeeklySummaryCard(FoodLoggingState foodState, UserProfileModel userProfile) {
+    final targetCalories = userProfile.targetCalories > 0 ? userProfile.targetCalories : 2000;
+    final todayCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    final todayProgress = targetCalories > 0 ? (todayCalories / targetCalories).clamp(0.0, 1.2) : 0.0;
+    
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(KSizes.margin4x),
@@ -484,7 +540,7 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
               ),
               const SizedBox(width: KSizes.margin3x),
               Text(
-                'Denne uge',
+                'Dagens fremgang',
                 style: TextStyle(
                   fontSize: KSizes.fontSizeXL,
                   fontWeight: KSizes.fontWeightBold,
@@ -496,72 +552,109 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
           
           const SizedBox(height: KSizes.margin4x),
           
-          // Simple week progress bars
-          ...List.generate(7, (index) {
-            final days = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn'];
-            final progress = [0.8, 0.9, 0.7, 1.0, 0.6, 0.4, 0.0][index]; // Mock data
-            final colors = [
-              AppColors.success,
-              AppColors.success,
-              AppColors.warning,
-              AppColors.success,
-              AppColors.warning,
-              AppColors.error,
-              AppColors.surface,
-            ];
-            
-            return Padding(
-              padding: const EdgeInsets.only(bottom: KSizes.margin2x),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 30,
-                    child: Text(
-                      days[index],
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: AppColors.textSecondary,
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
+          // Today's progress
+          Padding(
+            padding: const EdgeInsets.only(bottom: KSizes.margin2x),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 30,
+                  child: Text(
+                    'I dag',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeS,
+                      color: AppColors.textSecondary,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
                   ),
-                  const SizedBox(width: KSizes.margin2x),
-                  Expanded(
-                    child: Container(
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: progress,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: colors[index],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                ),
+                const SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: todayProgress,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: todayProgress >= 0.9 
+                              ? AppColors.success 
+                              : todayProgress >= 0.7 
+                                  ? AppColors.warning 
+                                  : AppColors.primary,
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: KSizes.margin2x),
-                  SizedBox(
-                    width: 40,
-                    child: Text(
-                      progress > 0 ? '${(progress * 100).toInt()}%' : '-',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: colors[index],
-                        fontWeight: KSizes.fontWeightMedium,
-                      ),
-                      textAlign: TextAlign.right,
+                ),
+                const SizedBox(width: KSizes.margin2x),
+                SizedBox(
+                  width: 50,
+                  child: Text(
+                    todayProgress > 0 ? '${(todayProgress * 100).toInt()}%' : '-',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeS,
+                      color: todayProgress >= 0.9 
+                          ? AppColors.success 
+                          : todayProgress >= 0.7 
+                              ? AppColors.warning 
+                              : AppColors.primary,
+                      fontWeight: KSizes.fontWeightMedium,
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: KSizes.margin2x),
+          
+          // Summary text
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin3x),
+            decoration: BoxDecoration(
+              color: AppColors.surface.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  todayProgress >= 0.9 
+                      ? MdiIcons.checkCircle 
+                      : todayProgress >= 0.5 
+                          ? MdiIcons.clockOutline 
+                          : MdiIcons.informationOutline,
+                  color: todayProgress >= 0.9 
+                      ? AppColors.success 
+                      : todayProgress >= 0.5 
+                          ? AppColors.warning 
+                          : AppColors.info,
+                  size: KSizes.iconS,
+                ),
+                const SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: Text(
+                    todayProgress >= 0.9 
+                        ? 'Flot arbejde! Du er godt på vej med dagens kaloriemål.'
+                        : todayProgress >= 0.5 
+                            ? 'Du er halvvejs til dagens mål. Fortsæt det gode arbejde!'
+                            : 'Start dagen med at logge dine måltider for at følge din fremgang.',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeS,
+                      color: AppColors.textSecondary,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
                   ),
-                ],
-              ),
-            );
-          }),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

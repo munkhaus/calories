@@ -391,7 +391,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
             style: TextStyle(
               fontSize: KSizes.fontSizeXL,
               fontWeight: KSizes.fontWeightBold,
-              color: color,
+              color: AppColors.textPrimary,
             ),
           ),
           
@@ -997,7 +997,7 @@ class _DetailItem extends StatelessWidget {
             style: TextStyle(
               fontSize: KSizes.fontSizeM,
               fontWeight: FontWeight.bold,
-              color: AppColors.primary,
+              color: AppColors.textPrimary,
             ),
             textAlign: TextAlign.right,
           ),
