@@ -328,9 +328,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                         size: KSizes.iconM,
                       ),
                     ),
-                    
-                    SizedBox(height: KSizes.margin1x),
-                    
                     Text(
                       feature.title,
                       style: TextStyle(
@@ -340,16 +337,13 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    
-                    SizedBox(height: KSizes.margin1x),
-                    
                     Text(
                       feature.subtitle,
                       style: TextStyle(
                         fontSize: KSizes.fontSizeXS,
                         color: Colors.white.withOpacity(0.8),
                         fontWeight: KSizes.fontWeightRegular,
-                        height: 1.1,
+                        height: 1.0,
                       ),
                       textAlign: TextAlign.center,
                     ),

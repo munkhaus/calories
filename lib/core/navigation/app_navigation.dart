@@ -43,8 +43,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
 
   final List<Widget> _pages = [
     const DashboardPage(),
-    const QuickFavoritesPage(initialTab: 0), // Favorites page
-    const ActivityPage(),
+    const QuickFavoritesPage(), // Favorites page - removed initialTab parameter
     const ProgressPage(),
     const ProfilePage(),
   ];
@@ -57,10 +56,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     NavigationItem(
       icon: MdiIcons.star,
       label: 'Favoritter',
-    ),
-    NavigationItem(
-      icon: MdiIcons.runFast,
-      label: 'Aktivitet',
     ),
     NavigationItem(
       icon: MdiIcons.chartLine,
@@ -872,7 +867,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => QuickFavoritesPage(
-          initialTab: 1, // Activity tab
           showAddButton: false, // Hide add button - we just want to use existing favorites
         ),
       ),
@@ -897,7 +891,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => QuickFavoritesPage(
-          initialTab: 0, // Food tab
           showAddButton: false, // Hide add button - we just want to use existing favorites
         ),
       ),
