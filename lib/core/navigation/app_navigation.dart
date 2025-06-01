@@ -867,9 +867,7 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   void _navigateToActivityFavorites(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => QuickFavoritesPage(
-          showAddButton: false, // Hide add button - we just want to use existing favorites
-        ),
+        builder: (context) => ActivityFavoritesPage(),
       ),
     ).then((_) {
       // Refresh providers when returning from activity favorites

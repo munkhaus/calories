@@ -11,8 +11,6 @@ import '../../weight_tracking/domain/weight_entry_model.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
 
-enum TimePeriod { day, week, month }
-
 /// Simplified progress page focusing on visual progress
 class ProgressPage extends ConsumerStatefulWidget {
   const ProgressPage({super.key});
@@ -24,8 +22,6 @@ class ProgressPage extends ConsumerStatefulWidget {
 class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
-
-  TimePeriod _selectedPeriod = TimePeriod.day;
 
   @override
   void initState() {
@@ -76,27 +72,18 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                     
                     const SizedBox(height: KSizes.margin4x),
                     
-                    // Time period selector
-                    _buildTimePeriodSelector(),
+                    // Weekly overview (always show)
+                    _buildWeeklyOverview(foodState, userProfile),
                     
                     const SizedBox(height: KSizes.margin4x),
-                    
-                    // Weekly overview (only show when week is selected or always show for current week)
-                    if (_selectedPeriod == TimePeriod.week || _selectedPeriod == TimePeriod.day)
-                      _buildWeeklyOverview(foodState, userProfile),
-                    
-                    if (_selectedPeriod == TimePeriod.week || _selectedPeriod == TimePeriod.day)
-                      const SizedBox(height: KSizes.margin4x),
-                    
-                    const SizedBox(height: KSizes.margin2x),
                     
                     // Weight Progress - Main visual element
                     _buildWeightProgressCard(currentWeight, targetWeight, startWeight),
                     
                     const SizedBox(height: KSizes.margin4x),
                     
-                    // Stats based on selected period
-                    _buildPeriodStatsRow(foodState, userProfile, weightEntries),
+                    // Today's stats
+                    _buildTodayStatsRow(foodState, userProfile, weightEntries),
                     
                     const SizedBox(height: KSizes.margin4x),
                     
@@ -105,8 +92,8 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                     
                     const SizedBox(height: KSizes.margin4x),
                     
-                    // Period summary based on selection
-                    _buildPeriodSummaryCard(foodState, userProfile, weightEntries),
+                    // Today's summary
+                    _buildTodaySummaryCard(foodState, userProfile, weightEntries),
                     
                     // Bottom padding
                     const SizedBox(height: 100),
@@ -118,92 +105,6 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
         ),
       ),
     );
-  }
-
-  Widget _buildTimePeriodSelector() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: TimePeriod.values.map((period) {
-          final isSelected = _selectedPeriod == period;
-          final text = _getPeriodDisplayText(period);
-          final icon = _getPeriodIcon(period);
-          
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _selectedPeriod = period;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(
-                  vertical: KSizes.margin3x,
-                  horizontal: KSizes.margin2x,
-                ),
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      icon,
-                      size: KSizes.iconS,
-                      color: isSelected ? Colors.white : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: KSizes.margin1x),
-                    Text(
-                      text,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        fontWeight: isSelected ? KSizes.fontWeightBold : KSizes.fontWeightMedium,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  String _getPeriodDisplayText(TimePeriod period) {
-    switch (period) {
-      case TimePeriod.day:
-        return 'Dag';
-      case TimePeriod.week:
-        return 'Uge';
-      case TimePeriod.month:
-        return 'Måned';
-    }
-  }
-
-  IconData _getPeriodIcon(TimePeriod period) {
-    switch (period) {
-      case TimePeriod.day:
-        return MdiIcons.calendarToday;
-      case TimePeriod.week:
-        return MdiIcons.calendarWeek;
-      case TimePeriod.month:
-        return MdiIcons.calendar;
-    }
   }
 
   Widget _buildWeightProgressCard(double currentWeight, double targetWeight, double startWeight) {
@@ -376,16 +277,17 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     );
   }
 
-  Widget _buildPeriodStatsRow(FoodLoggingState foodState, UserProfileModel userProfile, List<WeightEntryModel> weightEntries) {
-    final periodData = _calculatePeriodData(foodState, userProfile, weightEntries);
+  Widget _buildTodayStatsRow(FoodLoggingState foodState, UserProfileModel userProfile, List<WeightEntryModel> weightEntries) {
+    final todayCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    final todayMeals = foodState.mealsForDate.length;
     
     return Row(
       children: [
         Expanded(
           child: _buildQuickStatCard(
-            _getPeriodStatsTitle('Kalorier'),
-            '${periodData['calories']}',
-            _getPeriodStatsSubtitle(periodData['targetCalories']),
+            'Kalorier',
+            '$todayCalories kcal',
+            'af dagens mål',
             AppColors.primary,
             MdiIcons.fire,
           ),
@@ -393,158 +295,20 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
         const SizedBox(width: KSizes.margin3x),
         Expanded(
           child: _buildQuickStatCard(
-            _getPeriodStatsTitle('Måltider'),
-            '${periodData['meals']}',
-            _getPeriodMealsSubtitle(),
+            'Måltider',
+            '$todayMeals måltider',
+            'logget i dag',
             AppColors.secondary,
             MdiIcons.silverwareVariant,
-          ),
-        ),
-        const SizedBox(width: KSizes.margin3x),
-        Expanded(
-          child: _buildQuickStatCard(
-            _getPeriodStatsTitle('Fremgang'),
-            '${periodData['progressPercent']}%',
-            _getProgressSubtitle(),
-            periodData['progressPercent'] >= 80 ? AppColors.success : periodData['progressPercent'] >= 60 ? AppColors.warning : AppColors.error,
-            _getProgressIcon(periodData['progressPercent']),
           ),
         ),
       ],
     );
   }
 
-  Map<String, dynamic> _calculatePeriodData(FoodLoggingState foodState, UserProfileModel userProfile, List<WeightEntryModel> weightEntries) {
-    final now = DateTime.now();
-    final targetCalories = userProfile.targetCalories > 0 ? userProfile.targetCalories : 2000;
-    
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        final todayCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
-        final todayMeals = foodState.mealsForDate.length;
-        final progressPercent = targetCalories > 0 ? ((todayCalories / targetCalories) * 100).clamp(0, 120).toInt() : 0;
-        
-        return {
-          'calories': todayCalories,
-          'targetCalories': targetCalories,
-          'meals': todayMeals,
-          'progressPercent': progressPercent,
-        };
-        
-      case TimePeriod.week:
-        // Calculate actual week data
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        int totalWeekCalories = 0;
-        int totalWeekMeals = 0;
-        int activeDays = 0;
-        
-        for (int i = 0; i < 7; i++) {
-          final day = startOfWeek.add(Duration(days: i));
-          if (!day.isAfter(now)) {
-            final dayCalories = _getCaloriesForDate(foodState, day);
-            final dayMeals = day.day == now.day && day.month == now.month && day.year == now.year 
-                ? foodState.mealsForDate.length 
-                : (dayCalories > 0 ? 3 : 0); // Estimate meals based on calories
-            
-            totalWeekCalories += dayCalories;
-            totalWeekMeals += dayMeals;
-            if (dayCalories > 0) activeDays++;
-          }
-        }
-        
-        final avgCalories = activeDays > 0 ? totalWeekCalories ~/ activeDays : 0;
-        final avgMeals = activeDays > 0 ? totalWeekMeals ~/ activeDays : 0;
-        final weekProgressPercent = targetCalories > 0 ? ((avgCalories / targetCalories) * 100).clamp(0, 120).toInt() : 0;
-        
-        return {
-          'calories': avgCalories,
-          'targetCalories': targetCalories,
-          'meals': avgMeals,
-          'progressPercent': weekProgressPercent,
-        };
-        
-      case TimePeriod.month:
-        // Calculate simplified month data (using current week as estimate)
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        int totalWeekCalories = 0;
-        int activeDays = 0;
-        
-        for (int i = 0; i < 7; i++) {
-          final day = startOfWeek.add(Duration(days: i));
-          if (!day.isAfter(now)) {
-            final dayCalories = _getCaloriesForDate(foodState, day);
-            totalWeekCalories += dayCalories;
-            if (dayCalories > 0) activeDays++;
-          }
-        }
-        
-        final avgCalories = activeDays > 0 ? totalWeekCalories ~/ activeDays : 0;
-        final avgMeals = activeDays > 0 ? 3 : 0; // Estimate
-        final monthProgressPercent = targetCalories > 0 ? ((avgCalories / targetCalories) * 100).clamp(0, 120).toInt() : 0;
-        
-        return {
-          'calories': avgCalories,
-          'targetCalories': targetCalories,
-          'meals': avgMeals,
-          'progressPercent': monthProgressPercent,
-        };
-    }
-  }
-
-  String _getPeriodStatsTitle(String base) {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'Dagens $base';
-      case TimePeriod.week:
-        return 'Ugentligt snit';
-      case TimePeriod.month:
-        return 'Månedligt snit';
-    }
-  }
-
-  String _getPeriodStatsSubtitle(int targetCalories) {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'af $targetCalories kcal';
-      case TimePeriod.week:
-        return 'pr. dag denne uge';
-      case TimePeriod.month:
-        return 'pr. dag denne måned';
-    }
-  }
-
-  String _getPeriodMealsSubtitle() {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'logget i dag';
-      case TimePeriod.week:
-        return 'snit pr. dag';
-      case TimePeriod.month:
-        return 'snit pr. dag';
-    }
-  }
-
-  String _getProgressSubtitle() {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'af dagens mål';
-      case TimePeriod.week:
-        return 'af ugens mål';
-      case TimePeriod.month:
-        return 'af månedens mål';
-    }
-  }
-
-  IconData _getProgressIcon(int progressPercent) {
-    if (progressPercent >= 90) return MdiIcons.trophyVariant;
-    if (progressPercent >= 80) return MdiIcons.target;
-    if (progressPercent >= 60) return MdiIcons.clockOutline;
-    return MdiIcons.trendingUp;
-  }
-
-  Widget _buildPeriodSummaryCard(FoodLoggingState foodState, UserProfileModel userProfile, List<WeightEntryModel> weightEntries) {
-    final periodData = _calculatePeriodData(foodState, userProfile, weightEntries);
-    final progress = periodData['progressPercent'] / 100.0;
+  Widget _buildTodaySummaryCard(FoodLoggingState foodState, UserProfileModel userProfile, List<WeightEntryModel> weightEntries) {
+    final todayCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    final todayMeals = foodState.mealsForDate.length;
     
     return Container(
       width: double.infinity,
@@ -574,14 +338,14 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                   borderRadius: BorderRadius.circular(KSizes.radiusM),
                 ),
                 child: Icon(
-                  _getPeriodSummaryIcon(),
+                  MdiIcons.chartLine,
                   color: Colors.white,
                   size: KSizes.iconM,
                 ),
               ),
               const SizedBox(width: KSizes.margin3x),
               Text(
-                _getPeriodSummaryTitle(),
+                'Dagens overblik',
                 style: TextStyle(
                   fontSize: KSizes.fontSizeXL,
                   fontWeight: KSizes.fontWeightBold,
@@ -593,43 +357,21 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
           
           const SizedBox(height: KSizes.margin4x),
           
-          // Progress visualization
-          _buildPeriodProgressBars(periodData),
+          // Today's progress
+          _buildTodayProgress(todayCalories, userProfile.targetCalories),
           
           const SizedBox(height: KSizes.margin4x),
           
-          // Summary insights
-          _buildPeriodInsights(periodData, weightEntries, userProfile),
+          // Today's insights
+          _buildTodayInsights(todayCalories, todayMeals, weightEntries, userProfile),
         ],
       ),
     );
   }
 
-  IconData _getPeriodSummaryIcon() {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return MdiIcons.chartLine;
-      case TimePeriod.week:
-        return MdiIcons.chartAreaspline;
-      case TimePeriod.month:
-        return MdiIcons.chartTimelineVariant;
-    }
-  }
-
-  String _getPeriodSummaryTitle() {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'Dagens overblik';
-      case TimePeriod.week:
-        return 'Ugeoverblik';
-      case TimePeriod.month:
-        return 'Månedsoverblik';
-    }
-  }
-
-  Widget _buildPeriodProgressBars(Map<String, dynamic> periodData) {
-    final progress = (periodData['progressPercent'] / 100.0).clamp(0.0, 1.2);
-    final progressColor = progress >= 0.9 ? AppColors.success : progress >= 0.7 ? AppColors.warning : AppColors.primary;
+  Widget _buildTodayProgress(int todayCalories, int targetCalories) {
+    final progress = targetCalories > 0 ? (todayCalories / targetCalories).clamp(0.0, 1.2) : 0.0;
+    final progressPercent = (progress * 100).round();
     
     return Column(
       children: [
@@ -641,7 +383,7 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
               SizedBox(
                 width: 100,
                 child: Text(
-                  _getPeriodProgressLabel(),
+                  'Dagens fremgang',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeS,
                     color: AppColors.textSecondary,
@@ -662,7 +404,7 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                     widthFactor: progress.clamp(0.0, 1.0),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: progressColor,
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
@@ -673,10 +415,10 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
               SizedBox(
                 width: 60,
                 child: Text(
-                  '${periodData['progressPercent']}%',
+                  '$progressPercent%',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeS,
-                    color: progressColor,
+                    color: AppColors.primary,
                     fontWeight: KSizes.fontWeightBold,
                   ),
                   textAlign: TextAlign.right,
@@ -686,100 +428,14 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
           ),
         ),
         
-        // Additional metrics based on period
-        if (_selectedPeriod != TimePeriod.day) ...[
-          const SizedBox(height: KSizes.margin2x),
-          _buildAdditionalMetrics(periodData),
-        ],
+        // Additional metrics based on today's data
+        _buildTodayAdditionalMetrics(todayCalories, todayMeals, weightEntries, userProfile),
       ],
     );
   }
 
-  String _getPeriodProgressLabel() {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'Dagens fremgang';
-      case TimePeriod.week:
-        return 'Ugentlig fremgang';
-      case TimePeriod.month:
-        return 'Månedlig fremgang';
-    }
-  }
-
-  Widget _buildAdditionalMetrics(Map<String, dynamic> periodData) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildMetricIndicator(
-            'Konsistens',
-            _getConsistencyScore(),
-            _getConsistencyScore() >= 80 ? AppColors.success : AppColors.warning,
-          ),
-        ),
-        const SizedBox(width: KSizes.margin3x),
-        Expanded(
-          child: _buildMetricIndicator(
-            'Trend',
-            _getTrendDirection(),
-            AppColors.info,
-            showPercentage: false,
-          ),
-        ),
-      ],
-    );
-  }
-
-  int _getConsistencyScore() {
-    // Simplified consistency calculation based on selected period
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 100;
-      case TimePeriod.week:
-        return 85; // Example: 6 out of 7 days with logging
-      case TimePeriod.month:
-        return 75; // Example: 22 out of 30 days with logging
-    }
-  }
-
-  String _getTrendDirection() {
-    // Simplified trend calculation
-    return '↗️ Stigende';
-  }
-
-  Widget _buildMetricIndicator(String label, dynamic value, Color color, {bool showPercentage = true}) {
-    return Container(
-      padding: const EdgeInsets.all(KSizes.margin3x),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeS,
-              color: AppColors.textSecondary,
-              fontWeight: KSizes.fontWeightMedium,
-            ),
-          ),
-          const SizedBox(height: KSizes.margin1x),
-          Text(
-            showPercentage ? '$value%' : value.toString(),
-            style: TextStyle(
-              fontSize: KSizes.fontSizeL,
-              color: color,
-              fontWeight: KSizes.fontWeightBold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPeriodInsights(Map<String, dynamic> periodData, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
-    final insights = _generatePeriodInsights(periodData, weightEntries, userProfile);
+  Widget _buildTodayInsights(int todayCalories, int todayMeals, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
+    final insights = _generateTodayInsights(todayCalories, todayMeals, weightEntries, userProfile);
     
     return Container(
       padding: const EdgeInsets.all(KSizes.margin3x),
@@ -815,68 +471,246 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     );
   }
 
-  List<Map<String, dynamic>> _generatePeriodInsights(Map<String, dynamic> periodData, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
-    final progressPercent = periodData['progressPercent'];
+  List<Map<String, dynamic>> _generateTodayInsights(int todayCalories, int todayMeals, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
     final insights = <Map<String, dynamic>>[];
     
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        if (progressPercent >= 90) {
-          insights.add({
-            'icon': MdiIcons.checkCircle,
-            'text': 'Fantastisk! Du har næsten nået dagens kaloriemål.',
-            'color': AppColors.success,
-          });
-        } else if (progressPercent >= 50) {
-          insights.add({
-            'icon': MdiIcons.clockOutline,
-            'text': 'Du er godt på vej til at nå dagens mål.',
-            'color': AppColors.warning,
-          });
-        } else {
-          insights.add({
-            'icon': MdiIcons.informationOutline,
-            'text': 'Der er stadig tid til at logge flere måltider i dag.',
-            'color': AppColors.info,
-          });
-        }
-        break;
-        
-      case TimePeriod.week:
+    if (todayCalories >= userProfile.targetCalories) {
+      insights.add({
+        'icon': MdiIcons.checkCircle,
+        'text': 'Fantastisk! Du har næsten nået dagens kaloriemål.',
+        'color': AppColors.success,
+      });
+    } else if (todayCalories > 0) {
+      insights.add({
+        'icon': MdiIcons.clockOutline,
+        'text': 'Du er godt på vej til at nå dagens mål.',
+        'color': AppColors.warning,
+      });
+    } else {
+      insights.add({
+        'icon': MdiIcons.informationOutline,
+        'text': 'Der er stadig tid til at logge flere måltider i dag.',
+        'color': AppColors.info,
+      });
+    }
+    
+    if (todayMeals >= 3) {
+      insights.add({
+        'icon': MdiIcons.fire,
+        'text': '$todayMeals måltider logget i dag',
+        'color': AppColors.warning,
+      });
+    }
+    
+    if (weightEntries.isNotEmpty) {
+      final weightLost = (userProfile.currentWeightKg - weightEntries.first.weightKg).abs();
+      if (weightLost > 0) {
         insights.add({
-          'icon': MdiIcons.trendingUp,
-          'text': 'Denne uge har du været konsistent med din madlogning.',
-          'color': AppColors.success,
-        });
-        insights.add({
-          'icon': MdiIcons.target,
-          'text': 'Din ugentlige gennemsnitskalorie er på rette spor.',
+          'icon': MdiIcons.trendingDown,
+          'text': '${weightLost.toStringAsFixed(1)} kg fremgang i dag',
           'color': AppColors.primary,
         });
-        break;
-        
-      case TimePeriod.month:
-        insights.add({
-          'icon': MdiIcons.chartLine,
-          'text': 'Månedlige trends viser fremgang mod dit mål.',
-          'color': AppColors.success,
-        });
-        if (weightEntries.length > 1) {
-          insights.add({
-            'icon': MdiIcons.scale,
-            'text': 'Din vægtudvikling denne måned viser fremgang.',
-            'color': AppColors.primary,
-          });
-        }
-        insights.add({
-          'icon': MdiIcons.calendarCheck,
-          'text': 'Du har logget måltider på de fleste dage denne måned.',
-          'color': AppColors.info,
-        });
-        break;
+      }
     }
     
     return insights;
+  }
+
+  Widget _buildTodayAdditionalMetrics(int todayCalories, int todayMeals, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMetricIndicator(
+            'Konsistens',
+            _getConsistencyScore(todayCalories, todayMeals),
+            _getConsistencyScore(todayCalories, todayMeals) >= 80 ? AppColors.success : AppColors.warning,
+          ),
+        ),
+        const SizedBox(width: KSizes.margin3x),
+        Expanded(
+          child: _buildMetricIndicator(
+            'Trend',
+            _getTrendDirection(todayCalories, todayMeals),
+            AppColors.info,
+            showPercentage: false,
+          ),
+        ),
+      ],
+    );
+  }
+
+  int _getConsistencyScore(int todayCalories, int todayMeals) {
+    // Simplified consistency calculation based on today's data
+    if (todayCalories > 0 && todayMeals > 0) {
+      return 100;
+    }
+    return 0;
+  }
+
+  String _getTrendDirection(int todayCalories, int todayMeals) {
+    // Simplified trend calculation based on today's data
+    if (todayCalories > 0 && todayMeals > 0) {
+      return '↗️ Stigende';
+    }
+    return '↘️ Faldende';
+  }
+
+  Widget _buildMetricIndicator(String label, dynamic value, Color color, {bool showPercentage = true}) {
+    return Container(
+      padding: const EdgeInsets.all(KSizes.margin3x),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeS,
+              color: AppColors.textSecondary,
+              fontWeight: KSizes.fontWeightMedium,
+            ),
+          ),
+          const SizedBox(height: KSizes.margin1x),
+          Text(
+            showPercentage ? '$value%' : value.toString(),
+            style: TextStyle(
+              fontSize: KSizes.fontSizeL,
+              color: color,
+              fontWeight: KSizes.fontWeightBold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAchievementsCard(FoodLoggingState foodState, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
+    // Calculate real achievements from today's data
+    final todayCalories = foodState.mealsForDate.fold<int>(0, (sum, meal) => sum + meal.calories);
+    final mealsLogged = foodState.mealsForDate.length;
+    final weightLost = weightEntries.isNotEmpty ? 
+        (userProfile.currentWeightKg - weightEntries.first.weightKg).abs() : 0.0;
+    
+    final achievements = <Map<String, dynamic>>[];
+    
+    // Add achievements based on real data
+    if (mealsLogged >= 3) {
+      achievements.add({
+        'icon': MdiIcons.fire, 
+        'text': '$mealsLogged måltider logget i dag', 
+        'color': AppColors.warning
+      });
+    }
+    if (todayCalories > 0 && userProfile.targetCalories > 0) {
+      final percentage = ((todayCalories / userProfile.targetCalories) * 100).round();
+      if (percentage >= 80) {
+        achievements.add({
+          'icon': MdiIcons.target, 
+          'text': 'Nåede $percentage% af kaloriemål', 
+          'color': AppColors.success
+        });
+      }
+    }
+    
+    if (weightLost > 0) {
+      achievements.add({
+        'icon': MdiIcons.trendingDown, 
+        'text': '${weightLost.toStringAsFixed(1)} kg fremgang', 
+        'color': AppColors.primary
+      });
+    }
+    
+    // Fallback achievements if no real ones
+    if (achievements.isEmpty) {
+      achievements.addAll([
+        {'icon': MdiIcons.heart, 'text': 'Velkommen til din rejse', 'color': AppColors.primary},
+        {'icon': MdiIcons.trophy, 'text': 'Start med at logge dine måltider', 'color': AppColors.secondary},
+      ]);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.success.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Icon(
+                  MdiIcons.trophy,
+                  color: Colors.white,
+                  size: KSizes.iconM,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin3x),
+              Text(
+                'Dagens resultater',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeXL,
+                  fontWeight: KSizes.fontWeightBold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: KSizes.margin4x),
+          
+          ...achievements.map((achievement) => Padding(
+            padding: const EdgeInsets.only(bottom: KSizes.margin2x),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(KSizes.margin1x),
+                  decoration: BoxDecoration(
+                    color: (achievement['color'] as Color).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
+                  child: Icon(
+                    achievement['icon'] as IconData,
+                    color: achievement['color'] as Color,
+                    size: KSizes.iconS,
+                  ),
+                ),
+                const SizedBox(width: KSizes.margin3x),
+                Expanded(
+                  child: Text(
+                    achievement['text'] as String,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeM,
+                      color: AppColors.textPrimary,
+                      fontWeight: KSizes.fontWeightMedium,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )).toList(),
+        ],
+      ),
+    );
   }
 
   Widget _buildQuickStatCard(String title, String value, String subtitle, Color color, IconData icon) {
@@ -946,176 +780,6 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
     );
   }
 
-  Widget _buildAchievementsCard(FoodLoggingState foodState, List<WeightEntryModel> weightEntries, UserProfileModel userProfile) {
-    // Calculate real achievements from data based on selected period
-    final periodData = _calculatePeriodData(foodState, userProfile, weightEntries);
-    final totalCalories = periodData['calories'];
-    final mealsLogged = periodData['meals'];
-    final weightLost = weightEntries.isNotEmpty ? 
-        (userProfile.currentWeightKg - weightEntries.first.weightKg).abs() : 0.0;
-    
-    final achievements = <Map<String, dynamic>>[];
-    
-    // Add achievements based on real data and selected period
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        if (mealsLogged >= 3) {
-          achievements.add({
-            'icon': MdiIcons.fire, 
-            'text': '$mealsLogged måltider logget i dag', 
-            'color': AppColors.warning
-          });
-        }
-        if (totalCalories > 0 && userProfile.targetCalories > 0) {
-          final percentage = ((totalCalories / userProfile.targetCalories) * 100).round();
-          if (percentage >= 80) {
-            achievements.add({
-              'icon': MdiIcons.target, 
-              'text': 'Nåede $percentage% af kaloriemål', 
-              'color': AppColors.success
-            });
-          }
-        }
-        break;
-        
-      case TimePeriod.week:
-        achievements.add({
-          'icon': MdiIcons.calendarCheck, 
-          'text': 'Konsistent madlogning denne uge', 
-          'color': AppColors.success
-        });
-        achievements.add({
-          'icon': MdiIcons.trendingUp, 
-          'text': 'Ugentlige kaloriemål på rette kurs', 
-          'color': AppColors.primary
-        });
-        break;
-        
-      case TimePeriod.month:
-        achievements.add({
-          'icon': MdiIcons.calendar, 
-          'text': 'En hel måned med fremgang', 
-          'color': AppColors.success
-        });
-        if (weightLost > 0) {
-          achievements.add({
-            'icon': MdiIcons.trendingDown, 
-            'text': '${weightLost.toStringAsFixed(1)} kg fremgang denne måned', 
-            'color': AppColors.primary
-          });
-        }
-        break;
-    }
-    
-    if (weightLost > 0 && _selectedPeriod == TimePeriod.day) {
-      achievements.add({
-        'icon': MdiIcons.trendingDown, 
-        'text': '${weightLost.toStringAsFixed(1)} kg total fremgang', 
-        'color': AppColors.primary
-      });
-    }
-    
-    // Fallback achievements if no real ones
-    if (achievements.isEmpty) {
-      achievements.addAll([
-        {'icon': MdiIcons.heart, 'text': 'Velkommen til din rejse', 'color': AppColors.primary},
-        {'icon': MdiIcons.trophy, 'text': 'Start med at logge dine måltider', 'color': AppColors.secondary},
-      ]);
-    }
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.success.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  MdiIcons.trophy,
-                  color: Colors.white,
-                  size: KSizes.iconM,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Text(
-                _getAchievementsTitle(),
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeXL,
-                  fontWeight: KSizes.fontWeightBold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: KSizes.margin4x),
-          
-          ...achievements.map((achievement) => Padding(
-            padding: const EdgeInsets.only(bottom: KSizes.margin2x),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(KSizes.margin1x),
-                  decoration: BoxDecoration(
-                    color: (achievement['color'] as Color).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
-                  ),
-                  child: Icon(
-                    achievement['icon'] as IconData,
-                    color: achievement['color'] as Color,
-                    size: KSizes.iconS,
-                  ),
-                ),
-                const SizedBox(width: KSizes.margin3x),
-                Expanded(
-                  child: Text(
-                    achievement['text'] as String,
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeM,
-                      color: AppColors.textPrimary,
-                      fontWeight: KSizes.fontWeightMedium,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
-        ],
-      ),
-    );
-  }
-
-  String _getAchievementsTitle() {
-    switch (_selectedPeriod) {
-      case TimePeriod.day:
-        return 'Dagens resultater';
-      case TimePeriod.week:
-        return 'Ugens resultater';
-      case TimePeriod.month:
-        return 'Månedens resultater';
-    }
-  }
-
   Widget _buildWeightStat(String label, double weight, Color color, {bool showDelta = false, bool isPositive = false}) {
     return Column(
       children: [
@@ -1163,11 +827,6 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
         ),
       ],
     );
-  }
-
-  Widget _buildQuickStatsRow(FoodLoggingState foodState, UserProfileModel userProfile) {
-    // Keep original method for backward compatibility
-    return _buildPeriodStatsRow(foodState, userProfile, []);
   }
 
   Widget _buildWeeklyOverview(FoodLoggingState foodState, UserProfileModel userProfile) {
