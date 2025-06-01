@@ -93,10 +93,10 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
         title: Text(
           'Kategoriser din mad',
           style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: KSizes.fontSizeL,
-            fontWeight: KSizes.fontWeightBold,
-          ),
+          color: AppColors.textPrimary,
+          fontSize: KSizes.fontSizeL,
+          fontWeight: KSizes.fontWeightBold,
+        ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -108,33 +108,33 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           children: [
             // Scrollable content
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(KSizes.margin4x),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Image preview
-                    _buildImagePreview(),
-                    
-                    SizedBox(height: KSizes.margin4x),
-                    
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(KSizes.margin4x),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image preview
+              _buildImagePreview(),
+              
+              SizedBox(height: KSizes.margin4x),
+              
                     // AI Analysis Section
                     _buildAiAnalysisSection(),
-                    
-                    SizedBox(height: KSizes.margin4x),
-                    
+              
+              SizedBox(height: KSizes.margin4x),
+              
                     // Food details form - main focus
                     _buildFoodDetailsForm(),
-                    
-                    SizedBox(height: KSizes.margin8x),
+              
+              SizedBox(height: KSizes.margin8x),
                   ],
                 ),
               ),
             ),
-            
+              
             // Fixed bottom action area
             _buildBottomActionArea(),
-          ],
+            ],
         ),
       ),
     );
@@ -213,13 +213,13 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
               ),
               
               // Image overlay with improved design
-              Positioned(
-                bottom: 0,
+                  Positioned(
+                    bottom: 0,
                 left: 0,
                 right: 0,
-                child: Container(
+                        child: Container(
                   padding: EdgeInsets.all(KSizes.margin3x),
-                  decoration: BoxDecoration(
+                          decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
@@ -227,7 +227,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                         Colors.black.withOpacity(0.7),
                         Colors.transparent,
                       ],
-                    ),
+                  ),
                   ),
                   child: Row(
                     children: [
@@ -237,34 +237,34 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                         size: KSizes.iconS,
                       ),
                       SizedBox(width: KSizes.margin1x),
-                      Text(
+                        Text(
                         'Tryk for fuld visning',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: KSizes.fontSizeS,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: KSizes.fontSizeS,
                           fontWeight: KSizes.fontWeightMedium,
+                          ),
                         ),
-                      ),
                       Spacer(),
                       if (widget.pendingFood.imageCount > 1)
                         Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: KSizes.margin2x,
-                            vertical: KSizes.margin1x,
-                          ),
-                          decoration: BoxDecoration(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: KSizes.margin2x,
+                    vertical: KSizes.margin1x,
+                  ),
+                  decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(KSizes.radiusS),
-                          ),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
                           child: Text(
                             '${_currentImageIndex + 1}/${widget.pendingFood.imageCount}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: KSizes.fontSizeXS,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: KSizes.fontSizeXS,
                               fontWeight: KSizes.fontWeightBold,
                             ),
-                          ),
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -337,15 +337,15 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               color: AppColors.surface,
-                              child: Center(
+                            child: Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Icon(
-                                      MdiIcons.imageOff,
+                                MdiIcons.imageOff,
                                       size: KSizes.iconXL,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                color: AppColors.textSecondary,
+                              ),
                                     SizedBox(height: KSizes.margin2x),
                                     Text(
                                       'Billede kunne ikke indlæses',
@@ -355,8 +355,8 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                                       ),
                                     ),
                                   ],
-                                ),
-                              ),
+                            ),
+                          ),
                             );
                           },
                         ),
@@ -384,7 +384,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: Offset(0, 2),
-          ),
+        ),
         ],
       ),
       child: Column(
@@ -409,31 +409,31 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
               ),
               Spacer(),
               if (_analysisResult != null)
-                Container(
+              Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: KSizes.margin2x,
                     vertical: KSizes.margin1x,
                   ),
-                  decoration: BoxDecoration(
+                decoration: BoxDecoration(
                     color: _analysisResult!.confidence > 0.7 
                         ? AppColors.success.withOpacity(0.1)
                         : _analysisResult!.confidence > 0.4
                             ? AppColors.warning.withOpacity(0.1)
                             : AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
                     border: Border.all(
                       color: _analysisResult!.confidence > 0.7 
                           ? AppColors.success
                           : _analysisResult!.confidence > 0.4
                               ? AppColors.warning
                               : AppColors.error,
-                    ),
-                  ),
-                  child: Text(
+                ),
+              ),
+                child: Text(
                     '${(_analysisResult!.confidence * 100).toInt()}%',
-                    style: TextStyle(
+                  style: TextStyle(
                       fontSize: KSizes.fontSizeS,
-                      fontWeight: KSizes.fontWeightBold,
+                    fontWeight: KSizes.fontWeightBold,
                       color: _analysisResult!.confidence > 0.7 
                           ? AppColors.success
                           : _analysisResult!.confidence > 0.4
@@ -450,7 +450,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           // Analysis result or analyze button
           if (_analysisResult == null) ...[
             // No analysis yet - show analyze button
-            SizedBox(
+        SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: _isAnalyzing ? null : _analyzeImage,
@@ -458,10 +458,10 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                     ? SizedBox(
                         width: KSizes.iconS,
                         height: KSizes.iconS,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                        ),
+          ),
                       )
                     : Icon(MdiIcons.eye, size: KSizes.iconS),
                 label: Text(_isAnalyzing ? 'Analyserer...' : 'Analyser Billede'),
@@ -469,8 +469,8 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                   foregroundColor: AppColors.primary,
                   side: BorderSide(color: AppColors.primary),
                   padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
-                ),
-              ),
+          ),
+        ),
             ),
           ] else ...[
             // Show analysis result
@@ -489,53 +489,53 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                 ),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
                   // Food name
-                  Row(
-                    children: [
-                      Icon(
+        Row(
+          children: [
+            Icon(
                         _analysisResult!.foodName.toLowerCase() != 'ingen mad'
                             ? MdiIcons.foodVariant
                             : MdiIcons.alertCircle,
                         color: _analysisResult!.foodName.toLowerCase() != 'ingen mad'
-                            ? AppColors.success
+                  ? AppColors.success 
                             : AppColors.info,
-                        size: KSizes.iconS,
-                      ),
+              size: KSizes.iconS,
+            ),
                       SizedBox(width: KSizes.margin2x),
                       Expanded(
                         child: Text(
                           _analysisResult!.foodName,
-                          style: TextStyle(
+              style: TextStyle(
                             fontSize: KSizes.fontSizeM,
                             fontWeight: KSizes.fontWeightBold,
                             color: _analysisResult!.foodName.toLowerCase() != 'ingen mad'
-                                ? AppColors.success
+                    ? AppColors.success 
                                 : AppColors.info,
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  
+              ),
+            ),
+          ],
+        ),
+        
                   if (_analysisResult!.foodName.toLowerCase() != 'ingen mad') ...[
                     SizedBox(height: KSizes.margin2x),
-                    
+        
                     // Calories estimate
                     Row(
                       children: [
                         Icon(MdiIcons.fire, color: AppColors.warning, size: KSizes.iconS),
                         SizedBox(width: KSizes.margin1x),
-                        Text(
+        Text(
                           '${_analysisResult!.estimatedCalories} kcal',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeS,
+          style: TextStyle(
+            fontSize: KSizes.fontSizeS,
                             fontWeight: KSizes.fontWeightMedium,
                             color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
+          ),
+        ),
+      ],
                     ),
                     
                     SizedBox(height: KSizes.margin2x),
@@ -570,7 +570,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                              ),
+            ),
                             )
                           : Icon(MdiIcons.refresh, size: KSizes.iconS),
                       label: Text(_isAnalyzing ? 'Analyserer...' : 'Analyser Igen'),
@@ -578,9 +578,9 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                         foregroundColor: AppColors.primary,
                         side: BorderSide(color: AppColors.primary),
                         padding: EdgeInsets.symmetric(vertical: KSizes.margin2x),
-                      ),
-                    ),
-                  ),
+              ),
+            ),
+          ),
                 ],
               ),
             ),
@@ -600,7 +600,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
-            children: [
+      children: [
               Icon(MdiIcons.lightbulbOn, color: Colors.white),
               SizedBox(width: KSizes.margin2x),
               Text('AI forslag anvendt!'),
@@ -632,13 +632,13 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Section header
-          Row(
-            children: [
-              Icon(
+        Row(
+          children: [
+            Icon(
                 MdiIcons.silverwareForkKnife,
                 color: AppColors.primary,
                 size: KSizes.iconM,
-              ),
+            ),
               SizedBox(width: KSizes.margin2x),
               Text(
                 'Mad Detaljer',
@@ -646,10 +646,10 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                   fontSize: KSizes.fontSizeL,
                   fontWeight: KSizes.fontWeightBold,
                   color: AppColors.textPrimary,
-                ),
               ),
-            ],
-          ),
+            ),
+          ],
+        ),
           
           SizedBox(height: KSizes.margin4x),
           
@@ -657,64 +657,64 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           if (_analysisResult != null && _analysisResult!.foodName.toLowerCase() != 'ingen mad') ...[
             Container(
               padding: EdgeInsets.all(KSizes.margin3x),
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
                 color: AppColors.success.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
                 border: Border.all(color: AppColors.success.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(
+            ),
+            child: Row(
+              children: [
+                Icon(
                     MdiIcons.lightbulbOn,
                     color: AppColors.success,
                     size: KSizes.iconS,
-                  ),
+                ),
                   SizedBox(width: KSizes.margin2x),
                   Expanded(
                     child: Text(
                       'AI forslag: ${_analysisResult!.foodName} (${_analysisResult!.estimatedCalories} kcal)',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
                         color: AppColors.success,
-                        fontWeight: KSizes.fontWeightMedium,
+                    fontWeight: KSizes.fontWeightMedium,
                       ),
-                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ),
             SizedBox(height: KSizes.margin4x),
           ],
           
           // Food name input
-          Text(
-            'Hvad er det for mad?',
-            style: TextStyle(
+        Text(
+          'Hvad er det for mad?',
+          style: TextStyle(
               fontSize: KSizes.fontSizeM,
               fontWeight: KSizes.fontWeightMedium,
-              color: AppColors.textPrimary,
-            ),
+            color: AppColors.textPrimary,
           ),
-          SizedBox(height: KSizes.margin2x),
-          TextField(
-            controller: _foodNameController,
-            decoration: InputDecoration(
-              hintText: 'F.eks. Spaghetti Bolognese',
-              prefixIcon: Icon(
+        ),
+        SizedBox(height: KSizes.margin2x),
+        TextField(
+          controller: _foodNameController,
+          decoration: InputDecoration(
+            hintText: 'F.eks. Spaghetti Bolognese',
+            prefixIcon: Icon(
                 MdiIcons.foodVariant,
-                color: AppColors.primary,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-                borderSide: BorderSide(color: AppColors.primary),
-              ),
+              color: AppColors.primary,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              borderSide: BorderSide(color: AppColors.primary),
+            ),
               filled: true,
               fillColor: AppColors.background,
-            ),
+        ),
             onChanged: (_) => setState(() {}),
           ),
           
@@ -722,15 +722,15 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           
           // Meal type selector - show selected time
           Row(
-            children: [
-              Text(
+      children: [
+        Text(
                 'Måltid: ',
-                style: TextStyle(
+          style: TextStyle(
                   fontSize: KSizes.fontSizeM,
                   fontWeight: KSizes.fontWeightMedium,
-                  color: AppColors.textPrimary,
-                ),
-              ),
+            color: AppColors.textPrimary,
+          ),
+        ),
               Text(
                 '(${_formatImageTime()})',
                 style: TextStyle(
@@ -744,8 +744,8 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: MealType.values.map((mealType) {
-                final isSelected = _selectedMealType == mealType;
+          children: MealType.values.map((mealType) {
+            final isSelected = _selectedMealType == mealType;
                 final index = MealType.values.indexOf(mealType);
                 
                 return Padding(
@@ -753,19 +753,19 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                     right: index < MealType.values.length - 1 ? KSizes.margin2x : 0,
                   ),
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedMealType = mealType),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
+              onTap: () => setState(() => _selectedMealType = mealType),
+              child: Container(
+                padding: EdgeInsets.symmetric(
                         horizontal: KSizes.margin4x,
                         vertical: KSizes.margin3x,
-                      ),
-                      decoration: BoxDecoration(
+                ),
+                decoration: BoxDecoration(
                         color: isSelected ? AppColors.primary : AppColors.background,
                         borderRadius: BorderRadius.circular(KSizes.radiusL),
-                        border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.border,
+                  border: Border.all(
+                    color: isSelected ? AppColors.primary : AppColors.border,
                           width: isSelected ? 2 : 1,
-                        ),
+                  ),
                         boxShadow: isSelected ? [
                           BoxShadow(
                             color: AppColors.primary.withOpacity(0.3),
@@ -773,52 +773,52 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                             offset: Offset(0, 2),
                           ),
                         ] : null,
-                      ),
-                      child: Text(
-                        mealType.mealTypeDisplayName,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                          fontWeight: isSelected ? KSizes.fontWeightBold : KSizes.fontWeightMedium,
+                ),
+                child: Text(
+                  mealType.mealTypeDisplayName,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
+                    fontWeight: isSelected ? KSizes.fontWeightBold : KSizes.fontWeightMedium,
                           fontSize: KSizes.fontSizeM,
                         ),
-                      ),
-                    ),
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
           ),
           
           SizedBox(height: KSizes.margin4x),
           
           // Calories input
-          Text(
-            'Hvor mange kalorier?',
-            style: TextStyle(
+        Text(
+          'Hvor mange kalorier?',
+          style: TextStyle(
               fontSize: KSizes.fontSizeM,
               fontWeight: KSizes.fontWeightMedium,
-              color: AppColors.textPrimary,
-            ),
+            color: AppColors.textPrimary,
           ),
-          SizedBox(height: KSizes.margin2x),
-          TextField(
-            controller: _caloriesController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'F.eks. 450',
-              suffixText: 'kcal',
-              prefixIcon: Icon(
-                MdiIcons.fire,
-                color: AppColors.primary,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-                borderSide: BorderSide(color: AppColors.border),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
-                borderSide: BorderSide(color: AppColors.primary),
-              ),
+        ),
+        SizedBox(height: KSizes.margin2x),
+        TextField(
+          controller: _caloriesController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            hintText: 'F.eks. 450',
+            suffixText: 'kcal',
+            prefixIcon: Icon(
+              MdiIcons.fire,
+              color: AppColors.primary,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              borderSide: BorderSide(color: AppColors.border),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              borderSide: BorderSide(color: AppColors.primary),
+            ),
               filled: true,
               fillColor: AppColors.background,
             ),
@@ -843,82 +843,82 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
         color: AppColors.surface,
         border: Border(
           top: BorderSide(color: AppColors.border.withOpacity(0.3)),
+          ),
         ),
-      ),
       child: Column(
-        children: [
-          // Primary action - Kategoriser Mad
+      children: [
+        // Primary action - Kategoriser Mad
           SizedBox(
-            width: double.infinity,
+          width: double.infinity,
             height: 56,
-            child: ElevatedButton.icon(
+          child: ElevatedButton.icon(
               onPressed: (_isProcessing || !_isFormValid()) ? null : _categorizeFood,
-              icon: _isProcessing 
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Icon(MdiIcons.check, size: KSizes.iconM),
-              label: Text(
-                _isProcessing ? 'Kategoriserer...' : 'Kategoriser Mad',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: KSizes.fontWeightBold,
-                ),
+            icon: _isProcessing 
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(MdiIcons.check, size: KSizes.iconM),
+            label: Text(
+              _isProcessing ? 'Kategoriserer...' : 'Kategoriser Mad',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                fontWeight: KSizes.fontWeightBold,
               ),
-              style: ElevatedButton.styleFrom(
+            ),
+            style: ElevatedButton.styleFrom(
                 backgroundColor: _isFormValid() ? AppColors.primary : AppColors.border,
-                foregroundColor: Colors.white,
+              foregroundColor: Colors.white,
                 elevation: _isFormValid() ? 8 : 0,
-                shadowColor: AppColors.primary.withOpacity(0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                ),
+              shadowColor: AppColors.primary.withOpacity(0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(KSizes.radiusL),
               ),
             ),
           ),
-          
+        ),
+        
           SizedBox(height: KSizes.margin2x),
-          
+        
           // Secondary actions row
           Row(
             children: [
               // Save for later button
               Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _isProcessing ? null : _saveForLater,
-                  icon: Icon(MdiIcons.clockOutline, size: KSizes.iconS),
+          child: OutlinedButton.icon(
+            onPressed: _isProcessing ? null : _saveForLater,
+            icon: Icon(MdiIcons.clockOutline, size: KSizes.iconS),
                   label: Text('Senere'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.warning,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.warning,
                     side: BorderSide(color: AppColors.warning),
                     padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
-                  ),
-                ),
-              ),
-              
+            ),
+          ),
+        ),
+        
               SizedBox(width: KSizes.margin2x),
-              
-              // Delete button
-              Expanded(
+        
+            // Delete button
+            Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _isProcessing ? null : _deleteImage,
-                  icon: Icon(MdiIcons.delete, size: KSizes.iconS),
-                  label: Text('Slet'),
+                onPressed: _isProcessing ? null : _deleteImage,
+                icon: Icon(MdiIcons.delete, size: KSizes.iconS),
+                label: Text('Slet'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
+                  foregroundColor: AppColors.error,
                     side: BorderSide(color: AppColors.error),
                     padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
-                  ),
                 ),
               ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
+      ],
       ),
     );
   }
@@ -926,6 +926,12 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   void _saveForLater() async {
     try {
       setState(() => _isProcessing = true);
+      
+      // If this comes from quick photo session, we need to save the pending food to the service
+      if (widget.fromQuickPhoto) {
+        print('🍎 CategorizeFoodPage: Saving pending food from quick photo session');
+        await ref.read(pendingFoodProvider.notifier).addNewPendingFood(widget.pendingFood);
+      }
       
       // Just pop back without processing - the pending food stays in the list
       if (mounted) {
@@ -945,6 +951,23 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
         
         // Return special value to indicate save for later
         Navigator.of(context).pop('saved_for_later');
+      }
+    } catch (e) {
+      print('🍎 CategorizeFoodPage: Error saving for later: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(MdiIcons.alertCircle, color: Colors.white),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(child: Text('Fejl ved gemning til senere: $e')),
+              ],
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -1099,14 +1122,14 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
 
     if (confirmed == true) {
       try {
-        setState(() => _isProcessing = true);
-        
+      setState(() => _isProcessing = true);
+
         // Delete pending food
         await ref.read(pendingFoodProvider.notifier).deletePendingFood(widget.pendingFood.id);
-        
+
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
               content: Row(
                 children: [
                   Icon(MdiIcons.checkCircle, color: Colors.white),
@@ -1114,10 +1137,10 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
                   Text('Billede slettet'),
                 ],
               ),
-              backgroundColor: AppColors.success,
+                backgroundColor: AppColors.success,
               behavior: SnackBarBehavior.floating,
-            ),
-          );
+              ),
+            );
           Navigator.of(context).pop('deleted');
         }
       } catch (e) {
@@ -1145,7 +1168,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
   }
 
   void _analyzeImage() async {
-    if (widget.pendingFood.imagePaths.isEmpty || 
+    if (widget.pendingFood.imagePaths.isEmpty ||
         widget.pendingFood.primaryImagePath.startsWith('mock_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1174,7 +1197,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
       final result = await _geminiService.analyzeFoodImage(
         widget.pendingFood.primaryImagePath,
       );
-      
+
       if (result.isSuccess) {
         final analysisResult = result.success;
         setState(() {
@@ -1184,7 +1207,7 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
         });
         
         print('🤖 CategorizeFoodPage: AI analysis successful');
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

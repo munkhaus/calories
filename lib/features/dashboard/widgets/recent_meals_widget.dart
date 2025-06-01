@@ -453,11 +453,11 @@ class RecentMealsWidget extends ConsumerWidget {
                         Expanded(
                           flex: 2,
                           child: Text(
-                            meal.mealType.mealTypeDisplayName,
-                            style: TextStyle(
-                              fontSize: KSizes.fontSizeS,
-                              color: _getMealColor(meal.mealType),
-                              fontWeight: KSizes.fontWeightMedium,
+                          meal.mealType.mealTypeDisplayName,
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeS,
+                            color: _getMealColor(meal.mealType),
+                            fontWeight: KSizes.fontWeightMedium,
                             ),
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
@@ -466,10 +466,10 @@ class RecentMealsWidget extends ConsumerWidget {
                         Expanded(
                           flex: 3,
                           child: Text(
-                            ' • ${meal.quantity} ${meal.servingUnit}',
-                            style: TextStyle(
-                              fontSize: KSizes.fontSizeS,
-                              color: AppColors.textSecondary,
+                          ' • ${meal.quantity} ${meal.servingUnit}',
+                          style: TextStyle(
+                            fontSize: KSizes.fontSizeS,
+                            color: AppColors.textSecondary,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -640,7 +640,7 @@ class RecentMealsWidget extends ConsumerWidget {
                   final shouldDelete = await _showDeleteConfirmDialog(context, meal);
                   if (shouldDelete == true) {
                     try {
-                      ref.read(foodLoggingProvider.notifier).deleteFood(meal.logEntryId);
+                    ref.read(foodLoggingProvider.notifier).deleteFood(meal.logEntryId);
                       
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -661,8 +661,8 @@ class RecentMealsWidget extends ConsumerWidget {
                       }
                     } catch (e) {
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
                             content: Row(
                               children: [
                                 Icon(MdiIcons.alertCircle, color: Colors.white),
@@ -672,10 +672,10 @@ class RecentMealsWidget extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            backgroundColor: AppColors.error,
+                        backgroundColor: AppColors.error,
                             behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                      ),
+                    );
                       }
                     }
                   }

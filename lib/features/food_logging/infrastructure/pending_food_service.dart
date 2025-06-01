@@ -118,6 +118,7 @@ class PendingFoodService implements IPendingFoodService {
   }
 
   /// Get the most recently captured pending food
+  @override
   Future<Result<PendingFoodModel?, PendingFoodError>> getMostRecentPendingFood() async {
     await initialize();
     
@@ -395,6 +396,7 @@ class PendingFoodService implements IPendingFoodService {
   }
 
   /// Add a new pending food element directly
+  @override
   Future<Result<PendingFoodModel, PendingFoodError>> addPendingFood(PendingFoodModel pendingFood) async {
     await initialize();
     
@@ -413,6 +415,7 @@ class PendingFoodService implements IPendingFoodService {
   }
 
   /// Add an additional image to an existing pending food
+  @override
   Future<Result<PendingFoodModel, PendingFoodError>> addImageToPendingFood(String pendingFoodId) async {
     await initialize();
     

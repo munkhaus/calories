@@ -282,7 +282,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   Widget _buildFeatureCard(_FeatureItem feature, int index) {
     // Calculate a staggered delay for each card
     final delay = feature.delay + (index * 100);
-
+    
     return AnimatedBuilder(
       animation: _featuresController,
       builder: (context, child) {
@@ -311,52 +311,52 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               ),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
+                children: [
+                  Container(
                       padding: const EdgeInsets.all(KSizes.margin1x),
-                      decoration: BoxDecoration(
-                        color: feature.color.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(KSizes.radiusL),
-                      ),
-                      child: Icon(
-                        feature.icon,
-                        color: Colors.white,
-                        size: KSizes.iconS,
-                      ),
+                    decoration: BoxDecoration(
+                      color: feature.color.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(KSizes.radiusL),
                     ),
+                    child: Icon(
+                      feature.icon,
+                      color: Colors.white,
+                        size: KSizes.iconS,
+                    ),
+                  ),
                     SizedBox(height: KSizes.margin1x),
                     Flexible(
                       child: Text(
-                        feature.title,
-                        style: TextStyle(
+                    feature.title,
+                    style: TextStyle(
                           fontSize: 10.0,
-                          fontWeight: KSizes.fontWeightBold,
-                          color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      fontWeight: KSizes.fontWeightBold,
+                      color: Colors.white,
                     ),
-                    Flexible(
-                      child: Text(
-                        feature.subtitle,
-                        style: TextStyle(
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                    ),
+                  Flexible(
+                    child: Text(
+                      feature.subtitle,
+                      style: TextStyle(
                           fontSize: 8.0,
-                          color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withOpacity(0.8),
                           fontWeight: KSizes.fontWeightRegular,
                           height: 1.0,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
+                  ),
+                ],
                 ),
               ),
             ),

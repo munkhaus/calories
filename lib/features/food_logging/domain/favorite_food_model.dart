@@ -85,7 +85,7 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
     
     // Total calories for the default serving (calculated)
     @Default(0) int totalCaloriesForServing, // Renamed from 'calories'
-
+    
     // Available serving sizes
     @Default([]) List<FavoriteServingSize> servingSizes,
     

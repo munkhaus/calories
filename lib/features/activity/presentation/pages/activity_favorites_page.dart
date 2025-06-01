@@ -55,7 +55,7 @@ class _ActivityFavoritesPageState extends ConsumerState<ActivityFavoritesPage> {
           SnackBar(
             content: Text('Kunne ikke indlæse favoritter'),
             backgroundColor: AppColors.error,
-          ),
+    ),
         );
       }
     }
@@ -106,7 +106,7 @@ class _ActivityFavoritesPageState extends ConsumerState<ActivityFavoritesPage> {
                 child: _isLoading 
                     ? _buildLoadingState()
                     : _favorites.isEmpty 
-                        ? _buildEmptyState()
+                    ? _buildEmptyState()
                         : _buildFavoritesList(),
               ),
             ],
@@ -224,11 +224,11 @@ class _ActivityFavoritesPageState extends ConsumerState<ActivityFavoritesPage> {
                   ),
                 )
               else
-                Icon(
-                  MdiIcons.chevronRight,
-                  color: AppColors.textSecondary,
-                  size: KSizes.iconM,
-                ),
+              Icon(
+                MdiIcons.chevronRight,
+                color: AppColors.textSecondary,
+                size: KSizes.iconM,
+              ),
             ],
           ),
         ),
@@ -327,8 +327,8 @@ class _ActivityFavoritesPageState extends ConsumerState<ActivityFavoritesPage> {
       
       if (mounted && context.mounted) {
         // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
             content: Row(
               children: [
                 Icon(MdiIcons.check, color: Colors.white),
@@ -338,14 +338,14 @@ class _ActivityFavoritesPageState extends ConsumerState<ActivityFavoritesPage> {
                 ),
               ],
             ),
-            backgroundColor: AppColors.success,
+        backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
-          ),
-        );
-        
+      ),
+    );
+    
         // Navigate back after successful logging
-        Navigator.of(context).pop();
-      }
+    Navigator.of(context).pop();
+  }
     } catch (e) {
       print('❌ ActivityFavoritesPage: Error logging activity: $e');
       

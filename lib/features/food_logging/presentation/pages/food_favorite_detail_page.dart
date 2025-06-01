@@ -49,7 +49,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
 
     // Use selectedFoodDetails from the provider if available for a new favorite
     _currentAiFoodDetails = ref.read(onlineFoodProvider).selectedFoodDetails;
-
+    
     if (_isEditing) {
       final favorite = widget.existingFavorite!;
       _nameController.text = favorite.foodName;
@@ -248,21 +248,21 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                 _buildMealTypeDropdown(),
                 
                 SizedBox(height: KSizes.margin4x),
-
+                
                 // ALWAYS SHOWN: Calories per 100g
                 _buildTextField(
                   controller: _caloriesPer100gController,
                   label: 'Kalorier pr. 100 gram',
                   hint: 'f.eks. 150',
                   icon: MdiIcons.fire,
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
                     if (value == null || value.isEmpty) return 'Indtast kalorier pr. 100g';
                     if (double.tryParse(value) == null) return 'Ugyldigt tal';
                     if (double.parse(value) < 0) return 'Kalorier kan ikke være negative';
-                    return null;
-                  },
-                ),
+                          return null;
+                        },
+                      ),
                 SizedBox(height: KSizes.margin4x),
 
                 // ALWAYS SHOWN: Portion in grams
@@ -452,8 +452,8 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     
     DateTime lastUsedDate;
     int usageCountValue;
-
-    if (_isEditing) {
+        
+        if (_isEditing) {
       if (_logOnSave) {
         lastUsedDate = DateTime.now();
         usageCountValue = widget.existingFavorite!.usageCount + 1;
@@ -473,7 +473,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       caloriesPer100g: caloriesPer100g.round(),
       defaultServingGrams: portionGrams,
       totalCaloriesForServing: totalCalculatedCalories.round(),
-      preferredMealType: _selectedMealType,
+            preferredMealType: _selectedMealType,
       servingSizes: servingSizes.toSet().toList(), // Use the populated and potentially modified servingSizes
       isAiGenerated: _currentAiFoodDetails != null,
       aiSearchQuery: _currentAiFoodDetails?.basicInfo.id,
@@ -498,15 +498,15 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       if (_isEditing) {
         // No need to call incrementFavoriteUsage if _logOnSave is false, as usageCount and lastUsed are already set.
         await favoriteService.updateFavorite(favorite);
-        ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Favorit opdateret: ${favorite.foodName}'), backgroundColor: AppColors.success),
-        );
+            );
       } else {
         await favoriteService.addToFavorites(favorite);
-        ScaffoldMessenger.of(context).showSnackBar(
+            ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Favorit tilføjet: ${favorite.foodName}'), backgroundColor: AppColors.success),
-        );
-      }
+            );
+          }
 
       // If this save action is also meant to log the food, we would do it here.
       // For now, this is handled by the page that PUSHED FoodFavoriteDetailPage with logOnSave = true.
@@ -520,14 +520,14 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
           });
         }
         Navigator.of(context).pop(favorite); // Return the saved/updated favorite
-      }
-    } catch (e) {
+        }
+      } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Fejl ved gemning: $e'), backgroundColor: AppColors.error),
-        );
-      }
+          );
+        }
     }
   }
 
@@ -539,7 +539,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       context: context,
       builder: (BuildContext dialogContext) {
         return AiSearchDialog(
-          initialQuery: query,
+        initialQuery: query,
           llmFoodService: llmServiceInstance, // Pass the instance from provider
           onFoodDetailsSelected: (details) { 
              Navigator.of(dialogContext).pop(details);
@@ -565,18 +565,18 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     _caloriesPer100gController.text = details.nutrition.calories > 0 
                                         ? details.nutrition.calories.toStringAsFixed(0) 
                                         : '0';
-
+        
     final OnlineServingSize defaultServing = details.servingSizes.firstWhere(
       (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
-      orElse: () => details.servingSizes.isNotEmpty 
-                    ? details.servingSizes.first 
+          orElse: () => details.servingSizes.isNotEmpty 
+              ? details.servingSizes.first 
                     : const OnlineServingSize(name: '100 gram', grams: 100, isDefault: true), // Ensure this returns OnlineServingSize
     );
     _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
     
     _calculateTotalCalories();
+    }
   }
-}
 
 class AiSearchDialog extends ConsumerStatefulWidget {
   final String initialQuery;
@@ -608,7 +608,7 @@ class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         // Check if a search isn't already in progress from the cubit
         if (!ref.read(onlineFoodProvider).isLoading) {
-          _searchFood();
+      _searchFood();
         }
       });
     }
@@ -723,10 +723,10 @@ class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
                               ? Center(child: Text('Ingen resultater fundet.', style: TextStyle(color: AppColors.textSecondary, fontSize: KSizes.fontSizeM)))
                               : ListView.builder(
                                   itemCount: searchResults.length,
-                                  itemBuilder: (context, index) {
+      itemBuilder: (context, index) {
                                     final result = searchResults[index];
                                     final bool isFetchingThisItem = _isFetchingDetails && onlineFoodState.selectedFoodDetails?.basicInfo.id == result.id;
-                                    return Card(
+        return Card(
                                       elevation: 1,
                                       margin: EdgeInsets.symmetric(vertical: KSizes.margin1x),
                                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSizes.radiusS)),
@@ -746,14 +746,14 @@ class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
                                             : Icon(MdiIcons.chevronRight, color: AppColors.primary),
                                         onTap: isFetchingThisItem ? null : () => _fetchAndSelectDetails(result),
                                         contentPadding: EdgeInsets.symmetric(horizontal: KSizes.margin2x, vertical: KSizes.margin1x),
-                                      ),
+                        ),
                                     );
                                   },
-                                ),
-            ),
-          ],
-        ),
-      ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
     );
   }
 } 

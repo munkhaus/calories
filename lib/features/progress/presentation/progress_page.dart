@@ -345,18 +345,18 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                 child: Icon(
                   MdiIcons.chartLine,
                   color: Colors.white,
-                  size: KSizes.iconM,
-                ),
+            size: KSizes.iconM,
+          ),
               ),
               const SizedBox(width: KSizes.margin3x),
-              Text(
+          Text(
                 'Dagens overblik',
-                style: TextStyle(
+            style: TextStyle(
                   fontSize: KSizes.fontSizeXL,
-                  fontWeight: KSizes.fontWeightBold,
+              fontWeight: KSizes.fontWeightBold,
                   color: AppColors.textPrimary,
-                ),
-              ),
+            ),
+          ),
             ],
           ),
           
@@ -389,11 +389,11 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                 width: 100,
                 child: Text(
                   'Dagens fremgang',
-                  style: TextStyle(
+            style: TextStyle(
                     fontSize: KSizes.fontSizeS,
                     color: AppColors.textSecondary,
-                    fontWeight: KSizes.fontWeightMedium,
-                  ),
+              fontWeight: KSizes.fontWeightMedium,
+            ),
                 ),
               ),
               const SizedBox(width: KSizes.margin2x),
@@ -702,11 +702,11 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                 const SizedBox(width: KSizes.margin3x),
                 Expanded(
                   child: Text(
-                    achievement['text'] as String,
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeM,
-                      color: AppColors.textPrimary,
-                      fontWeight: KSizes.fontWeightMedium,
+                  achievement['text'] as String,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    color: AppColors.textPrimary,
+                    fontWeight: KSizes.fontWeightMedium,
                     ),
                   ),
                 ),
@@ -955,46 +955,46 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
               child: Column(
                 children: [
                   Row(
-                    children: [
-                      SizedBox(
+                children: [
+                  SizedBox(
                         width: 60,
-                        child: Text(
+                    child: Text(
                           dayName,
-                          style: TextStyle(
+                      style: TextStyle(
                             fontSize: KSizes.fontSizeM,
                             color: isToday ? AppColors.primary : AppColors.textSecondary,
                             fontWeight: isToday ? KSizes.fontWeightBold : KSizes.fontWeightMedium,
-                          ),
-                        ),
                       ),
-                      const SizedBox(width: KSizes.margin2x),
-                      Expanded(
-                        child: Container(
+                    ),
+                  ),
+                  const SizedBox(width: KSizes.margin2x),
+                  Expanded(
+                    child: Container(
                           height: isToday ? 16 : 12,
-                          decoration: BoxDecoration(
+                      decoration: BoxDecoration(
                             color: AppColors.surface.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(8),
                             border: isToday ? Border.all(color: AppColors.primary, width: 1) : null,
-                          ),
-                          child: FractionallySizedBox(
-                            alignment: Alignment.centerLeft,
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
                             widthFactor: progress.clamp(0.0, 1.0),
-                            child: Container(
-                              decoration: BoxDecoration(
+                        child: Container(
+                          decoration: BoxDecoration(
                                 color: progressColor,
                                 borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: KSizes.margin2x),
-                      SizedBox(
+                    ),
+                  ),
+                  const SizedBox(width: KSizes.margin2x),
+                  SizedBox(
                         width: 80,
-                        child: Text(
+                    child: Text(
                           isFuture ? '-' : '${dayCalories} kcal',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeS,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
                             color: isToday ? AppColors.primary : AppColors.textSecondary,
                             fontWeight: isToday ? KSizes.fontWeightBold : KSizes.fontWeightMedium,
                           ),
@@ -1010,9 +1010,9 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
                             fontSize: KSizes.fontSizeS,
                             color: progressColor,
                             fontWeight: KSizes.fontWeightBold,
-                          ),
-                          textAlign: TextAlign.right,
-                        ),
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
                       ),
                     ],
                   ),
@@ -1097,9 +1097,9 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
             '$completedDays/7',
             MdiIcons.calendarCheck,
             completedDays >= 6 ? AppColors.success : completedDays >= 4 ? AppColors.warning : AppColors.error,
-          ),
-        ),
-      ],
+                  ),
+                ),
+              ],
     );
   }
 
@@ -1117,15 +1117,15 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
           const SizedBox(height: KSizes.margin1x),
           Text(
             value,
-            style: TextStyle(
+                style: TextStyle(
               fontSize: KSizes.fontSizeM,
-              fontWeight: KSizes.fontWeightBold,
-              color: color,
-            ),
-          ),
+                  fontWeight: KSizes.fontWeightBold,
+                  color: color,
+                ),
+              ),
           Text(
             label,
-            style: TextStyle(
+                style: TextStyle(
               fontSize: KSizes.fontSizeXS,
               color: AppColors.textSecondary,
             ),
@@ -1148,8 +1148,8 @@ class _ProgressPageState extends ConsumerState<ProgressPage> with AutomaticKeepA
             'Konsistens',
             _getConsistencyScore(todayCalories, todayMeals),
             _getConsistencyScore(todayCalories, todayMeals) >= 80 ? AppColors.success : AppColors.warning,
-          ),
-        ),
+                ),
+              ),
         const SizedBox(width: KSizes.margin3x),
         Expanded(
           child: _buildMetricIndicator(

@@ -271,19 +271,19 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
     String? preferredServingUnit,
   }) async {
     if (state.selectedFoodIds.isEmpty) return;
-    
-    state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
-    
-    int successCount = 0;
-    List<String> failedFoods = [];
 
+    state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
+
+      int successCount = 0;
+    List<String> failedFoods = [];
+      
     for (final foodId in state.selectedFoodIds) {
       try {
         // Get details first (important to get fresh details)
         final detailsResult = await _foodService.getFoodDetails(foodId);
         
         if (detailsResult.isSuccess) {
-          final details = detailsResult.success;
+        final details = detailsResult.success;
           final favorite = FavoriteFoodModel.fromOnlineFoodDetails(
             details,
             preferredMealType: preferredMealType,
@@ -291,8 +291,8 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
           );
           
           final addResult = await _favoriteFoodService.addToFavorites(favorite);
-          if (addResult.isSuccess) {
-            successCount++;
+        if (addResult.isSuccess) {
+          successCount++;
           } else {
             failedFoods.add(details.basicInfo.name);
           }
@@ -301,9 +301,9 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
         }
       } catch (e) {
         failedFoods.add('Ukendt ($foodId) - Fejl: $e');
+        }
       }
-    }
-    
+
     String message;
     if (successCount == state.selectedFoodIds.length) {
       message = '✅ Alle valgte madvarer tilføjet til favoritter!';
@@ -312,14 +312,14 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
     } else {
       message = '❌ Kunne ikke tilføje nogen af de valgte madvarer. Fejlede: ${failedFoods.join(', ')}';
     }
-    
-    state = state.copyWith(
+      
+      state = state.copyWith(
       isLoading: false,
       hasError: successCount < state.selectedFoodIds.length,
       errorMessage: message,
       selectedFoodIds: [], // Clear selection after attempt
-      isSelectionMode: false, // Exit selection mode
-    );
+        isSelectionMode: false, // Exit selection mode
+      );
     print('🌐 OnlineFoodCubit: Added $successCount / ${state.selectedFoodIds.length} to favorites.');
   }
 

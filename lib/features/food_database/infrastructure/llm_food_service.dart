@@ -51,13 +51,13 @@ class LLMFoodService implements IOnlineFoodService {
           print('❌ LLMFoodService: CRITICAL - No API key found. Cannot create model.');
           _isInitialized = false;
           _model = null;
-          return Failure(OnlineFoodError.apiKeyMissing);
-        }
-        
+        return Failure(OnlineFoodError.apiKeyMissing);
+      }
+      
         print('🤖 LLMFoodService: Hardcoded API key for model creation: ${LLMFoodService._apiKey.substring(0,10)}... (masked)');
         try {
-          _model = GenerativeModel(
-            model: 'gemini-1.5-flash',
+      _model = GenerativeModel(
+        model: 'gemini-1.5-flash',
             apiKey: LLMFoodService._apiKey,
             generationConfig: GenerationConfig(
               temperature: 0.1,
@@ -308,7 +308,7 @@ class LLMFoodService implements IOnlineFoodService {
         // Cache complete details for immediate access
         _detailsCache[name] = OnlineFoodDetails(
           basicInfo: foodResult,
-          nutrition: NutritionInfo(
+                nutrition: NutritionInfo(
             calories: calories,
             protein: protein,
             carbs: carbs,

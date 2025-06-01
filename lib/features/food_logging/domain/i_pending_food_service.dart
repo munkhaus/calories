@@ -56,4 +56,26 @@ abstract class IPendingFoodService {
   /// 
   /// Returns [Result.failure] with [PendingFoodError.validation] if validation fails.
   Future<Result<PendingFoodModel, PendingFoodError>> addNotes(String id, String notes);
+
+  /// Add a new pending food element directly
+  /// 
+  /// Returns [Result.failure] with [PendingFoodError.validation] if validation fails.
+  Future<Result<PendingFoodModel, PendingFoodError>> addPendingFood(PendingFoodModel pendingFood);
+
+  /// Get the most recent pending food item
+  /// 
+  /// Returns [Result.failure] with [PendingFoodError.notFound] if no pending foods exist.
+  Future<Result<PendingFoodModel?, PendingFoodError>> getMostRecentPendingFood();
+
+  /// Add an image to an existing pending food
+  /// 
+  /// Returns [Result.failure] with [PendingFoodError.notFound] if pending food doesn't exist.
+  /// Returns [Result.failure] with [PendingFoodError.userCancelled] if user cancels camera.
+  /// Returns [Result.failure] with [PendingFoodError.imageCapture] if image capture fails.
+  Future<Result<PendingFoodModel, PendingFoodError>> addImageToPendingFood(String pendingFoodId);
+
+  /// Get the count of unprocessed pending foods
+  /// 
+  /// Returns [Result.failure] with [PendingFoodError.database] if database error occurs.
+  Future<Result<int, PendingFoodError>> getUnprocessedCount();
 } 
