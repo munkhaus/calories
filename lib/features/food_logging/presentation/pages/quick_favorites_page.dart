@@ -19,10 +19,12 @@ import './food_search_page.dart';
 /// Page for quick selection and management of food and activity favorites
 class QuickFavoritesPage extends ConsumerStatefulWidget {
   final int initialTab;
+  final bool showAddButton; // Control whether to show the + button
   
   const QuickFavoritesPage({
     super.key,
     this.initialTab = 0,
+    this.showAddButton = true, // Default to true for backwards compatibility
   });
 
   @override
@@ -120,21 +122,23 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
           ],
         ),
       ),
-      floatingActionButton: _tabController.index == 0
-          ? FloatingActionButton(
-              heroTag: "food_fab",
-              onPressed: () => _createNewFoodFavorite(),
-              backgroundColor: AppColors.primary,
-              child: Icon(MdiIcons.plus),
-              tooltip: 'Ny mad favorit',
-            )
-          : FloatingActionButton(
-              heroTag: "activity_fab",
-              onPressed: () => _createNewActivityFavorite(),
-              backgroundColor: AppColors.secondary,
-              child: Icon(MdiIcons.plus),
-              tooltip: 'Ny aktivitet favorit',
-            ),
+      floatingActionButton: widget.showAddButton ? (
+        _tabController.index == 0
+            ? FloatingActionButton(
+                heroTag: "food_fab",
+                onPressed: () => _createNewFoodFavorite(),
+                backgroundColor: AppColors.primary,
+                child: Icon(MdiIcons.plus),
+                tooltip: 'Ny mad favorit',
+              )
+            : FloatingActionButton(
+                heroTag: "activity_fab",
+                onPressed: () => _createNewActivityFavorite(),
+                backgroundColor: AppColors.secondary,
+                child: Icon(MdiIcons.plus),
+                tooltip: 'Ny aktivitet favorit',
+              )
+      ) : null, // Hide FAB when showAddButton is false
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
@@ -157,7 +161,9 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       return _buildEmptyState(
         icon: MdiIcons.silverwareForkKnife,
         title: 'Ingen mad-favoritter',
-        subtitle: 'Tryk på + knappen for at oprette din første favorit',
+        subtitle: widget.showAddButton 
+            ? 'Tryk på + knappen for at oprette din første favorit'
+            : 'Du har ikke gemt nogen mad-favoritter endnu.\nGem favoritter når du kategoriserer mad.',
         color: AppColors.primary,
       );
     }
@@ -177,7 +183,9 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       return _buildEmptyState(
         icon: MdiIcons.runFast,
         title: 'Ingen aktivitets-favoritter',
-        subtitle: 'Tryk på + knappen for at oprette din første favorit',
+        subtitle: widget.showAddButton
+            ? 'Tryk på + knappen for at oprette din første favorit'
+            : 'Du har ikke gemt nogen aktivitets-favoritter endnu.\nGem favoritter når du logger aktiviteter.',
         color: AppColors.secondary,
       );
     }
@@ -247,7 +255,6 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       margin: const EdgeInsets.only(bottom: KSizes.margin3x),
       child: InkWell(
         onTap: () => _useFoodFavorite(favorite),
-        onLongPress: () => _editFoodFavorite(favorite),
         borderRadius: BorderRadius.circular(KSizes.radiusL),
         child: Container(
           padding: const EdgeInsets.all(KSizes.margin4x),
@@ -312,23 +319,51 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
                 ),
               ),
               
-              Column(
-                children: [
-                  Icon(
-                    MdiIcons.plus,
-                    color: AppColors.primary,
+              // Menu button with actions
+              PopupMenuButton<String>(
+                onSelected: (value) => _handleFoodFavoriteAction(value, favorite),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'use',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.plus, color: AppColors.primary, size: KSizes.iconS),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Spis nu'),
+                      ],
+                    ),
+                  ),
+                  if (widget.showAddButton) ...[
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(MdiIcons.pencil, color: AppColors.secondary, size: KSizes.iconS),
+                          SizedBox(width: KSizes.margin2x),
+                          Text('Rediger'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(MdiIcons.delete, color: AppColors.error, size: KSizes.iconS),
+                          SizedBox(width: KSizes.margin2x),
+                          Text('Slet'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+                child: Container(
+                  padding: EdgeInsets.all(KSizes.margin2x),
+                  child: Icon(
+                    MdiIcons.dotsVertical,
+                    color: AppColors.textSecondary,
                     size: KSizes.iconM,
                   ),
-                  SizedBox(height: KSizes.margin1x),
-                  Text(
-                    'Tryk: brug\nHold: rediger',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeXS,
-                      color: AppColors.textTertiary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -342,7 +377,6 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
       margin: const EdgeInsets.only(bottom: KSizes.margin3x),
       child: InkWell(
         onTap: () => _useActivityFavorite(favorite),
-        onLongPress: () => _editActivityFavorite(favorite),
         borderRadius: BorderRadius.circular(KSizes.radiusL),
         child: Container(
           padding: const EdgeInsets.all(KSizes.margin4x),
@@ -407,23 +441,51 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
                 ),
               ),
               
-              Column(
-                children: [
-                  Icon(
-                    MdiIcons.plus,
-                    color: AppColors.secondary,
+              // Menu button with actions
+              PopupMenuButton<String>(
+                onSelected: (value) => _handleActivityFavoriteAction(value, favorite),
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'use',
+                    child: Row(
+                      children: [
+                        Icon(MdiIcons.plus, color: AppColors.primary, size: KSizes.iconS),
+                        SizedBox(width: KSizes.margin2x),
+                        Text('Log nu'),
+                      ],
+                    ),
+                  ),
+                  if (widget.showAddButton) ...[
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(MdiIcons.pencil, color: AppColors.secondary, size: KSizes.iconS),
+                          SizedBox(width: KSizes.margin2x),
+                          Text('Rediger'),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(MdiIcons.delete, color: AppColors.error, size: KSizes.iconS),
+                          SizedBox(width: KSizes.margin2x),
+                          Text('Slet'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+                child: Container(
+                  padding: EdgeInsets.all(KSizes.margin2x),
+                  child: Icon(
+                    MdiIcons.dotsVertical,
+                    color: AppColors.textSecondary,
                     size: KSizes.iconM,
                   ),
-                  SizedBox(height: KSizes.margin1x),
-                  Text(
-                    'Tryk: brug\nHold: rediger',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeXS,
-                      color: AppColors.textTertiary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
             ],
           ),
@@ -608,5 +670,138 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
     } else {
       return '${favorite.distanceKm} km';
     }
+  }
+
+  void _handleFoodFavoriteAction(String value, FavoriteFoodModel favorite) {
+    if (value == 'use') {
+      _useFoodFavorite(favorite);
+    } else if (value == 'edit') {
+      _editFoodFavorite(favorite);
+    } else if (value == 'delete') {
+      _deleteFoodFavorite(favorite);
+    }
+  }
+
+  void _handleActivityFavoriteAction(String value, FavoriteActivityModel favorite) {
+    if (value == 'use') {
+      _useActivityFavorite(favorite);
+    } else if (value == 'edit') {
+      _editActivityFavorite(favorite);
+    } else if (value == 'delete') {
+      _deleteActivityFavorite(favorite);
+    }
+  }
+
+  void _deleteFoodFavorite(FavoriteFoodModel favorite) async {
+    final confirmed = await _showDeleteConfirmDialog(
+      'Slet ${favorite.foodName}?',
+      'Er du sikker på, at du vil slette denne mad-favorit?',
+    );
+
+    if (confirmed == true) {
+      try {
+        final result = await _foodService.removeFromFavorites(favorite.id);
+        if (result.isSuccess) {
+          _loadFavorites(); // Refresh the list
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${favorite.foodName} er slettet fra favoritter'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Kunne ikke slette favorit'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Fejl ved sletning: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  void _deleteActivityFavorite(FavoriteActivityModel favorite) async {
+    final confirmed = await _showDeleteConfirmDialog(
+      'Slet ${favorite.activityName}?',
+      'Er du sikker på, at du vil slette denne aktivitets-favorit?',
+    );
+
+    if (confirmed == true) {
+      try {
+        final result = await _activityService.removeFromFavorites(favorite.id);
+        if (result.isSuccess) {
+          _loadFavorites(); // Refresh the list
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${favorite.activityName} er slettet fra favoritter'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Kunne ikke slette favorit'),
+                backgroundColor: AppColors.error,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Fejl ved sletning: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<bool?> _showDeleteConfirmDialog(String title, String content) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Nej'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Ja, slet'),
+          ),
+        ],
+      ),
+    );
   }
 } 

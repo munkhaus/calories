@@ -871,7 +871,10 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   void _navigateToActivityFavorites(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => QuickFavoritesPage(initialTab: 1), // Activity tab
+        builder: (context) => QuickFavoritesPage(
+          initialTab: 1, // Activity tab
+          showAddButton: false, // Hide add button - we just want to use existing favorites
+        ),
       ),
     ).then((_) {
       // Refresh providers when returning from activity favorites
@@ -893,7 +896,10 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
   void _navigateToFoodFavorites(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => QuickFavoritesPage(initialTab: 0), // Food tab
+        builder: (context) => QuickFavoritesPage(
+          initialTab: 0, // Food tab
+          showAddButton: false, // Hide add button - we just want to use existing favorites
+        ),
       ),
     ).then((_) {
       // Refresh providers when returning from food favorites
