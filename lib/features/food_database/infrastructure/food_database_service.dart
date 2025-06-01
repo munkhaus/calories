@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:result_type/result_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/food_record_model.dart';
@@ -6,12 +7,35 @@ import '../domain/i_food_database_service.dart';
 import '../domain/online_food_models.dart';
 
 class FoodDatabaseService implements IFoodDatabaseService {
+  static FoodDatabaseService? _instance;
+  
+  // Singleton pattern
+  factory FoodDatabaseService() {
+    _instance ??= FoodDatabaseService._internal();
+    return _instance!;
+  }
+  
+  FoodDatabaseService._internal();
+
   static const String _storageKey = 'food_database';
   static const String _recentFoodsKey = 'recent_foods';
   
   List<FoodRecordModel> _foods = [];
   List<String> _recentFoodIds = [];
   bool _isInitialized = false;
+  
+  // Callback for when foods are added/updated/deleted
+  VoidCallback? _onDataChanged;
+
+  /// Set callback to be called when data changes
+  void setOnDataChanged(VoidCallback? callback) {
+    _onDataChanged = callback;
+  }
+  
+  /// Notify that data has changed
+  void _notifyDataChanged() {
+    _onDataChanged?.call();
+  }
 
   Future<void> _ensureInitialized() async {
     if (_isInitialized) return;
@@ -47,229 +71,9 @@ class FoodDatabaseService implements IFoodDatabaseService {
   }
 
   List<FoodRecordModel> _getSampleFoods() {
-    return [
-      // Breakfast items
-      FoodRecordModel(
-        id: 'havregryn',
-        name: 'Havregryn',
-        description: 'Almindelige havregryn, tørre',
-        caloriesPer100g: 389,
-        proteinPer100g: 16.9,
-        carbsPer100g: 66.3,
-        fatPer100g: 6.9,
-        category: FoodCategory.breakfast,
-        servingSizes: [
-          const ServingSize(name: '1 dl', grams: 35.0, isDefault: true),
-          const ServingSize(name: '1 kop', grams: 80.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-      
-      FoodRecordModel(
-        id: 'skummetmaelk',
-        name: 'Skummetmælk',
-        description: 'Skummetmælk, 0.5% fedt',
-        caloriesPer100g: 35,
-        proteinPer100g: 3.4,
-        carbsPer100g: 4.8,
-        fatPer100g: 0.5,
-        category: FoodCategory.drink,
-        servingSizes: [
-          const ServingSize(name: '1 glas', grams: 200.0, isDefault: true),
-          const ServingSize(name: '1 dl', grams: 100.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      FoodRecordModel(
-        id: 'rugbroed',
-        name: 'Rugbrød',
-        description: 'Dansk rugbrød, mørkt',
-        caloriesPer100g: 259,
-        proteinPer100g: 4.2,
-        carbsPer100g: 48.3,
-        fatPer100g: 3.3,
-        category: FoodCategory.breakfast,
-        servingSizes: [
-          const ServingSize(name: '1 skive', grams: 37.0, isDefault: true),
-          const ServingSize(name: '1 tynd skive', grams: 25.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      // Lunch items
-      FoodRecordModel(
-        id: 'kyllingebryst',
-        name: 'Kyllingebryst',
-        description: 'Grillet kyllingebryst uden skind',
-        caloriesPer100g: 165,
-        proteinPer100g: 31.0,
-        carbsPer100g: 0.0,
-        fatPer100g: 3.6,
-        category: FoodCategory.lunch,
-        servingSizes: [
-          const ServingSize(name: '1 bryst', grams: 150.0, isDefault: true),
-          const ServingSize(name: '1 portion', grams: 120.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      FoodRecordModel(
-        id: 'ris',
-        name: 'Ris',
-        description: 'Kogt hvide ris',
-        caloriesPer100g: 130,
-        proteinPer100g: 2.7,
-        carbsPer100g: 28.0,
-        fatPer100g: 0.3,
-        category: FoodCategory.lunch,
-        servingSizes: [
-          const ServingSize(name: '1 dl', grams: 80.0, isDefault: true),
-          const ServingSize(name: '1 portion', grams: 150.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      FoodRecordModel(
-        id: 'broccoli',
-        name: 'Broccoli',
-        description: 'Kogt broccoli',
-        caloriesPer100g: 35,
-        proteinPer100g: 2.8,
-        carbsPer100g: 7.0,
-        fatPer100g: 0.4,
-        category: FoodCategory.lunch,
-        servingSizes: [
-          const ServingSize(name: '1 portion', grams: 100.0, isDefault: true),
-          const ServingSize(name: '1 lille portion', grams: 75.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      // Dinner items
-      FoodRecordModel(
-        id: 'laks',
-        name: 'Laks',
-        description: 'Grillet laks',
-        caloriesPer100g: 208,
-        proteinPer100g: 25.4,
-        carbsPer100g: 0.0,
-        fatPer100g: 12.4,
-        category: FoodCategory.dinner,
-        servingSizes: [
-          const ServingSize(name: '1 portion', grams: 125.0, isDefault: true),
-          const ServingSize(name: '1 lille portion', grams: 100.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      FoodRecordModel(
-        id: 'kartofler',
-        name: 'Kartofler',
-        description: 'Kogte kartofler',
-        caloriesPer100g: 77,
-        proteinPer100g: 2.0,
-        carbsPer100g: 17.0,
-        fatPer100g: 0.1,
-        category: FoodCategory.dinner,
-        servingSizes: [
-          const ServingSize(name: '1 stor kartoffel', grams: 150.0, isDefault: true),
-          const ServingSize(name: '1 lille kartoffel', grams: 100.0, isDefault: false),
-          const ServingSize(name: '3 små kartofler', grams: 200.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      // Snacks
-      FoodRecordModel(
-        id: 'banan',
-        name: 'Banan',
-        description: 'Frisk banan',
-        caloriesPer100g: 89,
-        proteinPer100g: 1.1,
-        carbsPer100g: 23.0,
-        fatPer100g: 0.3,
-        category: FoodCategory.snack,
-        servingSizes: [
-          const ServingSize(name: '1 banan', grams: 120.0, isDefault: true),
-          const ServingSize(name: '1 lille banan', grams: 90.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      FoodRecordModel(
-        id: 'aeble',
-        name: 'Æble',
-        description: 'Frisk æble med skræl',
-        caloriesPer100g: 52,
-        proteinPer100g: 0.3,
-        carbsPer100g: 14.0,
-        fatPer100g: 0.2,
-        category: FoodCategory.snack,
-        servingSizes: [
-          const ServingSize(name: '1 æble', grams: 150.0, isDefault: true),
-          const ServingSize(name: '1 lille æble', grams: 100.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      // Drinks
-      FoodRecordModel(
-        id: 'kaffe',
-        name: 'Kaffe',
-        description: 'Sort kaffe uden tilsætninger',
-        caloriesPer100g: 2,
-        proteinPer100g: 0.3,
-        carbsPer100g: 0.0,
-        fatPer100g: 0.0,
-        category: FoodCategory.drink,
-        servingSizes: [
-          const ServingSize(name: '1 kop', grams: 200.0, isDefault: true),
-          const ServingSize(name: '1 espresso', grams: 30.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-
-      FoodRecordModel(
-        id: 'vand',
-        name: 'Vand',
-        description: 'Almindeligt vand',
-        caloriesPer100g: 0,
-        proteinPer100g: 0.0,
-        carbsPer100g: 0.0,
-        fatPer100g: 0.0,
-        category: FoodCategory.drink,
-        servingSizes: [
-          const ServingSize(name: '1 glas', grams: 200.0, isDefault: true),
-          const ServingSize(name: '1 flaske', grams: 500.0, isDefault: false),
-        ],
-        source: FoodSource.userCreated,
-        sourceProvider: '',
-        createdAt: DateTime.now(),
-      ),
-    ];
+    // Return empty list - no automatic sample foods
+    // Users can add their own foods or search online
+    return [];
   }
 
   Future<void> _saveFoods() async {
@@ -553,25 +357,17 @@ class FoodDatabaseService implements IFoodDatabaseService {
     try {
       await _ensureInitialized();
       
-      print('🍽️ FoodDatabaseService: Attempting to add food: "${food.name}" with ID: "${food.id}"');
-      print('🍽️ FoodDatabaseService: Current database has ${_foods.length} foods');
-      
-      // Check if food with same name already exists
-      final existingFood = _foods.where((f) => f.name.toLowerCase() == food.name.toLowerCase()).firstOrNull;
-      if (existingFood != null) {
-        print('🍽️ FoodDatabaseService: Found existing food with same name: "${existingFood.name}" (ID: "${existingFood.id}")');
-        print('🍽️ FoodDatabaseService: New food name: "${food.name}" (ID: "${food.id}")');
+      // Check if food with same name already exists (case insensitive)
+      final existingByName = _foods.where((f) => f.name.toLowerCase() == food.name.toLowerCase()).toList();
+      if (existingByName.isNotEmpty) {
         return Failure(FoodDatabaseError.alreadyExists);
       }
       
       // Check if food with same ID already exists
-      final existingById = _foods.where((f) => f.id == food.id).firstOrNull;
-      if (existingById != null) {
-        print('🍽️ FoodDatabaseService: Found existing food with same ID: "${existingById.name}" (ID: "${existingById.id}")');
+      final existingById = _foods.where((f) => f.id == food.id).toList();
+      if (existingById.isNotEmpty) {
         return Failure(FoodDatabaseError.alreadyExists);
       }
-      
-      print('🍽️ FoodDatabaseService: No duplicates found, proceeding with add');
       
       // Generate ID if not provided
       final newFood = food.id.isEmpty 
@@ -584,8 +380,10 @@ class FoodDatabaseService implements IFoodDatabaseService {
       _foods.add(newFood);
       await _saveFoods();
       
-      print('🍽️ FoodDatabaseService: Successfully added food: "${newFood.name}" (ID: "${newFood.id}")');
-      print('🍽️ FoodDatabaseService: Database now has ${_foods.length} foods');
+      print('🍽️ FoodDatabaseService: Successfully added food: "${newFood.name}"');
+      
+      _notifyDataChanged(); // Notify UI of changes
+      
       return Success(newFood);
     } catch (e) {
       print('🍽️ FoodDatabaseService: Error adding food: $e');
@@ -605,8 +403,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
       
       _foods[index] = food;
       await _saveFoods();
+      _notifyDataChanged(); // Notify UI of changes
       
-      print('🍽️ FoodDatabaseService: Updated food: ${food.name}');
       return Success(food);
     } catch (e) {
       print('🍽️ FoodDatabaseService: Error updating food: $e');
@@ -619,20 +417,10 @@ class FoodDatabaseService implements IFoodDatabaseService {
     try {
       await _ensureInitialized();
       
-      final index = _foods.indexWhere((f) => f.id == id);
-      if (index == -1) {
-        return Failure(FoodDatabaseError.notFound);
-      }
-      
-      final removedFood = _foods.removeAt(index);
-      
-      // Remove from recent foods if present
-      _recentFoodIds.remove(id);
-      
+      _foods.removeWhere((food) => food.id == id);
       await _saveFoods();
-      await _saveRecentFoods();
+      _notifyDataChanged(); // Notify UI of changes
       
-      print('🍽️ FoodDatabaseService: Deleted food: ${removedFood.name}');
       return Success(null);
     } catch (e) {
       print('🍽️ FoodDatabaseService: Error deleting food: $e');
@@ -651,6 +439,7 @@ class FoodDatabaseService implements IFoodDatabaseService {
       
       await _saveFoods();
       await _saveRecentFoods();
+      _notifyDataChanged(); // Notify UI of changes
       
       print('🍽️ FoodDatabaseService: Cleared all $foodCount foods from database');
       return Success(null);

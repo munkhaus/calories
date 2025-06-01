@@ -6,16 +6,22 @@ import '../domain/food_record_model.dart';
 import '../infrastructure/llm_food_service.dart';
 import '../infrastructure/food_database_service.dart';
 import 'online_food_state.dart';
+import 'providers.dart'; // Import shared providers
 
 // Provider for LLM service (only provider)
 final llmFoodServiceProvider = Provider<IOnlineFoodService>((ref) {
   return LLMFoodService();
 });
 
-// Online food cubit provider - only uses LLM
+// Shared provider for FoodDatabaseService
+final foodDatabaseServiceProvider = Provider<IFoodDatabaseService>((ref) {
+  return FoodDatabaseService();
+});
+
+// Online food cubit provider - uses shared database service
 final onlineFoodProvider = StateNotifierProvider<OnlineFoodCubit, OnlineFoodState>((ref) {
   final llmService = ref.read(llmFoodServiceProvider);
-  final foodDatabaseService = FoodDatabaseService();
+  final foodDatabaseService = ref.read(foodDatabaseServiceProvider);
   return OnlineFoodCubit(llmService, foodDatabaseService);
 });
 
@@ -182,14 +188,51 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
     print('🌐 OnlineFoodCubit: Selected foods: ${selectedIds.length}');
   }
 
+  /// Toggle select all foods (select all if none/some selected, deselect all if all selected)
+  void toggleSelectAllFoods() {
+    final allFoodIds = state.searchResults.map((food) => food.id).toList();
+    final currentSelected = state.selectedFoodIds;
+    
+    print('🌐 OnlineFoodCubit: toggleSelectAllFoods() called');
+    print('🌐 OnlineFoodCubit: Total foods: ${allFoodIds.length}');
+    print('🌐 OnlineFoodCubit: Currently selected: ${currentSelected.length}');
+    
+    // If all are selected, deselect all. Otherwise, select all.
+    final bool allSelected = currentSelected.length == allFoodIds.length &&
+                            allFoodIds.every((id) => currentSelected.contains(id));
+    
+    if (allSelected) {
+      print('🌐 OnlineFoodCubit: All were selected, deselecting all');
+      state = state.copyWith(
+        selectedFoodIds: [],
+        isSelectionMode: true, // Keep selection mode active
+      );
+    } else {
+      print('🌐 OnlineFoodCubit: Not all selected, selecting all');
+      state = state.copyWith(
+        selectedFoodIds: allFoodIds,
+        isSelectionMode: true,
+      );
+    }
+    
+    print('🌐 OnlineFoodCubit: After toggle - selected: ${state.selectedFoodIds.length}');
+  }
+
   /// Select all foods
   void selectAllFoods() {
     final allFoodIds = state.searchResults.map((food) => food.id).toList();
+    print('🌐 OnlineFoodCubit: selectAllFoods() called');
+    print('🌐 OnlineFoodCubit: Current search results: ${state.searchResults.length}');
+    print('🌐 OnlineFoodCubit: Current selected: ${state.selectedFoodIds.length}');
+    print('🌐 OnlineFoodCubit: About to select all IDs: $allFoodIds');
+    
     state = state.copyWith(
       selectedFoodIds: allFoodIds,
       isSelectionMode: true,
     );
-    print('🌐 OnlineFoodCubit: Selected all ${allFoodIds.length} foods');
+    
+    print('🌐 OnlineFoodCubit: After selectAll - selected: ${state.selectedFoodIds.length}');
+    print('🌐 OnlineFoodCubit: Selection mode: ${state.isSelectionMode}');
   }
 
   /// Add single food to database
@@ -239,7 +282,7 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
           state = state.copyWith(
             isAddingToDatabase: false,
             hasError: false, // Not an error, just info
-            errorMessage: '✅ "${food.name}" findes allerede i din database',
+            errorMessage: '✅ "${food.name}" er allerede i din database fra tidligere',
           );
         } else {
           print('🌐 OnlineFoodCubit: Failed to add "${food.name}" to database: ${addResult.failure}');
@@ -390,5 +433,52 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
       hasError: false,
       errorMessage: '',
     );
+  }
+
+  /// Debug method to check database contents
+  Future<void> debugDatabaseContents() async {
+    try {
+      final result = await _foodDatabaseService.getAllFoods();
+      if (result.isSuccess) {
+        final foods = result.success;
+        print('🐛 DEBUG: Database contains ${foods.length} foods:');
+        for (int i = 0; i < foods.length && i < 10; i++) {
+          final food = foods[i];
+          print('🐛   ${i + 1}. ${food.name} (ID: ${food.id}, Source: ${food.source})');
+        }
+        if (foods.length > 10) {
+          print('🐛   ... and ${foods.length - 10} more');
+        }
+      }
+    } catch (e) {
+      print('🐛 DEBUG: Error getting database contents: $e');
+    }
+  }
+
+  /// Debug method to force clear database (removes all foods)
+  Future<void> debugClearDatabase() async {
+    try {
+      print('🐛 DEBUG: Clearing entire database...');
+      final result = await _foodDatabaseService.clearAllFoods();
+      if (result.isSuccess) {
+        print('🐛 DEBUG: Database cleared successfully');
+        state = state.copyWith(
+          hasError: false,
+          errorMessage: 'Database cleared successfully',
+        );
+      } else {
+        print('🐛 DEBUG: Failed to clear database');
+        state = state.copyWith(
+          hasError: true,
+          errorMessage: 'Failed to clear database',
+        );
+      }
+    } catch (e) {
+      print('🐛 DEBUG: Error clearing database: $e');
+      state = state.copyWith(
+        hasError: true,
+        errorMessage: 'Error clearing database',
+      );
+    }
   }
 } 

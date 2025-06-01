@@ -129,7 +129,37 @@ class LLMFoodService implements IOnlineFoodService {
       } catch (e) {
         print('❌ LLMFoodService: JSON parse error: $e');
         print('❌ LLMFoodService: Problematic text: $cleanedResponse');
-        return Failure(OnlineFoodError.invalidResponse);
+        
+        // Try to fix common JSON issues
+        String fixedResponse = cleanedResponse;
+        
+        // If the response is truncated, try to close it properly
+        if (!cleanedResponse.endsWith('}') && !cleanedResponse.endsWith(']')) {
+          print('🔧 LLMFoodService: Response appears truncated, attempting to fix...');
+          
+          // Count open braces and brackets to try to close them
+          int openBraces = '{'.allMatches(cleanedResponse).length - '}'.allMatches(cleanedResponse).length;
+          int openBrackets = '['.allMatches(cleanedResponse).length - ']'.allMatches(cleanedResponse).length;
+          
+          // Add missing closing characters
+          for (int i = 0; i < openBrackets; i++) {
+            fixedResponse += ']';
+          }
+          for (int i = 0; i < openBraces; i++) {
+            fixedResponse += '}';
+          }
+          
+          print('🔧 LLMFoodService: Attempting to parse fixed response...');
+          try {
+            jsonData = json.decode(fixedResponse);
+            print('✅ LLMFoodService: Fixed JSON parsed successfully');
+          } catch (e2) {
+            print('❌ LLMFoodService: Fixed JSON also failed: $e2');
+            return Failure(OnlineFoodError.invalidResponse);
+          }
+        } else {
+          return Failure(OnlineFoodError.invalidResponse);
+        }
       }
 
       // Check for error in response

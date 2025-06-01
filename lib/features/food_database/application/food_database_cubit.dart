@@ -4,6 +4,7 @@ import '../domain/food_record_model.dart';
 import '../domain/i_food_database_service.dart';
 import '../infrastructure/food_database_service.dart';
 import 'food_database_state.dart';
+import 'providers.dart'; // Import shared providers
 
 class FoodDatabaseCubit extends StateNotifier<FoodDatabaseState> {
   final IFoodDatabaseService _service;
@@ -11,7 +12,14 @@ class FoodDatabaseCubit extends StateNotifier<FoodDatabaseState> {
   FoodDatabaseCubit({
     IFoodDatabaseService? service,
   })  : _service = service ?? FoodDatabaseService(),
-        super(FoodDatabaseState.initial());
+        super(FoodDatabaseState.initial()) {
+    // Set up callback to refresh when data changes
+    if (_service is FoodDatabaseService) {
+      (_service as FoodDatabaseService).setOnDataChanged(() {
+        refresh();
+      });
+    }
+  }
 
   Future<void> initialize() async {
     state = state.copyWith(
@@ -210,7 +218,10 @@ class FoodDatabaseCubit extends StateNotifier<FoodDatabaseState> {
   }
 }
 
-// Provider for the food database cubit
+// Provider for the food database cubit - uses shared service
 final foodDatabaseProvider = StateNotifierProvider<FoodDatabaseCubit, FoodDatabaseState>(
-  (ref) => FoodDatabaseCubit(),
+  (ref) {
+    final service = ref.read(foodDatabaseServiceProvider);
+    return FoodDatabaseCubit(service: service);
+  },
 ); 

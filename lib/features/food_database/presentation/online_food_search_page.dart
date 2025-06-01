@@ -91,6 +91,63 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                                   showInfoButton: false,
                                 ),
                               ),
+                              // Debug button
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                                ),
+                                child: IconButton(
+                                  onPressed: () {
+                                    print('🐛 DEBUG: Checking database contents...');
+                                    cubit.debugDatabaseContents();
+                                  },
+                                  icon: Icon(
+                                    MdiIcons.database,
+                                    color: Colors.white,
+                                    size: KSizes.iconM,
+                                  ),
+                                  tooltip: 'Debug database',
+                                ),
+                              ),
+                              SizedBox(width: KSizes.margin2x),
+                              // Clear database button
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
+                                ),
+                                child: IconButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text('Clear Database'),
+                                        content: Text('Dette vil slette ALLE fødevarer fra din database. Er du sikker?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context),
+                                            child: Text('Annuller'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () {
+                                              Navigator.pop(context);
+                                              cubit.debugClearDatabase();
+                                            },
+                                            child: Text('Ja, slet alt', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                  icon: Icon(
+                                    MdiIcons.deleteEmpty,
+                                    color: Colors.white,
+                                    size: KSizes.iconM,
+                                  ),
+                                  tooltip: 'Clear all foods',
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -558,13 +615,36 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                       ),
                     ),
                     ElevatedButton.icon(
-                      onPressed: () => cubit.selectAllFoods(),
+                      onPressed: () {
+                        print('🔘 UI: Vælg/Fravælg alle button pressed');
+                        cubit.toggleSelectAllFoods();
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.secondary,
                         foregroundColor: Colors.white,
+                        elevation: 2,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: KSizes.margin4x,
+                          vertical: KSizes.margin3x,
+                        ),
                       ),
-                      icon: Icon(MdiIcons.selectAll, size: KSizes.iconS),
-                      label: Text('Vælg alle'),
+                      icon: Icon(
+                        // Show different icon based on selection state
+                        state.selectedFoodIds.length == state.searchResults.length
+                            ? MdiIcons.selectOff
+                            : MdiIcons.selectAll,
+                        size: KSizes.iconS,
+                      ),
+                      label: Text(
+                        // Show different text based on selection state
+                        state.selectedFoodIds.length == state.searchResults.length
+                            ? 'Fravælg alle'
+                            : 'Vælg alle',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
