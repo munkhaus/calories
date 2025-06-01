@@ -28,15 +28,11 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   final _caloriesController = TextEditingController();
   final _quantityController = TextEditingController();
   final _notesController = TextEditingController();
-  final _searchController = TextEditingController();
   
-  MealType _selectedMealType = MealType.morgenmad;
+  MealType _selectedMealType = MealType.none;
   String _selectedServingUnit = 'stk';
   bool _isLoading = false;
   bool _isEditing = false;
-  bool _useAiSearch = false;
-  bool _isSearching = false;
-  List<OnlineFoodResult> _searchResults = [];
   LLMFoodService? _llmFoodService;
 
   // Predefined serving units
@@ -79,7 +75,6 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     _caloriesController.dispose();
     _quantityController.dispose();
     _notesController.dispose();
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -146,133 +141,58 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                 
                 SizedBox(height: KSizes.margin6x),
                 
-                // Food name
-                _buildTextField(
-                  controller: _nameController,
-                  label: 'Navn på mad',
-                  hint: 'f.eks. Havregrød med frugt',
-                  icon: MdiIcons.silverwareForkKnife,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Indtast navn på mad';
-                    }
-                    return null;
-                  },
-                ),
-                
-                SizedBox(height: KSizes.margin2x),
-                
-                // AI Search Toggle
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(KSizes.radiusM),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
-                  ),
-                  child: SwitchListTile(
-                    title: Text(
-                      'Brug AI søgning',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        fontWeight: KSizes.fontWeightMedium,
-                        color: AppColors.textPrimary,
+                // Food name with AI search button
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _nameController,
+                        label: 'Navn på mad',
+                        hint: 'f.eks. Havregrød med frugt',
+                        icon: MdiIcons.silverwareForkKnife,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Indtast navn på mad';
+                          }
+                          return null;
+                        },
                       ),
                     ),
-                    subtitle: Text(
-                      'Søg og vælg mad for at få præcise data',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    value: _useAiSearch,
-                    onChanged: (value) {
-                      setState(() {
-                        _useAiSearch = value;
-                        if (!value) {
-                          _searchResults = [];
-                          _searchController.clear();
-                        }
-                      });
-                    },
-                    activeColor: AppColors.primary,
-                    secondary: Icon(
-                      MdiIcons.robot,
-                      color: _useAiSearch ? AppColors.primary : AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                
-                if (_useAiSearch) ...[
-                  SizedBox(height: KSizes.margin4x),
-                  
-                  // AI Search Field
-                  TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Søg efter mad',
-                      hintText: 'f.eks. "havregrød" eller "kylling"',
-                      prefixIcon: Icon(MdiIcons.magnify, color: AppColors.primary),
-                      suffixIcon: _isSearching
-                          ? Padding(
-                              padding: EdgeInsets.all(KSizes.margin3x),
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                                ),
-                              ),
-                            )
-                          : IconButton(
-                              onPressed: _searchFood,
-                              icon: Icon(MdiIcons.send, color: AppColors.primary),
-                            ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                        borderSide: BorderSide(color: AppColors.primary, width: 2),
-                      ),
-                    ),
-                    onSubmitted: (_) => _searchFood(),
-                  ),
-                  
-                  // Search Results
-                  if (_searchResults.isNotEmpty) ...[
-                    SizedBox(height: KSizes.margin3x),
-                    Text(
-                      'Søgeresultater:',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: KSizes.margin2x),
-                    ...(_searchResults.map((food) => Container(
-                      margin: EdgeInsets.only(bottom: KSizes.margin2x),
+                    
+                    SizedBox(width: KSizes.margin2x),
+                    
+                    // AI Search Button
+                    Container(
+                      height: 56, // Match text field height
                       decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
+                        color: AppColors.primary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(KSizes.radiusM),
+                        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                       ),
-                      child: ListTile(
-                        title: Text(
-                          food.name,
-                          style: TextStyle(fontWeight: KSizes.fontWeightMedium),
+                      child: IconButton(
+                        onPressed: () {
+                          final nameText = _nameController.text.trim();
+                          if (nameText.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Skriv først et navn på maden'),
+                                backgroundColor: AppColors.warning,
+                              ),
+                            );
+                            return;
+                          }
+                          
+                          _showAiSearchDialog(nameText);
+                        },
+                        icon: Icon(
+                          MdiIcons.robot,
+                          color: AppColors.primary,
                         ),
-                        subtitle: Text(
-                          food.description,
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                        trailing: Icon(MdiIcons.chevronRight, color: AppColors.primary),
-                        onTap: () => _selectSearchResult(food),
+                        tooltip: 'Søg med AI',
                       ),
-                    )).toList()),
+                    ),
                   ],
-                ],
+                ),
                 
                 SizedBox(height: KSizes.margin4x),
                 
@@ -584,47 +504,18 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     }
   }
 
-  Future<void> _searchFood() async {
-    final query = _searchController.text.trim();
-    if (query.isEmpty) return;
-
-    setState(() {
-      _isSearching = true;
-      _searchResults = [];
-    });
-
-    try {
-      final result = await _llmFoodService!.searchFoods(query);
-      if (result.isSuccess) {
-        setState(() {
-          _searchResults = result.success;
-        });
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ingen resultater fundet'),
-              backgroundColor: AppColors.warning,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fejl ved søgning: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSearching = false;
-        });
-      }
-    }
+  void _showAiSearchDialog(String query) {
+    showDialog(
+      context: context,
+      builder: (context) => _AiSearchDialog(
+        initialQuery: query,
+        llmFoodService: _llmFoodService!,
+        onFoodSelected: (food) {
+          Navigator.of(context).pop();
+          _selectSearchResult(food);
+        },
+      ),
+    );
   }
 
   void _selectSearchResult(OnlineFoodResult food) async {
@@ -660,9 +551,6 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
         
         setState(() {
           _selectedServingUnit = unit;
-          _useAiSearch = false; // Hide search after selection
-          _searchResults = [];
-          _searchController.clear();
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -686,6 +574,248 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
           backgroundColor: AppColors.error,
         ),
       );
+    }
+  }
+}
+
+/// AI Search Dialog for finding food suggestions
+class _AiSearchDialog extends StatefulWidget {
+  final String initialQuery;
+  final LLMFoodService llmFoodService;
+  final Function(OnlineFoodResult) onFoodSelected;
+
+  const _AiSearchDialog({
+    required this.initialQuery,
+    required this.llmFoodService,
+    required this.onFoodSelected,
+  });
+
+  @override
+  State<_AiSearchDialog> createState() => _AiSearchDialogState();
+}
+
+class _AiSearchDialogState extends State<_AiSearchDialog> {
+  late TextEditingController _searchController;
+  List<OnlineFoodResult> _searchResults = [];
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(text: widget.initialQuery);
+    if (widget.initialQuery.isNotEmpty) {
+      _searchFood();
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+      ),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: EdgeInsets.all(KSizes.margin4x),
+        child: Column(
+          children: [
+            // Header
+            Row(
+              children: [
+                Icon(MdiIcons.robot, color: AppColors.primary),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: Text(
+                    'Søg med AI',
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeL,
+                      fontWeight: KSizes.fontWeightBold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(MdiIcons.close),
+                ),
+              ],
+            ),
+            
+            SizedBox(height: KSizes.margin4x),
+            
+            // Search field
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Navn på mad',
+                hintText: 'f.eks. "havregrød" eller "kylling"',
+                prefixIcon: Icon(MdiIcons.magnify, color: AppColors.primary),
+                suffixIcon: IconButton(
+                  onPressed: _isSearching ? null : _searchFood,
+                  icon: _isSearching 
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(MdiIcons.magnify),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+              ),
+              onSubmitted: (_) => _searchFood(),
+            ),
+            
+            SizedBox(height: KSizes.margin4x),
+            
+            // Results
+            Expanded(
+              child: _buildResults(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResults() {
+    if (_isSearching) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: AppColors.primary),
+            SizedBox(height: KSizes.margin4x),
+            Text(
+              'Søger efter "${_searchController.text.trim()}"...',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: KSizes.fontSizeM,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_searchResults.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              MdiIcons.magnify,
+              size: 64,
+              color: AppColors.textTertiary,
+            ),
+            SizedBox(height: KSizes.margin4x),
+            Text(
+              'Ingen resultater endnu',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                color: AppColors.textSecondary,
+                fontWeight: KSizes.fontWeightBold,
+              ),
+            ),
+            SizedBox(height: KSizes.margin2x),
+            Text(
+              'Skriv et navn på mad og tryk søg',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _searchResults.length,
+      itemBuilder: (context, index) {
+        final food = _searchResults[index];
+        return Container(
+          margin: EdgeInsets.only(bottom: KSizes.margin2x),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+          ),
+          child: ListTile(
+            title: Text(
+              food.name,
+              style: TextStyle(
+                fontWeight: KSizes.fontWeightMedium,
+                fontSize: KSizes.fontSizeM,
+              ),
+            ),
+            subtitle: Text(
+              food.description,
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: KSizes.fontSizeS,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            trailing: Icon(
+              MdiIcons.chevronRight,
+              color: AppColors.primary,
+            ),
+            onTap: () => widget.onFoodSelected(food),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _searchFood() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isSearching = true;
+      _searchResults = [];
+    });
+
+    try {
+      final result = await widget.llmFoodService.searchFoods(query);
+      if (result.isSuccess) {
+        setState(() {
+          _searchResults = result.success;
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ingen resultater fundet'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved søgning: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
     }
   }
 } 
