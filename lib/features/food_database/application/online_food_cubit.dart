@@ -234,12 +234,33 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
             isAddingToDatabase: false,
             hasError: false,
           );
+        } else if (addResult.failure == FoodDatabaseError.alreadyExists) {
+          print('🌐 OnlineFoodCubit: "${food.name}" already exists in database');
+          state = state.copyWith(
+            isAddingToDatabase: false,
+            hasError: false, // Not an error, just info
+            errorMessage: '✅ "${food.name}" findes allerede i din database',
+          );
         } else {
-          print('🌐 OnlineFoodCubit: Failed to add "${food.name}" to database');
+          print('🌐 OnlineFoodCubit: Failed to add "${food.name}" to database: ${addResult.failure}');
+          
+          // Get specific error message based on failure type
+          String errorMessage;
+          switch (addResult.failure) {
+            case FoodDatabaseError.storage:
+              errorMessage = 'Kunne ikke gemme fødevaren lige nu. Prøv igen.';
+              break;
+            case FoodDatabaseError.notFound:
+              errorMessage = 'Fødevaren blev ikke fundet. Prøv at søge igen.';
+              break;
+            default:
+              errorMessage = 'Noget gik galt. Prøv igen om lidt.';
+          }
+          
           state = state.copyWith(
             isAddingToDatabase: false,
             hasError: true,
-            errorMessage: 'Kunne ikke tilføje til database',
+            errorMessage: errorMessage,
           );
         }
       } else {
@@ -255,7 +276,7 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
       state = state.copyWith(
         isAddingToDatabase: false,
         hasError: true,
-        errorMessage: 'Fejl ved tilføjelse',
+        errorMessage: 'Uventet fejl ved tilføjelse',
       );
     }
   }
@@ -275,6 +296,8 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
 
     int successCount = 0;
     int failureCount = 0;
+    int alreadyExistsCount = 0;
+    final List<String> failedFoodNames = [];
 
     for (final food in selectedFoods) {
       try {
@@ -309,25 +332,55 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
           
           if (addResult.isSuccess) {
             successCount++;
+            print('🌐 OnlineFoodCubit: Successfully added "${food.name}" to database');
+          } else if (addResult.failure == FoodDatabaseError.alreadyExists) {
+            alreadyExistsCount++;
+            print('🌐 OnlineFoodCubit: "${food.name}" already exists in database');
           } else {
             failureCount++;
+            failedFoodNames.add(food.name);
+            print('🌐 OnlineFoodCubit: Failed to add "${food.name}" to database: ${addResult.failure}');
           }
         } else {
           failureCount++;
+          failedFoodNames.add(food.name);
+          print('🌐 OnlineFoodCubit: Failed to get details for "${food.name}"');
         }
       } catch (e) {
         failureCount++;
+        failedFoodNames.add(food.name);
+        print('🌐 OnlineFoodCubit: Exception adding "${food.name}": $e');
       }
     }
 
-    print('🌐 OnlineFoodCubit: Bulk add complete. $successCount/$failureCount successful');
+    print('🌐 OnlineFoodCubit: Bulk add complete. $successCount new, $alreadyExistsCount existed, $failureCount failed');
+    
+    // Generate appropriate user-friendly message
+    String errorMessage = '';
+    bool hasError = false;
+    
+    if (successCount > 0 && alreadyExistsCount > 0 && failureCount == 0) {
+      // Mixed success and already exists
+      errorMessage = '$successCount nye tilføjet, $alreadyExistsCount fandtes allerede ✅';
+    } else if (successCount == 0 && alreadyExistsCount > 0 && failureCount == 0) {
+      // All already exist
+      errorMessage = 'Alle ${alreadyExistsCount} fødevarer findes allerede i din database ✅';
+    } else if (successCount > 0 && failureCount > 0) {
+      // Mixed success and failure
+      hasError = true;
+      errorMessage = '$successCount tilføjet, $failureCount fejlede';
+    } else if (successCount == 0 && failureCount > 0) {
+      // All failed
+      hasError = true;
+      errorMessage = 'Kunne ikke tilføje fødevarerne. Prøv igen.';
+    }
     
     state = state.copyWith(
       isAddingToDatabase: false,
-      isSelectionMode: false,
-      selectedFoodIds: [],
-      hasError: failureCount > 0,
-      errorMessage: failureCount > 0 ? 'Nogle fødevarer kunne ikke tilføjes' : '',
+      isSelectionMode: hasError, // Keep selection mode only if there were real errors
+      selectedFoodIds: hasError ? state.selectedFoodIds : [], // Keep selections only if there were real errors
+      hasError: hasError,
+      errorMessage: errorMessage,
     );
   }
 

@@ -26,7 +26,7 @@ class OnlineFoodResultCard extends StatelessWidget {
       elevation: 1,
       shadowColor: AppColors.primary.withOpacity(0.1),
       child: InkWell(
-        onTap: onTap,
+        onTap: showSelection ? onSelectionToggle : onTap,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         child: Container(
           padding: EdgeInsets.all(KSizes.margin4x),

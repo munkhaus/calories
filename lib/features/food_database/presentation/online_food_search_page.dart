@@ -186,15 +186,40 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                     ),
             ),
           ),
-          floatingActionButton: state.searchResults.isNotEmpty && !state.isSelectionMode
+          floatingActionButton: state.isSelectionMode
               ? FloatingActionButton.extended(
-                  onPressed: () => cubit.toggleSelectionMode(),
-                  backgroundColor: AppColors.primary,
+                  onPressed: state.selectedFoodIds.isNotEmpty && !state.isAddingToDatabase
+                      ? () => _addSelectedFoods(cubit)
+                      : null,
+                  backgroundColor: state.selectedFoodIds.isNotEmpty
+                      ? AppColors.primary
+                      : AppColors.textTertiary,
                   foregroundColor: Colors.white,
-                  icon: Icon(MdiIcons.checkboxMultipleMarked),
-                  label: Text('Vælg flere'),
+                  icon: state.isAddingToDatabase 
+                      ? SizedBox(
+                          width: KSizes.iconM,
+                          height: KSizes.iconM,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Icon(MdiIcons.plus),
+                  label: Text(
+                    state.isAddingToDatabase 
+                        ? 'Tilføjer...' 
+                        : 'Tilføj ${state.selectedFoodIds.length}',
+                  ),
                 )
-              : null,
+              : state.searchResults.isNotEmpty
+                  ? FloatingActionButton.extended(
+                      onPressed: () => cubit.toggleSelectionMode(),
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      icon: Icon(MdiIcons.checkboxMultipleMarked),
+                      label: Text('Vælg flere'),
+                    )
+                  : null,
         );
       },
     );
@@ -486,33 +511,62 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
           Container(
             padding: EdgeInsets.all(KSizes.margin4x),
             decoration: AppDesign.cardDecoration,
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: Text(
-                    '${state.selectedFoodIds.length} valgt',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: KSizes.fontWeightMedium,
+                // Selection mode header
+                Row(
+                  children: [
+                    Icon(
+                      MdiIcons.checkboxMultipleMarked,
+                      color: AppColors.primary,
+                      size: KSizes.iconM,
                     ),
-                  ),
+                    SizedBox(width: KSizes.margin2x),
+                    Expanded(
+                      child: Text(
+                        'Vælg fødevarer',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: KSizes.fontWeightBold,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => cubit.toggleSelectionMode(),
+                      icon: Icon(
+                        MdiIcons.close,
+                        color: AppColors.textSecondary,
+                        size: KSizes.iconM,
+                      ),
+                      tooltip: 'Afslut valg',
+                    ),
+                  ],
                 ),
-                TextButton.icon(
-                  onPressed: () => cubit.selectAllFoods(),
-                  icon: Icon(MdiIcons.selectAll, size: KSizes.iconS),
-                  label: Text('Vælg alle'),
-                ),
-                SizedBox(width: KSizes.margin2x),
-                ElevatedButton.icon(
-                  onPressed: state.selectedFoodIds.isNotEmpty
-                      ? () => cubit.addSelectedFoodsToDatabase()
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: Icon(MdiIcons.plus, size: KSizes.iconS),
-                  label: Text('Tilføj'),
+                
+                SizedBox(height: KSizes.margin3x),
+                
+                // Selection controls
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${state.selectedFoodIds.length} valgt',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: KSizes.fontWeightBold,
+                        ),
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () => cubit.selectAllFoods(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: Icon(MdiIcons.selectAll, size: KSizes.iconS),
+                      label: Text('Vælg alle'),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -542,48 +596,10 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
   }
 
   void _showFoodDetails(BuildContext context, food, OnlineFoodCubit cubit) async {
-    // Show loading dialog immediately
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => Dialog(
-        child: Padding(
-          padding: EdgeInsets.all(KSizes.margin6x),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              ),
-              SizedBox(height: KSizes.margin4x),
-              Text(
-                'Henter detaljer...',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeM,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              SizedBox(height: KSizes.margin2x),
-              Text(
-                'Dette kan tage et øjeblik',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeS,
-                  color: AppColors.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    
-    // Fetch details
+    // Get details (should be cached and immediate)
     await cubit.getFoodDetails(food.id);
     
     if (!mounted) return;
-    
-    // Close loading dialog
-    Navigator.of(context).pop();
     
     final state = ref.read(onlineFoodProvider);
     if (state.selectedFoodDetails != null) {
@@ -600,27 +616,93 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
           ),
           child: OnlineFoodDetailView(
             foodDetails: state.selectedFoodDetails!,
-            onAddToDatabase: () {
-              cubit.addFoodToDatabase(food);
+            onAddToDatabase: () async {
+              await cubit.addFoodToDatabase(food);
+              
+              if (!mounted) return;
+              
               Navigator.pop(context);
+              
+              // Show appropriate feedback
+              final currentState = ref.read(onlineFoodProvider);
+              final isInfoMessage = currentState.errorMessage.contains('✅') || 
+                                   currentState.errorMessage.contains('findes allerede');
+              
+              if (!currentState.hasError || isInfoMessage) {
+                // Show success/info message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        Icon(
+                          isInfoMessage ? MdiIcons.informationOutline : MdiIcons.checkCircle,
+                          color: Colors.white,
+                          size: KSizes.iconM,
+                        ),
+                        SizedBox(width: KSizes.margin2x),
+                        Expanded(
+                          child: Text(
+                            currentState.errorMessage.isNotEmpty 
+                                ? currentState.errorMessage 
+                                : '✅ "${food.name}" tilføjet til database',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: isInfoMessage ? AppColors.primary : AppColors.success,
+                    duration: Duration(seconds: 3),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    ),
+                  ),
+                );
+              } else {
+                // Show error message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        Icon(
+                          MdiIcons.alertCircle,
+                          color: Colors.white,
+                          size: KSizes.iconM,
+                        ),
+                        SizedBox(width: KSizes.margin2x),
+                        Expanded(
+                          child: Text(
+                            currentState.errorMessage,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: AppColors.error,
+                    duration: Duration(seconds: 4),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    ),
+                    action: SnackBarAction(
+                      label: 'Prøv igen',
+                      textColor: Colors.white,
+                      onPressed: () => _showFoodDetails(context, food, cubit),
+                    ),
+                  ),
+                );
+              }
             },
             onClose: () {
               Navigator.pop(context);
             },
             isLoading: state.isAddingToDatabase,
-          ),
-        ),
-      );
-    } else if (state.hasError) {
-      // Show error snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(state.errorMessage),
-          backgroundColor: AppColors.error,
-          action: SnackBarAction(
-            label: 'Prøv igen',
-            textColor: Colors.white,
-            onPressed: () => _showFoodDetails(context, food, cubit),
           ),
         ),
       );
@@ -662,6 +744,97 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
     _searchController.clear();
     final cubit = ref.read(onlineFoodProvider.notifier);
     cubit.clearResults();
+  }
+
+  Future<void> _addSelectedFoods(OnlineFoodCubit cubit) async {
+    final selectedCount = ref.read(onlineFoodProvider).selectedFoodIds.length;
+    
+    await cubit.addSelectedFoodsToDatabase();
+    
+    if (!mounted) return;
+    
+    final state = ref.read(onlineFoodProvider);
+    
+    // Determine if this is truly an error or just info
+    final isInfoMessage = state.errorMessage.contains('✅') || 
+                         state.errorMessage.contains('fandtes allerede') ||
+                         state.errorMessage.contains('findes allerede');
+    
+    if (!state.hasError || isInfoMessage) {
+      // Show success/info message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isInfoMessage ? MdiIcons.informationOutline : MdiIcons.checkCircle,
+                color: Colors.white,
+                size: KSizes.iconM,
+              ),
+              SizedBox(width: KSizes.margin2x),
+              Expanded(
+                child: Text(
+                  state.errorMessage.isNotEmpty 
+                      ? state.errorMessage 
+                      : '$selectedCount fødevarer behandlet',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: isInfoMessage ? AppColors.primary : AppColors.success,
+          duration: Duration(seconds: isInfoMessage ? 4 : 3),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+          ),
+          action: SnackBarAction(
+            label: 'OK',
+            textColor: Colors.white,
+            onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
+          ),
+        ),
+      );
+    } else {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                MdiIcons.alertCircle,
+                color: Colors.white,
+                size: KSizes.iconM,
+              ),
+              SizedBox(width: KSizes.margin2x),
+              Expanded(
+                child: Text(
+                  state.errorMessage,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: AppColors.error,
+          duration: Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+          ),
+          action: SnackBarAction(
+            label: 'Prøv igen',
+            textColor: Colors.white,
+            onPressed: () => _addSelectedFoods(cubit),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildSearchModeFilter() {

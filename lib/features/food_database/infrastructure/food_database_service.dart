@@ -553,11 +553,25 @@ class FoodDatabaseService implements IFoodDatabaseService {
     try {
       await _ensureInitialized();
       
+      print('🍽️ FoodDatabaseService: Attempting to add food: "${food.name}" with ID: "${food.id}"');
+      print('🍽️ FoodDatabaseService: Current database has ${_foods.length} foods');
+      
       // Check if food with same name already exists
       final existingFood = _foods.where((f) => f.name.toLowerCase() == food.name.toLowerCase()).firstOrNull;
       if (existingFood != null) {
+        print('🍽️ FoodDatabaseService: Found existing food with same name: "${existingFood.name}" (ID: "${existingFood.id}")');
+        print('🍽️ FoodDatabaseService: New food name: "${food.name}" (ID: "${food.id}")');
         return Failure(FoodDatabaseError.alreadyExists);
       }
+      
+      // Check if food with same ID already exists
+      final existingById = _foods.where((f) => f.id == food.id).firstOrNull;
+      if (existingById != null) {
+        print('🍽️ FoodDatabaseService: Found existing food with same ID: "${existingById.name}" (ID: "${existingById.id}")');
+        return Failure(FoodDatabaseError.alreadyExists);
+      }
+      
+      print('🍽️ FoodDatabaseService: No duplicates found, proceeding with add');
       
       // Generate ID if not provided
       final newFood = food.id.isEmpty 
@@ -570,7 +584,8 @@ class FoodDatabaseService implements IFoodDatabaseService {
       _foods.add(newFood);
       await _saveFoods();
       
-      print('🍽️ FoodDatabaseService: Added food: ${newFood.name}');
+      print('🍽️ FoodDatabaseService: Successfully added food: "${newFood.name}" (ID: "${newFood.id}")');
+      print('🍽️ FoodDatabaseService: Database now has ${_foods.length} foods');
       return Success(newFood);
     } catch (e) {
       print('🍽️ FoodDatabaseService: Error adding food: $e');

@@ -13,6 +13,9 @@ class LLMFoodService implements IOnlineFoodService {
   
   GenerativeModel? _model;
   bool _isInitialized = false;
+  
+  // Cache for storing complete food details from search
+  final Map<String, OnlineFoodDetails> _detailsCache = {};
 
   @override
   String get providerName => 'Madvaresøgning';
@@ -163,10 +166,39 @@ class LLMFoodService implements IOnlineFoodService {
         final categoryTagsList = foodMap['categoryTags'] as List<dynamic>? ?? [];
         final categoryTags = categoryTagsList.cast<String>();
         
+        // Parse nutrition information from response
+        final nutritionMap = foodMap['nutrition'] as Map<String, dynamic>? ?? {};
+        final calories = (nutritionMap['calories'] as num?)?.toDouble() ?? 0.0;
+        final protein = (nutritionMap['protein'] as num?)?.toDouble() ?? 0.0;
+        final carbs = (nutritionMap['carbs'] as num?)?.toDouble() ?? 0.0;
+        final fat = (nutritionMap['fat'] as num?)?.toDouble() ?? 0.0;
+        final fiber = (nutritionMap['fiber'] as num?)?.toDouble() ?? 0.0;
+        final sugar = (nutritionMap['sugar'] as num?)?.toDouble() ?? 0.0;
+        
+        // Parse serving sizes from response
+        final servingSizesList = foodMap['servingSizes'] as List<dynamic>? ?? [];
+        final servingSizes = servingSizesList.map((serving) {
+          final servingMap = serving as Map<String, dynamic>;
+          return ServingInfo(
+            name: servingMap['name'] as String? ?? 'Standard portion',
+            grams: (servingMap['weight'] as num?)?.toDouble() ?? 100.0,
+            isDefault: servingMap['isDefault'] as bool? ?? false,
+          );
+        }).toList();
+        
+        // If no serving sizes provided, add default ones
+        if (servingSizes.isEmpty) {
+          servingSizes.addAll([
+            const ServingInfo(name: 'Standard portion', grams: 100.0, isDefault: true),
+            const ServingInfo(name: 'Lille portion', grams: 75.0, isDefault: false),
+            const ServingInfo(name: 'Stor portion', grams: 150.0, isDefault: false),
+          ]);
+        }
+        
         // Combine both meal and category tags
         final allTags = <String>[...mealTags, ...categoryTags];
         
-        print('🤖 LLMFoodService: Food "$name" has meal tags: $mealTags, category tags: $categoryTags');
+        print('🤖 LLMFoodService: Food "$name" has nutrition: ${calories}kcal, serving sizes: ${servingSizes.length}');
         
         // Use the type from JSON response if available, otherwise determine automatically
         SearchMode resultSearchMode;
@@ -178,17 +210,33 @@ class LLMFoodService implements IOnlineFoodService {
           resultSearchMode = _determineSearchMode(name);
         }
 
-        return OnlineFoodResult(
+        final foodResult = OnlineFoodResult(
           id: name,
           name: name,
           description: description,
           provider: _providerId,
-          estimatedCalories: 0, // Will be filled from details
+          estimatedCalories: calories, // Now we have real calories
           tags: FoodTags(
             customTags: allTags, // Use combined tags as custom tags
           ),
           searchMode: resultSearchMode,
         );
+        
+        // Cache complete details for immediate access
+        _detailsCache[name] = OnlineFoodDetails(
+          basicInfo: foodResult,
+          nutrition: NutritionInfo(
+            calories: calories,
+            protein: protein,
+            carbs: carbs,
+            fat: fat,
+            fiber: fiber,
+            sugar: sugar,
+          ),
+          servingSizes: servingSizes,
+        );
+        
+        return foodResult;
       }).toList();
 
       print('🤖 LLMFoodService: Generated ${results.length} food results for "$query"');
@@ -201,98 +249,33 @@ class LLMFoodService implements IOnlineFoodService {
 
   @override
   Future<Result<OnlineFoodDetails, OnlineFoodError>> getFoodDetails(String foodId) async {
+    print('🤖 LLMFoodService: Getting details for food ID: $foodId');
+    
     if (!_isInitialized || _model == null) {
-      final initResult = await initialize();
-      if (initResult.isFailure) {
-        return Failure(OnlineFoodError.providerUnavailable);
-      }
+      print('🤖 LLMFoodService: Service not available');
+      return Failure(OnlineFoodError.providerUnavailable);
+    }
+
+    // Check cache first
+    if (_detailsCache.containsKey(foodId)) {
+      print('🤖 LLMFoodService: Returning cached details for: $foodId');
+      return Success(_detailsCache[foodId]!);
     }
 
     try {
-      final prompt = LLMPrompts.getFoodDetailsPrompt(foodId);
-      
-      // Log the full request
-      print('🤖 LLMFoodService: === DETAILS REQUEST START ===');
-      print('🤖 LLMFoodService: Food ID: "$foodId"');
-      print('🤖 LLMFoodService: Prompt: $prompt');
-      print('🤖 LLMFoodService: === DETAILS REQUEST END ===');
-      
-      final response = await _model!.generateContent([Content.text(prompt)]);
-      final responseText = response.text ?? '';
-      
-      // Log the full response
-      print('🤖 LLMFoodService: === DETAILS RESPONSE START ===');
-      print('🤖 LLMFoodService: Raw response: $responseText');
-      print('🤖 LLMFoodService: === DETAILS RESPONSE END ===');
-
-      if (responseText.isEmpty) {
-        print('❌ LLMFoodService: Empty details response received');
-        return Failure(OnlineFoodError.invalidResponse);
-      }
-
-      // Clean the response text
-      final cleanedResponse = responseText
-          .replaceAll('```json', '')
-          .replaceAll('```', '')
-          .trim();
-
-      print('🤖 LLMFoodService: Cleaned details response: $cleanedResponse');
-
-      // Try to parse JSON
-      Map<String, dynamic> jsonData;
-      try {
-        jsonData = json.decode(cleanedResponse);
-        print('🤖 LLMFoodService: Details JSON parsed successfully');
-      } catch (e) {
-        print('❌ LLMFoodService: Details JSON parse error: $e');
-        print('❌ LLMFoodService: Problematic details text: $cleanedResponse');
-        return Failure(OnlineFoodError.invalidResponse);
-      }
-
-      // Check for error in response
-      if (jsonData.containsKey('error')) {
-        print('❌ LLMFoodService: LLM returned details error: ${jsonData['error']}');
-        return Failure(OnlineFoodError.noResults);
-      }
-
-      // Parse the response structure
-      final basicInfo = jsonData['basicInfo'] as Map<String, dynamic>? ?? {};
-      final nutrition = jsonData['nutrition'] as Map<String, dynamic>? ?? {};
-      final servingSizes = jsonData['servingSizes'] as List<dynamic>? ?? [];
-
-      print('🤖 LLMFoodService: Parsed ${servingSizes.length} serving sizes');
-
-      final details = OnlineFoodDetails(
-        basicInfo: OnlineFoodResult(
-          id: basicInfo['id'] as String? ?? foodId,
-          name: basicInfo['name'] as String? ?? foodId,
-          description: basicInfo['description'] as String? ?? '',
-          provider: _providerId,
-          searchMode: _determineSearchMode(foodId),
-        ),
-        nutrition: NutritionInfo(
-          calories: (nutrition['calories'] as num?)?.toDouble() ?? 0.0,
-          protein: (nutrition['protein'] as num?)?.toDouble() ?? 0.0,
-          carbs: (nutrition['carbs'] as num?)?.toDouble() ?? 0.0,
-          fat: (nutrition['fat'] as num?)?.toDouble() ?? 0.0,
-        ),
-        servingSizes: servingSizes.map((serving) {
-          final servingMap = serving as Map<String, dynamic>;
-          final weight = (servingMap['weight'] as num?)?.toDouble() ?? 100.0;
-          
-          return ServingInfo(
-            name: servingMap['name'] as String? ?? 'Standard portion',
-            grams: weight,
-            isDefault: servingMap['isDefault'] as bool? ?? false,
-          );
-        }).toList(),
-      );
-
-      print('🤖 LLMFoodService: Generated details for "$foodId"');
-      return Success(details);
+      print('🤖 LLMFoodService: Details not in cache, this should not happen for searched foods');
+      return Failure(OnlineFoodError.noResults);
     } catch (e) {
-      print('❌ LLMFoodService: Details error: $e');
-      return Failure(OnlineFoodError.networkError);
+      print('🤖 LLMFoodService: Error getting food details: $e');
+      if (e.toString().contains('API key')) {
+        return Failure(OnlineFoodError.apiKeyMissing);
+      } else if (e.toString().contains('quota') || e.toString().contains('limit')) {
+        return Failure(OnlineFoodError.providerUnavailable);
+      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
+        return Failure(OnlineFoodError.networkError);
+      } else {
+        return Failure(OnlineFoodError.unknown);
+      }
     }
   }
 
