@@ -498,7 +498,7 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage>
   void _createNewFoodFavorite() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const AddFoodPage(),
+        builder: (context) => const FoodFavoriteDetailPage(),
       ),
     );
     
