@@ -91,63 +91,6 @@ class _OnlineFoodSearchPageState extends ConsumerState<OnlineFoodSearchPage> {
                                   showInfoButton: false,
                                 ),
                               ),
-                              // Debug button
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    print('🐛 DEBUG: Checking database contents...');
-                                    cubit.debugDatabaseContents();
-                                  },
-                                  icon: Icon(
-                                    MdiIcons.database,
-                                    color: Colors.white,
-                                    size: KSizes.iconM,
-                                  ),
-                                  tooltip: 'Debug database',
-                                ),
-                              ),
-                              SizedBox(width: KSizes.margin2x),
-                              // Clear database button
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                                ),
-                                child: IconButton(
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: Text('Clear Database'),
-                                        content: Text('Dette vil slette ALLE fødevarer fra din database. Er du sikker?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.pop(context),
-                                            child: Text('Annuller'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              Navigator.pop(context);
-                                              cubit.debugClearDatabase();
-                                            },
-                                            child: Text('Ja, slet alt', style: TextStyle(color: Colors.red)),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                  icon: Icon(
-                                    MdiIcons.deleteEmpty,
-                                    color: Colors.white,
-                                    size: KSizes.iconM,
-                                  ),
-                                  tooltip: 'Clear all foods',
-                                ),
-                              ),
                             ],
                           ),
                         ),

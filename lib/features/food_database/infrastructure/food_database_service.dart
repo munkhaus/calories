@@ -379,9 +379,6 @@ class FoodDatabaseService implements IFoodDatabaseService {
       
       _foods.add(newFood);
       await _saveFoods();
-      
-      print('🍽️ FoodDatabaseService: Successfully added food: "${newFood.name}"');
-      
       _notifyDataChanged(); // Notify UI of changes
       
       return Success(newFood);
