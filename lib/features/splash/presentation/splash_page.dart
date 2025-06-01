@@ -280,83 +280,80 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
   }
 
   Widget _buildFeatureCard(_FeatureItem feature, int index) {
-    // Calculate animation delay
-    final delayedAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _featuresController,
-      curve: Interval(
-        (feature.delay / 1000).clamp(0.0, 0.8),
-        ((feature.delay + 200) / 1000).clamp(0.2, 1.0),
-        curve: Curves.easeOut,
-      ),
-    ));
-    
+    // Calculate a staggered delay for each card
+    final delay = feature.delay + (index * 100);
+
     return AnimatedBuilder(
-      animation: delayedAnimation,
+      animation: _featuresController,
       builder: (context, child) {
-        return Transform.scale(
-          scale: 0.5 + (delayedAnimation.value * 0.5),
+        // Apply slide and fade animation based on overall features animation
+        // and individual card delay
+        final cardAnimationProgress = Curves.easeOutCubic.transform(
+          (_featuresAnimation.value - (delay / 2000)).clamp(0.0, 1.0),
+        );
+        
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - cardAnimationProgress)),
           child: Opacity(
-            opacity: delayedAnimation.value,
+            opacity: cardAnimationProgress,
             child: Container(
-              padding: const EdgeInsets.all(KSizes.margin4x),
+              padding: const EdgeInsets.all(KSizes.margin2x),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(KSizes.radiusXL),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
-                ),
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(KSizes.radiusM),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
-                    offset: const Offset(0, 4),
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(KSizes.margin3x),
-                    decoration: BoxDecoration(
-                      color: feature.color.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(KSizes.radiusL),
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(KSizes.margin2x),
+                      decoration: BoxDecoration(
+                        color: feature.color.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(KSizes.radiusL),
+                      ),
+                      child: Icon(
+                        feature.icon,
+                        color: Colors.white,
+                        size: KSizes.iconL,
+                      ),
                     ),
-                    child: Icon(
-                      feature.icon,
-                      color: Colors.white,
-                      size: KSizes.iconL,
+                    
+                    SizedBox(height: KSizes.margin3x),
+                    
+                    Text(
+                      feature.title,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  
-                  SizedBox(height: KSizes.margin3x),
-                  
-                  Text(
-                    feature.title,
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeM,
-                      fontWeight: KSizes.fontWeightBold,
-                      color: Colors.white,
+                    
+                    SizedBox(height: KSizes.margin1x),
+                    
+                    Text(
+                      feature.subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: Colors.white.withOpacity(0.8),
+                        fontWeight: KSizes.fontWeightRegular,
+                        height: 1.2,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  SizedBox(height: KSizes.margin1x),
-                  
-                  Text(
-                    feature.subtitle,
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeS,
-                      color: Colors.white.withOpacity(0.8),
-                      height: 1.2,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
