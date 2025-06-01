@@ -41,12 +41,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() { // Simpler listener
-      if (!_tabController.indexIsChanging) {
-        print(' फेव FavoritesPage: Tab changed to index ${_tabController.index}. Reloading data.');
-        _loadAllFavorites();
-      }
-    });
     _loadAllFavorites(); // Initial load
   }
 
@@ -58,7 +52,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
   }
 
   Future<void> _loadAllFavorites() async {
-    print(' फेव FavoritesPage: _loadAllFavorites called. Current tab index: ${_tabController.index}');
     setState(() {
       _isLoadingFood = true;
       _isLoadingActivities = true;
@@ -68,24 +61,18 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
 
     try {
       // Load food favorites
-      print(' फेव FavoritesPage: Loading food favorites...');
       final foodResult = await _foodService.getAllFavorites();
       if (foodResult.isSuccess) {
-        print(' फेव FavoritesPage: Successfully loaded ${foodResult.success.length} food favorites.');
         _foodFavorites = foodResult.success;
       } else {
-        print(' फेव FavoritesPage: Error loading food favorites: ${foodResult.failure}');
         _foodError = 'Fejl ved indlæsning af mad-favoritter';
       }
 
       // Load activity favorites
-      print(' फेव FavoritesPage: Loading activity favorites...');
       final activityResult = await _activityService.getFavorites();
        if (activityResult.isSuccess) {
-        print(' फेव FavoritesPage: Successfully loaded ${activityResult.success.length} activity favorites.');
         _activityFavorites = activityResult.success;
       } else {
-        print(' फेव FavoritesPage: Error loading activity favorites: ${activityResult.failure}');
         _activityError = 'Fejl ved indlæsning af aktivitet-favoritter';
       }
 
@@ -96,9 +83,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
           _isLoadingActivities = false;
         });
       }
-      print(' फेव FavoritesPage: _loadAllFavorites completed.');
     } catch (e) {
-      print(' फेव FavoritesPage: Exception in _loadAllFavorites: $e');
       if (mounted) {
         setState(() {
           _isLoadingFood = false;
@@ -112,7 +97,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
-    print(' फेव FavoritesPage: Build method called. Food favorites: ${_foodFavorites.length}, Activity favorites: ${_activityFavorites.length}');
     return DefaultTabController(
       length: 2,
       child: Scaffold(
