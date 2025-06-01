@@ -1141,7 +1141,15 @@ class _CategorizeFoodPageState extends ConsumerState<CategorizeFoodPage> {
               behavior: SnackBarBehavior.floating,
               ),
             );
-          Navigator.of(context).pop('deleted');
+          
+          // If this came from quick photo session, navigate back to home/dashboard
+          // Otherwise just pop back to previous page
+          if (widget.fromQuickPhoto) {
+            // Navigate back to home by popping all routes until we get to the dashboard
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          } else {
+            Navigator.of(context).pop('deleted');
+          }
         }
       } catch (e) {
         if (mounted) {
