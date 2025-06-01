@@ -42,7 +42,7 @@ class FoodAnalysisResult {
 
 /// Service for analyzing food images using Google Gemini
 class GeminiService {
-  static const String _apiKey = 'AIzaSyA0A1vDv1t4tZ_5uAFBzqRns9PdrTTp-fQ'; // Real API key
+  static const String _apiKey = 'AIzaSyCPB0qzhIAprF1kYNhfpG3SMnkNnu56qD8'; // Real API key
   late final GenerativeModel _model;
 
   GeminiService() {

@@ -2,14 +2,21 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:result_type/result_type.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/i_online_food_service.dart';
 import '../domain/online_food_models.dart';
-import '../domain/food_record_model.dart';
 import 'constants/llm_prompts.dart';
+
+// Provider for LLMFoodService
+final llmFoodServiceProvider = Provider<LLMFoodService>((ref) {
+  final service = LLMFoodService();
+  service.initialize(); // Ensure service is initialized when provider is first read
+  return service;
+});
 
 class LLMFoodService implements IOnlineFoodService {
   static const String _providerId = 'llm';
-  static const String _apiKey = 'AIzaSyA0A1vDv1t4tZ_5uAFBzqRns9PdrTTp-fQ';
+  static final String _apiKey = 'AIzaSyCPB0qzhIAprF1kYNhfpG3SMnkNnu56qD8';
   
   GenerativeModel? _model;
   bool _isInitialized = false;
@@ -37,42 +44,57 @@ class LLMFoodService implements IOnlineFoodService {
     try {
       print('🤖 LLMFoodService: Initializing Gemini API...');
       
-      // Check if already initialized
       if (_isInitialized && _model != null) {
-        print('🤖 LLMFoodService: Already initialized');
+        print('🤖 LLMFoodService: Already initialized and model exists.');
         return Success(null);
       }
       
-      // Try environment variable first, then fallback to hardcoded key
-      const envApiKey = String.fromEnvironment('GEMINI_API_KEY');
-      final apiKey = envApiKey.isNotEmpty ? envApiKey : _apiKey;
-      
-      if (apiKey.isEmpty) {
-        print('❌ LLMFoodService: No API key found');
+      if (LLMFoodService._apiKey.isEmpty) {
+        print('❌ LLMFoodService: CRITICAL - No API key found (should be hardcoded). Cannot proceed.');
+        _isInitialized = false; // Ensure not marked as initialized
+        _model = null;
         return Failure(OnlineFoodError.apiKeyMissing);
       }
       
-      print('🤖 LLMFoodService: API key found (${envApiKey.isNotEmpty ? 'environment' : 'hardcoded'}), creating GenerativeModel...');
+      print('🤖 LLMFoodService: Hardcoded API key found: ${LLMFoodService._apiKey}');
       
-      // Only create model if not already created
       if (_model == null) {
-        _model = GenerativeModel(
-          model: 'gemini-1.5-flash',
-          apiKey: apiKey,
-          generationConfig: GenerationConfig(
-            temperature: 0.1,
-            topK: 1,
-            topP: 1,
-            maxOutputTokens: 2048,
-          ),
-        );
+        print('🤖 LLMFoodService: GenerativeModel is null, attempting to create new instance...');
+        try {
+          print('🤖 LLMFoodService: ==> Attempting to use API Key for GenerativeModel: ${LLMFoodService._apiKey}');
+          _model = GenerativeModel(
+            model: 'gemini-1.5-flash', // Ensure this is a valid and available model
+            apiKey: LLMFoodService._apiKey,
+            generationConfig: GenerationConfig(
+              temperature: 0.1, // Lower temperature for more deterministic results
+              // topK: 1, // Consider removing or adjusting if too restrictive
+              // topP: 1, // Consider removing or adjusting if too restrictive
+              maxOutputTokens: 8192, // Keep high for detailed JSON
+            ),
+          );
+          print('✅ LLMFoodService: GenerativeModel created successfully!');
+        } catch (e, stackTrace) {
+          print('❌ LLMFoodService: CRITICAL - Failed to create GenerativeModel instance.');
+          print('❌ LLMFoodService: Error during model creation: $e');
+          print('❌ LLMFoodService: Stack trace for model creation failure: $stackTrace');
+          _isInitialized = false; // Ensure not marked as initialized
+          _model = null;
+          // Attempt to map specific API errors
+          if (e.toString().contains('API key not valid') || e.toString().contains('InvalidApiKey')) {
+            return Failure(OnlineFoodError.apiKeyMissing);
+          }
+          return Failure(OnlineFoodError.providerUnavailable); // General failure if not API key
+        }
+      } else {
+        print('🤖 LLMFoodService: GenerativeModel instance already exists.');
       }
       
       _isInitialized = true;
-      print('🤖 LLMFoodService: Initialized successfully');
+      print('✅ LLMFoodService: Initialization successful. Model is ready.');
       return Success(null);
     } catch (e, stackTrace) {
-      print('❌ LLMFoodService: Initialization failed: $e');
+      // This outer catch is for other unexpected errors during initialization
+      print('❌ LLMFoodService: Unexpected error during outer initialization block: $e');
       print('❌ LLMFoodService: Stack trace: $stackTrace');
       _isInitialized = false;
       _model = null;
@@ -82,14 +104,38 @@ class LLMFoodService implements IOnlineFoodService {
 
   @override
   Future<Result<List<OnlineFoodResult>, OnlineFoodError>> searchFoods(String query) async {
+    print('🤖 LLMFoodService: searchFoods initiated for query: "$query"');
     if (!_isInitialized || _model == null) {
+      print('🤖 LLMFoodService: Not initialized or model is null. Attempting to initialize...');
       final initResult = await initialize();
       if (initResult.isFailure) {
-        return Failure(OnlineFoodError.providerUnavailable);
+        print('❌ LLMFoodService: Initialization failed in searchFoods. Error: ${initResult.failure}');
+        // Ensure the specific error from initialize is returned
+        return Failure(initResult.failure);
       }
+      // After successful initialization, _model should not be null.
+      // If it is, something went wrong in initialize() despite it returning Success.
+      if (_model == null) {
+          print('❌ LLMFoodService: CRITICAL - Initialization reported success but model is still null!');
+          return Failure(OnlineFoodError.unknown); // Should not happen
+      }
+      print('🤖 LLMFoodService: Initialization successful in searchFoods.');
+    } else {
+      print('🤖 LLMFoodService: Already initialized and model exists.');
     }
 
+    // Add a specific check for API key validity right before the call.
+    // This is a bit redundant if initialize() works, but helps pinpoint issues.
+    if (LLMFoodService._apiKey.isEmpty) {
+        print('❌ LLMFoodService: API key is empty before API call!');
+        return Failure(OnlineFoodError.apiKeyMissing);
+    }
+    // Log the key to be used, again, to be absolutely sure
+    print('🤖 LLMFoodService: About to make API call with key: ${LLMFoodService._apiKey.substring(0, 10)}... (masked)');
+
+
     try {
+      print('🤖 LLMFoodService: USING CURRENT DETAILED PROMPT GENERATOR - v2');
       final prompt = LLMPrompts.getFoodSearchPrompt(query);
       
       // Log the full request
@@ -131,33 +177,46 @@ class LLMFoodService implements IOnlineFoodService {
         print('❌ LLMFoodService: Problematic text: $cleanedResponse');
         
         // Try to fix common JSON issues
-        String fixedResponse = cleanedResponse;
+        String potentialJson = cleanedResponse;
+        int lastBrace = potentialJson.lastIndexOf('}');
+        int lastBracket = potentialJson.lastIndexOf(']');
         
-        // If the response is truncated, try to close it properly
-        if (!cleanedResponse.endsWith('}') && !cleanedResponse.endsWith(']')) {
-          print('🔧 LLMFoodService: Response appears truncated, attempting to fix...');
-          
-          // Count open braces and brackets to try to close them
+        // Smartly try to complete the JSON structure
+        if (lastBrace > lastBracket) { // Likely an object was being written
+          if (potentialJson.lastIndexOf('{') > potentialJson.lastIndexOf('[')) {
+            potentialJson += '}'; // Close the object
+          } else {
+            potentialJson += ']}'; // Close array then object - common in {"foods": [...]}
+          }
+        } else if (lastBracket > lastBrace) { // Likely an array was being written
+          potentialJson += ']';
+        } else { // No clear last structure, attempt to close based on counts (less reliable)
           int openBraces = '{'.allMatches(cleanedResponse).length - '}'.allMatches(cleanedResponse).length;
           int openBrackets = '['.allMatches(cleanedResponse).length - ']'.allMatches(cleanedResponse).length;
           
-          // Add missing closing characters
           for (int i = 0; i < openBrackets; i++) {
-            fixedResponse += ']';
+            potentialJson += ']';
           }
           for (int i = 0; i < openBraces; i++) {
-            fixedResponse += '}';
+            potentialJson += '}';
           }
-          
-          print('🔧 LLMFoodService: Attempting to parse fixed response...');
-          try {
-            jsonData = json.decode(fixedResponse);
-            print('✅ LLMFoodService: Fixed JSON parsed successfully');
-          } catch (e2) {
-            print('❌ LLMFoodService: Fixed JSON also failed: $e2');
-            return Failure(OnlineFoodError.invalidResponse);
+        }
+        // If the main structure is a list of foods, ensure the outer list is closed
+        if (cleanedResponse.trim().startsWith('{\n  "foods": [' ) && !potentialJson.endsWith(']}')) {
+          if (potentialJson.endsWith('}')) { // if a food object was closed
+            potentialJson += ']'; // close the foods list
           }
-        } else {
+          if (!potentialJson.endsWith('}')) { // if the foods list was closed
+            potentialJson += '}'; // close the main object
+          }
+        }
+
+        print('🔧 LLMFoodService: Attempting to parse fixed response with: $potentialJson');
+        try {
+          jsonData = json.decode(potentialJson);
+          print('✅ LLMFoodService: Fixed JSON parsed successfully');
+        } catch (e2) {
+          print('❌ LLMFoodService: Fixed JSON also failed: $e2');
           return Failure(OnlineFoodError.invalidResponse);
         }
       }
@@ -209,19 +268,21 @@ class LLMFoodService implements IOnlineFoodService {
         final servingSizesList = foodMap['servingSizes'] as List<dynamic>? ?? [];
         final servingSizes = servingSizesList.map((serving) {
           final servingMap = serving as Map<String, dynamic>;
-          return ServingInfo(
+          return OnlineServingSize(
             name: servingMap['name'] as String? ?? 'Standard portion',
             grams: (servingMap['weight'] as num?)?.toDouble() ?? 100.0,
             isDefault: servingMap['isDefault'] as bool? ?? false,
+            originalUnit: servingMap['originalUnit'] as String? ?? '',
+            originalAmount: (servingMap['originalAmount'] as num?)?.toDouble() ?? 0.0,
           );
         }).toList();
         
         // If no serving sizes provided, add default ones
         if (servingSizes.isEmpty) {
           servingSizes.addAll([
-            const ServingInfo(name: 'Standard portion', grams: 100.0, isDefault: true),
-            const ServingInfo(name: 'Lille portion', grams: 75.0, isDefault: false),
-            const ServingInfo(name: 'Stor portion', grams: 150.0, isDefault: false),
+            const OnlineServingSize(name: 'Standard portion', grams: 100.0, isDefault: true),
+            const OnlineServingSize(name: 'Lille portion', grams: 75.0, isDefault: false),
+            const OnlineServingSize(name: 'Stor portion', grams: 150.0, isDefault: false),
           ]);
         }
         
@@ -262,8 +323,11 @@ class LLMFoodService implements IOnlineFoodService {
             fat: fat,
             fiber: fiber,
             sugar: sugar,
+            unit: '100g',
           ),
           servingSizes: servingSizes,
+          ingredients: foodMap['ingredients'] as String? ?? '',
+          instructions: foodMap['instructions'] as String? ?? '',
         );
         
         return foodResult;
@@ -271,41 +335,48 @@ class LLMFoodService implements IOnlineFoodService {
 
       print('🤖 LLMFoodService: Generated ${results.length} food results for "$query"');
       return Success(results);
-    } catch (e) {
+    } catch (e, stackTrace) { // Added stackTrace
       print('❌ LLMFoodService: Search error: $e');
-      return Failure(OnlineFoodError.networkError);
+      print('❌ LLMFoodService: Search error stack trace: $stackTrace'); // Log stack trace
+
+      // Try to interpret the error more specifically
+      if (e is InvalidApiKey) { // Catching specific SDK error
+        print('❌ LLMFoodService: Detected InvalidApiKey from SDK.');
+        return Failure(OnlineFoodError.apiKeyMissing);
+      }
+      if (e.toString().contains('API key not valid')) {
+        print('❌ LLMFoodService: Error string indicates invalid API key.');
+        return Failure(OnlineFoodError.apiKeyMissing);
+      }
+      if (e is GenerativeAIException) { // Catching general SDK exception
+         print('❌ LLMFoodService: Detected GenerativeAIException: ${e.message}');
+         if (e.message.contains('timed out')) {
+           return Failure(OnlineFoodError.networkError); // Or a new timeout error
+         }
+         // Check for other specific messages if needed
+      }
+      return Failure(OnlineFoodError.networkError); // Default to network error for others
     }
   }
 
   @override
-  Future<Result<OnlineFoodDetails, OnlineFoodError>> getFoodDetails(String foodId) async {
-    print('🤖 LLMFoodService: Getting details for food ID: $foodId');
-    
-    if (!_isInitialized || _model == null) {
-      print('🤖 LLMFoodService: Service not available');
-      return Failure(OnlineFoodError.providerUnavailable);
-    }
-
-    // Check cache first
-    if (_detailsCache.containsKey(foodId)) {
-      print('🤖 LLMFoodService: Returning cached details for: $foodId');
-      return Success(_detailsCache[foodId]!);
-    }
-
+  Future<Result<OnlineFoodDetails, OnlineFoodError>> getFoodDetails(String externalId) async {
     try {
-      print('🤖 LLMFoodService: Details not in cache, this should not happen for searched foods');
-      return Failure(OnlineFoodError.noResults);
-    } catch (e) {
-      print('🤖 LLMFoodService: Error getting food details: $e');
-      if (e.toString().contains('API key')) {
-        return Failure(OnlineFoodError.apiKeyMissing);
-      } else if (e.toString().contains('quota') || e.toString().contains('limit')) {
-        return Failure(OnlineFoodError.providerUnavailable);
-      } else if (e.toString().contains('network') || e.toString().contains('connection')) {
-        return Failure(OnlineFoodError.networkError);
+      print('🤖 LLMFoodService: getFoodDetails called for ID: $externalId');
+      if (_detailsCache.containsKey(externalId)) {
+        final cachedDetails = _detailsCache[externalId]!;
+        print('✅ LLMFoodService: Returning cached details for: ${cachedDetails.basicInfo.name}');
+        return Success(cachedDetails);
       } else {
-        return Failure(OnlineFoodError.unknown);
+        // If not in cache, it means the initial search didn't populate it,
+        // or the ID is genuinely not one we've processed.
+        print('⚠️ LLMFoodService: Details not found in cache for ID: $externalId. This might indicate an issue if the ID was expected from a previous LLM search.');
+        return Failure(OnlineFoodError.noResults); 
       }
+    } catch (e, stackTrace) {
+      print('❌ LLMFoodService: Unexpected error in getFoodDetails for ID: $externalId. Exception: $e');
+      print('❌ LLMFoodService: StackTrace: $stackTrace');
+      return Failure(OnlineFoodError.unknown);
     }
   }
 
@@ -394,8 +465,8 @@ class LLMFoodService implements IOnlineFoodService {
             fat: (data['fatPer100g'] ?? 5).toDouble(),
           ),
           servingSizes: [
-            const ServingInfo(name: '1 portion', grams: 100, isDefault: true),
-            const ServingInfo(name: '1 stor portion', grams: 150, isDefault: false),
+            const OnlineServingSize(name: '1 portion', grams: 100, isDefault: true),
+            const OnlineServingSize(name: '1 stor portion', grams: 150, isDefault: false),
           ],
         );
       }
@@ -421,8 +492,8 @@ class LLMFoodService implements IOnlineFoodService {
         fat: 5.0,
       ),
       servingSizes: [
-        const ServingInfo(name: '1 portion', grams: 100, isDefault: true),
-        const ServingInfo(name: '1 stor portion', grams: 150, isDefault: false),
+        const OnlineServingSize(name: '1 portion', grams: 100, isDefault: true),
+        const OnlineServingSize(name: '1 stor portion', grams: 150, isDefault: false),
       ],
     );
   }
@@ -616,5 +687,86 @@ class LLMFoodService implements IOnlineFoodService {
     
     // Default to ingredients for single words
     return SearchMode.ingredients;
+  }
+
+  OnlineFoodDetails _createFoodDetailsFromMap(Map<String, dynamic> foodMap, String externalId) {
+    print('🤖 LLMFoodService: _createFoodDetailsFromMap called for ID: $externalId, Data: $foodMap');
+    try {
+      final basicInfo = _createFoodResultFromMap(foodMap, externalId);
+      final nutritionMap = foodMap['nutrition'] as Map<String, dynamic>? ?? {};
+      final calories = (nutritionMap['calories'] as num?)?.toDouble() ?? 0.0;
+      final protein = (nutritionMap['protein'] as num?)?.toDouble() ?? 0.0;
+      final carbs = (nutritionMap['carbs'] as num?)?.toDouble() ?? 0.0;
+      final fat = (nutritionMap['fat'] as num?)?.toDouble() ?? 0.0;
+      final fiber = (nutritionMap['fiber'] as num?)?.toDouble() ?? 0.0;
+      final sugar = (nutritionMap['sugar'] as num?)?.toDouble() ?? 0.0;
+      final servingSizes = foodMap['servingSizes'] as List<dynamic>? ?? [];
+      final foodDetails = OnlineFoodDetails(
+        basicInfo: basicInfo,
+        nutrition: NutritionInfo(
+          calories: calories,
+          protein: protein,
+          carbs: carbs,
+          fat: fat,
+          fiber: fiber,
+          sugar: sugar,
+          unit: '100g',
+        ),
+        servingSizes: servingSizes.map((serving) {
+          final servingMap = serving as Map<String, dynamic>;
+          return OnlineServingSize(
+            name: servingMap['name'] as String? ?? 'Standard portion',
+            grams: (servingMap['weight'] as num?)?.toDouble() ?? 100.0,
+            isDefault: servingMap['isDefault'] as bool? ?? false,
+            originalUnit: servingMap['originalUnit'] as String? ?? '',
+            originalAmount: (servingMap['originalAmount'] as num?)?.toDouble() ?? 0.0,
+          );
+        }).toList(),
+        ingredients: foodMap['ingredients'] as String? ?? '',
+        instructions: foodMap['instructions'] as String? ?? '',
+      );
+      print('✅ LLMFoodService: Successfully created FoodDetails for $externalId');
+      return foodDetails;
+    } catch (e, stacktrace) {
+      print('❌ LLMFoodService: Failed to create FoodDetails from map for ID: $externalId. Error: $e');
+      print('❌ LLMFoodService: Data causing error: $foodMap');
+      print('❌ LLMFoodService: Stacktrace: $stacktrace');
+      rethrow; // Rethrow to be caught by the caller, which can then return a specific error
+    }
+  }
+
+  OnlineFoodResult _createFoodResultFromMap(Map<String, dynamic> foodMap, String externalId) {
+    print('🤖 LLMFoodService: _createFoodResultFromMap called for ID: $externalId, Data: $foodMap');
+    try {
+      final tagsMap = foodMap['tags'] as Map<String, dynamic>?;
+      final foodTags = tagsMap != null ? FoodTags.fromJson(tagsMap) : const FoodTags();
+      final name = foodMap['name'] as String? ?? '';
+      final description = foodMap['description'] as String? ?? '';
+      final type = foodMap['type'] as String? ?? '';
+      final calories = (foodMap['nutrition'] as Map<String, dynamic>?)?['calories'] as num? ?? 0;
+      final protein = (foodMap['nutrition'] as Map<String, dynamic>?)?['protein'] as num? ?? 0;
+      final carbs = (foodMap['nutrition'] as Map<String, dynamic>?)?['carbs'] as num? ?? 0;
+      final fat = (foodMap['nutrition'] as Map<String, dynamic>?)?['fat'] as num? ?? 0;
+      final fiber = (foodMap['nutrition'] as Map<String, dynamic>?)?['fiber'] as num? ?? 0;
+      final sugar = (foodMap['nutrition'] as Map<String, dynamic>?)?['sugar'] as num? ?? 0;
+      final servingSizes = foodMap['servingSizes'] as List<dynamic>? ?? [];
+      final searchMode = _determineSearchMode(name);
+      final foodResult = OnlineFoodResult(
+        id: name,
+        name: name,
+        description: description,
+        provider: _providerId,
+        estimatedCalories: calories.toDouble(),
+        tags: foodTags,
+        searchMode: searchMode,
+      );
+      print('✅ LLMFoodService: Successfully created FoodResult for $externalId');
+      return foodResult;
+    } catch (e, stacktrace) {
+      print('❌ LLMFoodService: Failed to create FoodResult from map for ID: $externalId. Error: $e');
+      print('❌ LLMFoodService: Data causing error: $foodMap');
+      print('❌ LLMFoodService: Stacktrace: $stacktrace');
+      rethrow; // Rethrow to allow specific error handling if needed
+    }
   }
 } 

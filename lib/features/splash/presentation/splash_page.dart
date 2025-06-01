@@ -269,7 +269,7 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
         crossAxisCount: 2,
         crossAxisSpacing: KSizes.margin4x,
         mainAxisSpacing: KSizes.margin4x,
-        childAspectRatio: 1.1,
+        childAspectRatio: 1.3,
       ),
       itemCount: features.length,
       itemBuilder: (context, index) {
@@ -297,10 +297,10 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
           child: Opacity(
             opacity: cardAnimationProgress,
             child: Container(
-              padding: const EdgeInsets.all(KSizes.margin2x),
+              padding: const EdgeInsets.all(KSizes.margin1x),
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                borderRadius: BorderRadius.circular(KSizes.radiusL),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -314,9 +314,10 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(KSizes.margin2x),
+                      padding: const EdgeInsets.all(KSizes.margin1x),
                       decoration: BoxDecoration(
                         color: feature.color.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(KSizes.radiusL),
@@ -324,16 +325,16 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                       child: Icon(
                         feature.icon,
                         color: Colors.white,
-                        size: KSizes.iconL,
+                        size: KSizes.iconM,
                       ),
                     ),
                     
-                    SizedBox(height: KSizes.margin3x),
+                    SizedBox(height: KSizes.margin1x),
                     
                     Text(
                       feature.title,
                       style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
+                        fontSize: KSizes.fontSizeXS,
                         fontWeight: KSizes.fontWeightBold,
                         color: Colors.white,
                       ),
@@ -345,10 +346,10 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
                     Text(
                       feature.subtitle,
                       style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
+                        fontSize: KSizes.fontSizeXS,
                         color: Colors.white.withOpacity(0.8),
                         fontWeight: KSizes.fontWeightRegular,
-                        height: 1.2,
+                        height: 1.1,
                       ),
                       textAlign: TextAlign.center,
                     ),

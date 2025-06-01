@@ -6,8 +6,9 @@ import '../../../../core/theme/app_theme.dart';
 import '../../domain/favorite_food_model.dart';
 import '../../domain/user_food_log_model.dart';
 import '../../infrastructure/favorite_food_service.dart';
-import '../../../food_database/infrastructure/llm_food_service.dart';
+import '../../../food_database/infrastructure/llm_food_service.dart' as llm_service;
 import '../../../food_database/domain/online_food_models.dart';
+import '../../../food_database/application/online_food_cubit.dart';
 
 /// Detailed page for creating and editing food favorites
 class FoodFavoriteDetailPage extends ConsumerStatefulWidget {
@@ -25,57 +26,100 @@ class FoodFavoriteDetailPage extends ConsumerStatefulWidget {
 class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _caloriesController = TextEditingController();
-  final _quantityController = TextEditingController();
+  final _caloriesController = TextEditingController(); // This will hold TOTAL calories (read-only)
   final _notesController = TextEditingController();
+
+  // Calculator controllers (always used)
+  final _caloriesPer100gController = TextEditingController();
+  final _portionGramsController = TextEditingController();
   
   MealType _selectedMealType = MealType.none;
-  String _selectedServingUnit = 'stk';
   bool _isLoading = false;
   bool _isEditing = false;
-  LLMFoodService? _llmFoodService;
-
-  // Predefined serving units
-  static const List<String> _servingUnits = [
-    'stk',
-    'portioner',
-    'gram',
-    'skiver',
-    'kopper',
-    'spsk',
-    'tsk',
-    'dl',
-    'liter',
-  ];
+  OnlineFoodDetails? _currentAiFoodDetails; // To store fetched AI result details for saving
 
   @override
   void initState() {
     super.initState();
     _isEditing = widget.existingFavorite != null;
-    _llmFoodService = LLMFoodService();
-    _llmFoodService!.initialize(); // Initialize the AI service
-    
+
+    // Use selectedFoodDetails from the provider if available for a new favorite
+    _currentAiFoodDetails = ref.read(onlineFoodProvider).selectedFoodDetails;
+
     if (_isEditing) {
       final favorite = widget.existingFavorite!;
       _nameController.text = favorite.foodName;
-      _caloriesController.text = favorite.caloriesPer100g.toString();
-      _quantityController.text = favorite.defaultQuantity.toString();
-      _selectedServingUnit = favorite.defaultServingUnit;
+      _notesController.text = favorite.description;
       _selectedMealType = favorite.preferredMealType;
+
+      _caloriesPer100gController.text = favorite.caloriesPer100g > 0 
+                                          ? favorite.caloriesPer100g.toStringAsFixed(0) 
+                                          : '0';
+      _portionGramsController.text = favorite.defaultServingGrams > 0
+                                        ? favorite.defaultServingGrams.toStringAsFixed(0)
+                                        : (favorite.defaultQuantity > 0 && favorite.defaultServingUnit == 'gram' 
+                                            ? favorite.defaultQuantity.toStringAsFixed(0) 
+                                            : '100');
+      _calculateTotalCalories();
+    } else if (_currentAiFoodDetails != null) {
+      // New favorite from AI search (using full details)
+      _nameController.text = _currentAiFoodDetails!.basicInfo.name;
+      _notesController.text = _currentAiFoodDetails!.basicInfo.description;
+      
+      _caloriesPer100gController.text = _currentAiFoodDetails!.nutrition.calories > 0 
+                                          ? _currentAiFoodDetails!.nutrition.calories.toStringAsFixed(0)
+                                          : '0';
+
+      final defaultServing = _currentAiFoodDetails!.servingSizes.firstWhere(
+        (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
+        orElse: () => _currentAiFoodDetails!.servingSizes.isNotEmpty 
+                      ? _currentAiFoodDetails!.servingSizes.first 
+                      : const OnlineServingSize(name: '100 gram', grams: 100, isDefault: true),
+      );
+      _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
+      
+      _calculateTotalCalories();
     } else {
-      // Set defaults for new favorite
-      _quantityController.text = '1';
-      _selectedServingUnit = 'stk';
+      // Defaults for new favorite (manual creation without AI search prior)
+      _nameController.text = '';
+      _notesController.text = '';
+      _selectedMealType = MealType.none;
+      _caloriesPer100gController.text = '0';
+      _portionGramsController.text = '100'; 
+      _calculateTotalCalories();
     }
+
+    _caloriesPer100gController.addListener(_calculateTotalCalories);
+    _portionGramsController.addListener(_calculateTotalCalories);
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _caloriesController.dispose();
-    _quantityController.dispose();
     _notesController.dispose();
+    
+    _caloriesPer100gController.removeListener(_calculateTotalCalories);
+    _portionGramsController.removeListener(_calculateTotalCalories);
+    _caloriesPer100gController.dispose();
+    _portionGramsController.dispose();
     super.dispose();
+  }
+
+  void _calculateTotalCalories() {
+    final calories100 = double.tryParse(_caloriesPer100gController.text);
+    final grams = double.tryParse(_portionGramsController.text);
+
+    if (calories100 != null && calories100 >= 0 && grams != null && grams >= 0) {
+      final totalCalories = (calories100 / 100.0) * grams;
+      if (_caloriesController.text != totalCalories.round().toString()){
+        _caloriesController.text = totalCalories.round().toString();
+      }
+    } else {
+       if (_caloriesController.text != '0'){
+         _caloriesController.text = '0';
+       }
+    }
   }
 
   @override
@@ -196,62 +240,59 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                 
                 SizedBox(height: KSizes.margin4x),
                 
-                // Meal type dropdown
+                // Meal type dropdown (always visible)
                 _buildMealTypeDropdown(),
                 
                 SizedBox(height: KSizes.margin4x),
-                
-                // Quantity and serving unit
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: _buildTextField(
-                        controller: _quantityController,
-                        label: 'Mængde',
-                        hint: '1',
-                        icon: MdiIcons.scaleBalance,
-                        keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Indtast mængde';
-                          }
-                          if (double.tryParse(value) == null) {
-                            return 'Indtast et gyldigt tal';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    SizedBox(width: KSizes.margin3x),
-                    Expanded(
-                      flex: 1,
-                      child: _buildServingUnitDropdown(),
-                    ),
-                  ],
-                ),
-                
-                SizedBox(height: KSizes.margin4x),
-                
-                // Calories
+
+                // ALWAYS SHOWN: Calories per 100g
                 _buildTextField(
-                  controller: _caloriesController,
-                  label: 'Kalorier',
-                  hint: 'f.eks. 350',
+                  controller: _caloriesPer100gController,
+                  label: 'Kalorier pr. 100 gram',
+                  hint: 'f.eks. 150',
                   icon: MdiIcons.fire,
                   keyboardType: TextInputType.number,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Indtast kalorier';
-                    }
-                    if (int.tryParse(value) == null) {
-                      return 'Indtast et gyldigt tal';
-                    }
+                    if (value == null || value.isEmpty) return 'Indtast kalorier pr. 100g';
+                    if (double.tryParse(value) == null) return 'Ugyldigt tal';
+                    if (double.parse(value) < 0) return 'Kalorier kan ikke være negative';
+                    return null;
+                  },
+                ),
+                SizedBox(height: KSizes.margin4x),
+
+                // ALWAYS SHOWN: Portion in grams
+                _buildTextField(
+                  controller: _portionGramsController,
+                  label: 'Portion (gram)',
+                  hint: 'f.eks. 150',
+                  icon: MdiIcons.weightGram,
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) return 'Indtast portion i gram';
+                    if (double.tryParse(value) == null) return 'Ugyldigt tal';
+                    if (double.parse(value) <= 0) return 'Portion skal være mere end 0';
+                    return null;
+                  },
+                ),
+                SizedBox(height: KSizes.margin4x),
+                
+                // ALWAYS SHOWN: Total Calories (Read-only)
+                _buildTextField(
+                  controller: _caloriesController,
+                  label: 'Total Kalorier (beregnet)',
+                  hint: 'Autoberegnet',
+                  icon: MdiIcons.calculatorVariantOutline,
+                  keyboardType: TextInputType.number,
+                  readOnly: true, // Always read-only
+                  validator: (value) { // Should not fail if logic is correct
+                    if (value == null || value.isEmpty) return 'Kalorier mangler';
+                    if (double.tryParse(value) == null) return 'Ugyldigt tal';
                     return null;
                   },
                 ),
                 
-                SizedBox(height: KSizes.margin6x),
+                SizedBox(height: KSizes.margin4x),
                 
                 // Notes
                 _buildTextField(
@@ -305,15 +346,15 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     required String label,
     required String hint,
     required IconData icon,
-    TextInputType? keyboardType,
+    TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     String? Function(String?)? validator,
+    bool readOnly = false,
   }) {
     return TextFormField(
       controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      validator: validator,
+      readOnly: readOnly,
+      style: TextStyle(color: AppColors.textPrimary, fontSize: KSizes.fontSizeM),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -326,6 +367,9 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
           borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
       ),
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      validator: validator,
     );
   }
 
@@ -357,34 +401,6 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     );
   }
 
-  Widget _buildServingUnitDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedServingUnit,
-      decoration: InputDecoration(
-        labelText: 'Enhed',
-        prefixIcon: Icon(MdiIcons.formatListBulleted, color: AppColors.primary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusM),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusM),
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
-        ),
-      ),
-      items: _servingUnits.map((unit) {
-        return DropdownMenuItem(
-          value: unit,
-          child: Text(unit),
-        );
-      }).toList(),
-      onChanged: (value) {
-        setState(() {
-          _selectedServingUnit = value!;
-        });
-      },
-    );
-  }
-
   String _getMealTypeDisplayName(MealType mealType) {
     switch (mealType) {
       case MealType.none:
@@ -401,210 +417,172 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   }
 
   Future<void> _saveFavorite() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-
-      try {
-        final name = _nameController.text.trim();
-        final calories = int.parse(_caloriesController.text.trim());
-        final quantity = double.parse(_quantityController.text.trim());
-
-        final favoriteService = FavoriteFoodService();
-        
-        if (_isEditing) {
-          // Update existing favorite
-          final updatedFavorite = widget.existingFavorite!.copyWith(
-            foodName: name,
-            preferredMealType: _selectedMealType,
-            defaultQuantity: quantity,
-            defaultServingUnit: _selectedServingUnit,
-            caloriesPer100g: calories,
-            proteinPer100g: 0.0, // Set default nutrition values
-            fatPer100g: 0.0,
-            carbsPer100g: 0.0,
-            usageCount: 0,
-            lastUsed: DateTime.now(),
-            createdAt: DateTime.now(),
-          );
-          
-          final result = await favoriteService.updateFavorite(updatedFavorite);
-          
-          if (result.isSuccess && mounted) {
-            Navigator.of(context).pop(true); // Return true to indicate success
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('$name er opdateret i favoritter!'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          } else if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Kunne ikke opdatere favorit'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        } else {
-          // Create new favorite
-          final newFavorite = FavoriteFoodModel(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            foodName: name,
-            preferredMealType: _selectedMealType,
-            defaultQuantity: quantity,
-            defaultServingUnit: _selectedServingUnit,
-            caloriesPer100g: calories,
-            proteinPer100g: 0.0, // Set default nutrition values
-            fatPer100g: 0.0,
-            carbsPer100g: 0.0,
-            usageCount: 0,
-            lastUsed: DateTime.now(),
-            createdAt: DateTime.now(),
-          );
-          
-          final result = await favoriteService.addToFavorites(newFavorite);
-          
-          if (result.isSuccess && mounted) {
-            Navigator.of(context).pop(true); // Return true to indicate success
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('$name er tilføjet til favoritter!'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          } else if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Kunne ikke gemme favorit'),
-                backgroundColor: AppColors.error,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Fejl ved gemning: $e'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
+    if (!_formKey.currentState!.validate()) {
+      return;
     }
-  }
+    setState(() => _isLoading = true);
 
-  void _showAiSearchDialog(String query) {
-    showDialog(
-      context: context,
-      builder: (context) => _AiSearchDialog(
-        initialQuery: query,
-        llmFoodService: _llmFoodService!,
-        onFoodSelected: (food) {
-          Navigator.of(context).pop();
-          _selectSearchResult(food);
-        },
-      ),
+    final caloriesPer100g = double.tryParse(_caloriesPer100gController.text) ?? 0.0;
+    final portionGrams = double.tryParse(_portionGramsController.text) ?? 100.0;
+    final totalCalculatedCalories = (caloriesPer100g / 100.0) * portionGrams;
+
+    // Ensure servingSizes is initialized, possibly from _currentAiFoodDetails if available
+    List<FavoriteServingSize> servingSizes = [];
+    if (_currentAiFoodDetails != null) {
+      servingSizes = _currentAiFoodDetails!.servingSizes.map((s) => FavoriteServingSize.fromOnlineServingInfo(s)).toList();
+    }
+    // Add a default 100g serving if none exist or if it's a manual entry without AI details
+    if (servingSizes.where((s) => s.grams == 100.0).isEmpty) {
+        servingSizes.add(const FavoriteServingSize(name: '100 gram', grams: 100.0, isDefault: true));
+    }
+    // Ensure there is at least one default serving
+    if (servingSizes.where((s) => s.isDefault).isEmpty && servingSizes.isNotEmpty) {
+        servingSizes[0] = servingSizes[0].copyWith(isDefault: true);
+    }
+    if (servingSizes.isEmpty) { // Fallback if still empty (e.g. manual new entry)
+        servingSizes.add(const FavoriteServingSize(name: 'Standard', grams: 100.0, isDefault: true));
+    }
+
+    final favorite = FavoriteFoodModel(
+      id: _isEditing ? widget.existingFavorite!.id : DateTime.now().millisecondsSinceEpoch.toString(),
+      foodName: _nameController.text.trim(),
+      description: _notesController.text.trim(),
+      caloriesPer100g: caloriesPer100g.round(),
+      defaultServingGrams: portionGrams,
+      totalCaloriesForServing: totalCalculatedCalories.round(),
+      preferredMealType: _selectedMealType,
+      servingSizes: servingSizes.toSet().toList(), // Use the populated and potentially modified servingSizes
+      isAiGenerated: _currentAiFoodDetails != null,
+      aiSearchQuery: _currentAiFoodDetails?.basicInfo.id,
+      sourceProvider: _currentAiFoodDetails?.basicInfo.provider ?? (_isEditing ? widget.existingFavorite!.sourceProvider : FavoriteFoodModel.manualProvider),
+      createdAt: _isEditing ? widget.existingFavorite!.createdAt : DateTime.now(),
+      lastUsed: DateTime.now(),
+      usageCount: _isEditing ? widget.existingFavorite!.usageCount + 1 : 1,
+      // Ensure other nutrition fields are populated if necessary, defaulting to 0
+      proteinPer100g: _currentAiFoodDetails?.nutrition.protein ?? (_isEditing ? widget.existingFavorite!.proteinPer100g : 0.0),
+      fatPer100g: _currentAiFoodDetails?.nutrition.fat ?? (_isEditing ? widget.existingFavorite!.fatPer100g : 0.0),
+      carbsPer100g: _currentAiFoodDetails?.nutrition.carbs ?? (_isEditing ? widget.existingFavorite!.carbsPer100g : 0.0),
+      fiberPer100g: _currentAiFoodDetails?.nutrition.fiber ?? (_isEditing ? widget.existingFavorite!.fiberPer100g : 0.0),
+      sugarPer100g: _currentAiFoodDetails?.nutrition.sugar ?? (_isEditing ? widget.existingFavorite!.sugarPer100g : 0.0),
+      tags: _currentAiFoodDetails != null 
+          ? FavoriteFoodModel.extractTagsFromFoodTags(_currentAiFoodDetails!.basicInfo.tags) 
+          : (_isEditing ? widget.existingFavorite!.tags : []),
+      ingredients: _currentAiFoodDetails?.ingredients ?? (_isEditing ? widget.existingFavorite!.ingredients : ''),
     );
-  }
 
-  void _selectSearchResult(OnlineFoodResult food) async {
     try {
-      // Get detailed food information
-      final detailsResult = await _llmFoodService!.getFoodDetails(food.id);
-      
-      if (detailsResult.isSuccess) {
-        final details = detailsResult.success;
-        
-        // Auto-populate fields from AI search result
-        _nameController.text = food.name;
-        _caloriesController.text = details.nutrition.calories.round().toString();
-        
-        // Find the best matching serving size
-        final defaultServing = details.servingSizes.firstWhere(
-          (s) => s.isDefault,
-          orElse: () => details.servingSizes.first,
-        );
-        
-        _quantityController.text = '1';
-        
-        // Try to match serving unit to our predefined units
-        String unit = 'stk'; // default
-        final servingName = defaultServing.name.toLowerCase();
-        if (servingName.contains('gram') || servingName.contains('g')) {
-          unit = 'gram';
-        } else if (servingName.contains('portion')) {
-          unit = 'portioner';
-        } else if (servingName.contains('skive')) {
-          unit = 'skiver';
-        }
-        
-        setState(() {
-          _selectedServingUnit = unit;
-        });
-
+      final favoriteService = FavoriteFoodService();
+      if (_isEditing) {
+        await favoriteService.updateFavorite(favorite);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${food.name} valgt - du kan nu redigere detaljerne'),
-            backgroundColor: AppColors.success,
-          ),
+          SnackBar(content: Text('Favorit opdateret: ${favorite.foodName}'), backgroundColor: AppColors.success),
         );
       } else {
+        await favoriteService.addToFavorites(favorite);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Kunne ikke hente detaljer for ${food.name}'),
-            backgroundColor: AppColors.error,
-          ),
+          SnackBar(content: Text('Favorit tilføjet: ${favorite.foodName}'), backgroundColor: AppColors.success),
         );
       }
+
+      setState(() => _isLoading = false);
+      if (mounted) {
+        if (_currentAiFoodDetails != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(onlineFoodProvider.notifier).clearResults(); // Use clearResults() from OnlineFoodCubit
+          });
+        }
+        Navigator.of(context).pop(true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Fejl ved valg af mad: $e'),
-          backgroundColor: AppColors.error,
-        ),
-      );
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Fejl ved gemning: $e'), backgroundColor: AppColors.error),
+        );
+      }
     }
+  }
+
+  Future<void> _showAiSearchDialog(String query) async {
+    // Get the LLM service from the provider using the alias
+    final llmServiceInstance = ref.read(llm_service.llmFoodServiceProvider);
+
+    final OnlineFoodDetails? selectedFoodDetails = await showDialog<OnlineFoodDetails>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AiSearchDialog(
+          initialQuery: query,
+          llmFoodService: llmServiceInstance, // Pass the instance from provider
+          onFoodDetailsSelected: (details) { 
+             Navigator.of(dialogContext).pop(details);
+          }
+        );
+      },
+    );
+
+    if (selectedFoodDetails != null) {
+      setState(() {
+        _currentAiFoodDetails = selectedFoodDetails; 
+        _populateFormFromAiDetails(selectedFoodDetails); 
+      });
+    }
+  }
+
+  // New method to populate form fields from OnlineFoodDetails
+  void _populateFormFromAiDetails(OnlineFoodDetails details) {
+    _nameController.text = details.basicInfo.name;
+    _notesController.text = details.basicInfo.description;
+    _selectedMealType = MealType.none; 
+
+    _caloriesPer100gController.text = details.nutrition.calories > 0 
+                                        ? details.nutrition.calories.toStringAsFixed(0) 
+                                        : '0';
+
+    final OnlineServingSize defaultServing = details.servingSizes.firstWhere(
+      (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
+      orElse: () => details.servingSizes.isNotEmpty 
+                    ? details.servingSizes.first 
+                    : const OnlineServingSize(name: '100 gram', grams: 100, isDefault: true), // Ensure this returns OnlineServingSize
+    );
+    _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
+    
+    _calculateTotalCalories();
   }
 }
 
-/// AI Search Dialog for finding food suggestions
-class _AiSearchDialog extends StatefulWidget {
+class AiSearchDialog extends ConsumerStatefulWidget {
   final String initialQuery;
-  final LLMFoodService llmFoodService;
-  final Function(OnlineFoodResult) onFoodSelected;
+  final llm_service.LLMFoodService llmFoodService; // Use aliased type
+  final ValueChanged<OnlineFoodDetails> onFoodDetailsSelected;
 
-  const _AiSearchDialog({
+  const AiSearchDialog({
+    super.key,
     required this.initialQuery,
     required this.llmFoodService,
-    required this.onFoodSelected,
+    required this.onFoodDetailsSelected,
   });
 
   @override
-  State<_AiSearchDialog> createState() => _AiSearchDialogState();
+  ConsumerState<AiSearchDialog> createState() => _AiSearchDialogState();
 }
 
-class _AiSearchDialogState extends State<_AiSearchDialog> {
-  late TextEditingController _searchController;
-  List<OnlineFoodResult> _searchResults = [];
+class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
+  final _searchController = TextEditingController();
   bool _isSearching = false;
+  bool _isFetchingDetails = false;
+  OnlineFoodError? _error;
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: widget.initialQuery);
+    _searchController.text = widget.initialQuery;
     if (widget.initialQuery.isNotEmpty) {
-      _searchFood();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Check if a search isn't already in progress from the cubit
+        if (!ref.read(onlineFoodProvider).isLoading) {
+          _searchFood();
+        }
+      });
     }
   }
 
@@ -614,208 +592,140 @@ class _AiSearchDialogState extends State<_AiSearchDialog> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-      ),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        height: MediaQuery.of(context).size.height * 0.7,
-        padding: EdgeInsets.all(KSizes.margin4x),
-        child: Column(
-          children: [
-            // Header
-            Row(
-              children: [
-                Icon(MdiIcons.robot, color: AppColors.primary),
-                SizedBox(width: KSizes.margin2x),
-                Expanded(
-                  child: Text(
-                    'Søg med AI',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeL,
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: Icon(MdiIcons.close),
-                ),
-              ],
-            ),
-            
-            SizedBox(height: KSizes.margin4x),
-            
-            // Search field
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Navn på mad',
-                hintText: 'f.eks. "havregrød" eller "kylling"',
-                prefixIcon: Icon(MdiIcons.magnify, color: AppColors.primary),
-                suffixIcon: IconButton(
-                  onPressed: _isSearching ? null : _searchFood,
-                  icon: _isSearching 
-                      ? SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(MdiIcons.magnify),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-              ),
-              onSubmitted: (_) => _searchFood(),
-            ),
-            
-            SizedBox(height: KSizes.margin4x),
-            
-            // Results
-            Expanded(
-              child: _buildResults(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResults() {
-    if (_isSearching) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: AppColors.primary),
-            SizedBox(height: KSizes.margin4x),
-            Text(
-              'Søger efter "${_searchController.text.trim()}"...',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: KSizes.fontSizeM,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (_searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              MdiIcons.magnify,
-              size: 64,
-              color: AppColors.textTertiary,
-            ),
-            SizedBox(height: KSizes.margin4x),
-            Text(
-              'Ingen resultater endnu',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeL,
-                color: AppColors.textSecondary,
-                fontWeight: KSizes.fontWeightBold,
-              ),
-            ),
-            SizedBox(height: KSizes.margin2x),
-            Text(
-              'Skriv et navn på mad og tryk søg',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeM,
-                color: AppColors.textTertiary,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.builder(
-      itemCount: _searchResults.length,
-      itemBuilder: (context, index) {
-        final food = _searchResults[index];
-        return Container(
-          margin: EdgeInsets.only(bottom: KSizes.margin2x),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-          ),
-          child: ListTile(
-            title: Text(
-              food.name,
-              style: TextStyle(
-                fontWeight: KSizes.fontWeightMedium,
-                fontSize: KSizes.fontSizeM,
-              ),
-            ),
-            subtitle: Text(
-              food.description,
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: KSizes.fontSizeS,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: Icon(
-              MdiIcons.chevronRight,
-              color: AppColors.primary,
-            ),
-            onTap: () => widget.onFoodSelected(food),
-          ),
-        );
-      },
-    );
-  }
-
   Future<void> _searchFood() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
 
     setState(() {
       _isSearching = true;
-      _searchResults = [];
+      _error = null;
     });
-
-    try {
-      final result = await widget.llmFoodService.searchFoods(query);
-      if (result.isSuccess) {
+    await ref.read(onlineFoodProvider.notifier).searchFoods(query);
+    if (mounted) {
         setState(() {
-          _searchResults = result.success;
+            _isSearching = false;
         });
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ingen resultater fundet'),
-              backgroundColor: AppColors.warning,
-            ),
-          );
+    }
+  }
+
+  Future<void> _fetchAndSelectDetails(OnlineFoodResult shortResult) async {
+    setState(() {
+      _isFetchingDetails = true;
+      _error = null;
+    });
+    try {
+      // Call getFoodDetails with only the ID, as per interface
+      // Use the llmFoodService instance passed via constructor (from provider)
+      final detailsResult = await widget.llmFoodService.getFoodDetails(shortResult.id);
+
+      if (mounted) {
+        if (detailsResult.isSuccess) {
+          final details = detailsResult.success;
+          widget.onFoodDetailsSelected(details);
+        } else {
+          final error = detailsResult.failure; // This is OnlineFoodError
+          setState(() {
+            _error = error;
+          });
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fejl ved søgning: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        setState(() {
+          _error = OnlineFoodError.unknown; 
+        });
       }
     } finally {
       if (mounted) {
         setState(() {
-          _isSearching = false;
+          _isFetchingDetails = false;
         });
       }
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final onlineFoodState = ref.watch(onlineFoodProvider);
+    final searchResults = onlineFoodState.searchResults;
+    final cubitError = onlineFoodState.hasError ? onlineFoodState.errorMessage : null;
+    final isLoadingFromCubit = onlineFoodState.isLoading;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSizes.radiusL)),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.9,
+        height: MediaQuery.of(context).size.height * 0.7,
+        padding: EdgeInsets.all(KSizes.margin4x),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(MdiIcons.robotOutline, color: AppColors.primary, size: KSizes.iconL),
+                SizedBox(width: KSizes.margin2x),
+                Expanded(
+                  child: Text('AI Mad Søgning', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: AppColors.textPrimary)),
+                ),
+                IconButton(icon: Icon(MdiIcons.close, color: AppColors.textSecondary), onPressed: () => Navigator.of(context).pop()),
+              ],
+            ),
+            SizedBox(height: KSizes.margin3x),
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                labelText: 'Søg efter fødevare...',
+                hintText: 'f.eks. kylling med ris',
+                prefixIcon: Icon(MdiIcons.magnify, color: AppColors.textSecondary),
+                suffixIcon: (_isSearching || isLoadingFromCubit)
+                    ? SizedBox(width: 20, height: 20, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)))
+                    : IconButton(icon: Icon(MdiIcons.arrowRightCircleOutline, color: AppColors.primary), onPressed: _searchFood),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(KSizes.radiusM)),
+              ),
+              onSubmitted: (_) => _searchFood(),
+            ),
+            SizedBox(height: KSizes.margin3x),
+            Expanded(
+              child: (_isSearching || isLoadingFromCubit)
+                  ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(color: AppColors.primary), SizedBox(height: KSizes.margin2x), Text('Søger...')]))
+                  : _error != null 
+                      ? Center(child: Text('Fejl ved hentning af detaljer: ${_error!.message}', style: TextStyle(color: AppColors.error, fontSize: KSizes.fontSizeM)))
+                      : cubitError != null 
+                          ? Center(child: Text('Søgningsfejl: $cubitError', style: TextStyle(color: AppColors.error, fontSize: KSizes.fontSizeM)))
+                          : searchResults.isEmpty
+                              ? Center(child: Text('Ingen resultater fundet.', style: TextStyle(color: AppColors.textSecondary, fontSize: KSizes.fontSizeM)))
+                              : ListView.builder(
+                                  itemCount: searchResults.length,
+                                  itemBuilder: (context, index) {
+                                    final result = searchResults[index];
+                                    final bool isFetchingThisItem = _isFetchingDetails && onlineFoodState.selectedFoodDetails?.basicInfo.id == result.id;
+                                    return Card(
+                                      elevation: 1,
+                                      margin: EdgeInsets.symmetric(vertical: KSizes.margin1x),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSizes.radiusS)),
+                                      child: ListTile(
+                                        leading: result.imageUrl.isNotEmpty 
+                                            ? Image.network(result.imageUrl, width: 40, height: 40, fit: BoxFit.cover, errorBuilder: (c, o, s) => Icon(MdiIcons.foodOutline, color: AppColors.primary)) 
+                                            : Icon(MdiIcons.foodOutline, color: AppColors.primary),
+                                        title: Text(result.name, style: TextStyle(fontWeight: KSizes.fontWeightMedium, fontSize: KSizes.fontSizeM, color: AppColors.textPrimary)),
+                                        subtitle: Text(
+                                          '${result.estimatedCalories.toStringAsFixed(0)} kcal pr. 100g (${result.searchMode.displayName})\n${result.description}',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(fontSize: KSizes.fontSizeS, color: AppColors.textSecondary),
+                                        ),
+                                        trailing: isFetchingThisItem 
+                                            ? SizedBox(width: 20, height: 20, child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)))
+                                            : Icon(MdiIcons.chevronRight, color: AppColors.primary),
+                                        onTap: isFetchingThisItem ? null : () => _fetchAndSelectDetails(result),
+                                        contentPadding: EdgeInsets.symmetric(horizontal: KSizes.margin2x, vertical: KSizes.margin1x),
+                                      ),
+                                    );
+                                  },
+                                ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 } 

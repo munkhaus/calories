@@ -38,9 +38,11 @@ _$FavoriteFoodModelImpl _$$FavoriteFoodModelImplFromJson(
   fiberPer100g: (json['fiberPer100g'] as num?)?.toDouble() ?? 0.0,
   sugarPer100g: (json['sugarPer100g'] as num?)?.toDouble() ?? 0.0,
   defaultQuantity: (json['defaultQuantity'] as num?)?.toDouble() ?? 1.0,
-  defaultServingUnit: json['defaultServingUnit'] as String? ?? 'portion',
+  defaultServingUnit: json['defaultServingUnit'] as String? ?? 'gram',
   defaultServingGrams:
       (json['defaultServingGrams'] as num?)?.toDouble() ?? 100.0,
+  totalCaloriesForServing:
+      (json['totalCaloriesForServing'] as num?)?.toInt() ?? 0,
   servingSizes:
       (json['servingSizes'] as List<dynamic>?)
           ?.map((e) => FavoriteServingSize.fromJson(e as Map<String, dynamic>))
@@ -49,7 +51,10 @@ _$FavoriteFoodModelImpl _$$FavoriteFoodModelImplFromJson(
   source:
       $enumDecodeNullable(_$FoodSourceEnumMap, json['source']) ??
       FoodSource.userCreated,
-  sourceProvider: json['sourceProvider'] as String? ?? '',
+  sourceProvider:
+      json['sourceProvider'] as String? ?? FavoriteFoodModel.manualProvider,
+  isAiGenerated: json['isAiGenerated'] as bool? ?? false,
+  aiSearchQuery: json['aiSearchQuery'] as String?,
   tags:
       (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
@@ -75,9 +80,12 @@ Map<String, dynamic> _$$FavoriteFoodModelImplToJson(
   'defaultQuantity': instance.defaultQuantity,
   'defaultServingUnit': instance.defaultServingUnit,
   'defaultServingGrams': instance.defaultServingGrams,
+  'totalCaloriesForServing': instance.totalCaloriesForServing,
   'servingSizes': instance.servingSizes,
   'source': _$FoodSourceEnumMap[instance.source]!,
   'sourceProvider': instance.sourceProvider,
+  'isAiGenerated': instance.isAiGenerated,
+  'aiSearchQuery': instance.aiSearchQuery,
   'tags': instance.tags,
   'ingredients': instance.ingredients,
   'createdAt': instance.createdAt.toIso8601String(),

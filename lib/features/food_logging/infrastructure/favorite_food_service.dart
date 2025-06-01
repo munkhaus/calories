@@ -242,8 +242,7 @@ class FavoriteFoodService implements IFavoriteFoodService {
       final favorite = FavoriteFoodModel.fromOnlineFoodDetails(
         details,
         preferredMealType: preferredMealType,
-        preferredQuantity: preferredQuantity,
-        preferredServingUnit: preferredServingUnit,
+        preferredQuantityGrams: preferredQuantity,
       );
       
       return await addToFavorites(favorite);

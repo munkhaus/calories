@@ -415,35 +415,32 @@ class RecentMealsWidget extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
+                          flex: 3,
                           child: Text(
                             meal.foodName,
                             style: TextStyle(
                               fontSize: KSizes.fontSizeM,
-                              fontWeight: KSizes.fontWeightSemiBold,
+                              fontWeight: KSizes.fontWeightMedium,
                               color: AppColors.textPrimary,
                             ),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: KSizes.margin2x,
-                            vertical: KSizes.margin1x,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _getMealColor(meal.mealType),
-                            borderRadius: BorderRadius.circular(KSizes.radiusS),
-                          ),
+                        SizedBox(width: KSizes.margin2x),
+                        Flexible(
+                          flex: 2,
                           child: Text(
-                            '${meal.calories} kcal',
+                            '${meal.calories.round()} kcal',
                             style: TextStyle(
-                              fontSize: KSizes.fontSizeXS,
+                              fontSize: KSizes.fontSizeM,
                               fontWeight: KSizes.fontWeightBold,
-                              color: Colors.white,
+                              color: AppColors.primary,
                             ),
+                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -453,19 +450,28 @@ class RecentMealsWidget extends ConsumerWidget {
                     
                     Row(
                       children: [
-                        Text(
-                          meal.mealType.mealTypeDisplayName,
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeS,
-                            color: _getMealColor(meal.mealType),
-                            fontWeight: KSizes.fontWeightMedium,
+                        Expanded(
+                          flex: 2,
+                          child: Text(
+                            meal.mealType.mealTypeDisplayName,
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeS,
+                              color: _getMealColor(meal.mealType),
+                              fontWeight: KSizes.fontWeightMedium,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
-                        Text(
-                          ' • ${meal.quantity} ${meal.servingUnit}',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeS,
-                            color: AppColors.textSecondary,
+                        Expanded(
+                          flex: 3,
+                          child: Text(
+                            ' • ${meal.quantity} ${meal.servingUnit}',
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeS,
+                              color: AppColors.textSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

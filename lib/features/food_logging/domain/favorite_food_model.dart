@@ -46,6 +46,15 @@ class FavoriteServingSize with _$FavoriteServingSize {
       isDefault: serving.isDefault,
     );
   }
+
+  /// Create from OnlineServingSize (from LLM response)
+  factory FavoriteServingSize.fromOnlineServingInfo(OnlineServingSize serving) {
+    return FavoriteServingSize(
+      name: serving.name,
+      grams: serving.grams,
+      isDefault: serving.isDefault,
+    );
+  }
 }
 
 /// Model for favorite food items that can be quickly selected for logging
@@ -53,6 +62,7 @@ class FavoriteServingSize with _$FavoriteServingSize {
 @freezed
 class FavoriteFoodModel with _$FavoriteFoodModel {
   const FavoriteFoodModel._();
+  static const String manualProvider = 'manual'; // For manually created favorites
 
   const factory FavoriteFoodModel({
     @Default('') String id,
@@ -69,16 +79,21 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
     @Default(0.0) double sugarPer100g,
     
     // Default serving information (user's preferred portion)
-    @Default(1.0) double defaultQuantity,
-    @Default('portion') String defaultServingUnit,
+    @Default(1.0) double defaultQuantity, // This is now effectively defaultServingGrams if unit is 'gram'
+    @Default('gram') String defaultServingUnit, // Defaulting to 'gram' more strongly
     @Default(100.0) double defaultServingGrams,
     
+    // Total calories for the default serving (calculated)
+    @Default(0) int totalCaloriesForServing, // Renamed from 'calories'
+
     // Available serving sizes
     @Default([]) List<FavoriteServingSize> servingSizes,
     
     // Source and metadata
     @Default(FoodSource.userCreated) FoodSource source,
-    @Default('') String sourceProvider,
+    @Default(FavoriteFoodModel.manualProvider) String sourceProvider, // Default to manual
+    @Default(false) bool isAiGenerated,
+    String? aiSearchQuery,
     @Default([]) List<String> tags,
     @Default('') String ingredients,
     
@@ -127,35 +142,50 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
   /// Create favorite from OnlineFoodDetails
   factory FavoriteFoodModel.fromOnlineFoodDetails(OnlineFoodDetails details, {
     MealType? preferredMealType,
-    double? preferredQuantity,
-    String? preferredServingUnit,
+    double? preferredQuantityGrams, // Quantity is now grams
   }) {
     final nutrition = details.nutrition;
-    final defaultServing = details.servingSizes.firstWhere(
+    final basicInfo = details.basicInfo;
+
+    final OnlineServingSize defaultServingOnline = details.servingSizes.firstWhere(
       (s) => s.isDefault,
       orElse: () => details.servingSizes.isNotEmpty 
           ? details.servingSizes.first 
-          : const ServingInfo(name: 'portion', grams: 100.0, isDefault: true),
+          : const OnlineServingSize(name: '100 gram', grams: 100.0, isDefault: true),
     );
+    
+    final double currentPortionGrams = preferredQuantityGrams ?? defaultServingOnline.grams;
+    
+    // Ensure calories are finite and calculate total calories, defaulting to 0
+    final int calculatedTotalCalories = nutrition.calories.isFinite && currentPortionGrams.isFinite
+        ? (nutrition.calories / 100.0 * currentPortionGrams).round()
+        : 0;
 
     return FavoriteFoodModel(
-      id: details.basicInfo.id,
-      foodName: details.basicInfo.name,
-      description: details.basicInfo.description,
-      preferredMealType: preferredMealType ?? _inferMealTypeFromTags(details.basicInfo.tags),
+      id: basicInfo.id.isNotEmpty ? basicInfo.id : DateTime.now().millisecondsSinceEpoch.toString(),
+      foodName: basicInfo.name,
+      description: basicInfo.description,
+      preferredMealType: preferredMealType ?? _inferMealTypeFromTags(basicInfo.tags),
       caloriesPer100g: nutrition.calories.round(),
       proteinPer100g: nutrition.protein,
       fatPer100g: nutrition.fat,
       carbsPer100g: nutrition.carbs,
       fiberPer100g: nutrition.fiber,
       sugarPer100g: nutrition.sugar,
-      defaultQuantity: preferredQuantity ?? 1.0,
-      defaultServingUnit: preferredServingUnit ?? defaultServing.name,
-      defaultServingGrams: defaultServing.grams,
-      servingSizes: details.servingSizes.map((s) => FavoriteServingSize.fromServingInfo(s)).toList(),
-      source: FoodSource.onlineDatabase,
-      sourceProvider: details.basicInfo.provider,
-      tags: _extractTagsFromFoodTags(details.basicInfo.tags),
+      
+      defaultQuantity: currentPortionGrams, // This is the portion in grams
+      defaultServingUnit: 'gram', // Always gram now
+      defaultServingGrams: currentPortionGrams,
+      totalCaloriesForServing: calculatedTotalCalories, // Use renamed field
+
+      servingSizes: details.servingSizes.map((s) => FavoriteServingSize.fromOnlineServingInfo(s)).toList(),
+      
+      source: FoodSource.onlineDatabase, // Explicitly set source
+      sourceProvider: basicInfo.provider,
+      isAiGenerated: true, // Mark as AI generated
+      aiSearchQuery: null, // Could use original query if passed through
+
+      tags: extractTagsFromFoodTags(basicInfo.tags),
       ingredients: details.ingredients,
       createdAt: DateTime.now(),
       lastUsed: DateTime.now(),
@@ -207,10 +237,9 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
   /// Display text for this favorite
   String get displayText => '$foodName (${caloriesPer100g} kcal/100g)';
 
-  /// Calculated calories for default serving
+  /// Calculated calories for default serving - NOW USES THE STORED 'totalCaloriesForServing' field
   int get defaultServingCalories {
-    final totalGrams = defaultServingGrams * defaultQuantity;
-    return (caloriesPer100g * totalGrams / 100).round();
+    return totalCaloriesForServing; // Use the renamed field
   }
 
   /// Get emoji representation based on food name and tags
@@ -225,20 +254,28 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
       final lower = tag.toLowerCase();
       if (lower.contains('morgenmad') || lower.contains('breakfast')) return MealType.morgenmad;
       if (lower.contains('frokost') || lower.contains('lunch')) return MealType.frokost;
-      if (lower.contains('aftensmad') || lower.contains('dinner')) return MealType.aftensmad;
+      if (lower.contains('aftensmad') || lower.contains('dinner') || lower.contains('middag')) return MealType.aftensmad;
       if (lower.contains('snack') || lower.contains('mellemmåltid')) return MealType.snack;
+    }
+    // Check food types if custom tags didn't yield a result
+    for (final foodType in tags.foodTypes) {
+        final lower = foodType.displayName.toLowerCase(); // Access displayName
+        if (lower == 'breakfast') return MealType.morgenmad;
+        if (lower == 'lunch') return MealType.frokost;
+        if (lower == 'dinner') return MealType.aftensmad;
+        if (lower == 'snack') return MealType.snack;
     }
     return MealType.none;
   }
 
-  static List<String> _extractTagsFromFoodTags(FoodTags tags) {
-    final allTags = <String>[];
-    allTags.addAll(tags.foodTypes.map((t) => t.displayName));
-    allTags.addAll(tags.cuisineStyles.map((t) => t.displayName));
-    allTags.addAll(tags.dietaryTags.map((t) => t.displayName));
-    allTags.addAll(tags.preparationTypes.map((t) => t.displayName));
-    allTags.addAll(tags.customTags);
-    return allTags;
+  static List<String> extractTagsFromFoodTags(FoodTags foodTags) {
+    final tags = <String>{}; // Use a Set to avoid duplicates
+    tags.addAll(foodTags.foodTypes.map((e) => e.displayName));
+    tags.addAll(foodTags.cuisineStyles.map((e) => e.displayName));
+    tags.addAll(foodTags.dietaryTags.map((e) => e.displayName));
+    tags.addAll(foodTags.preparationTypes.map((e) => e.displayName));
+    tags.addAll(foodTags.customTags);
+    return tags.toList();
   }
 
   /// Display name for meal type

@@ -88,18 +88,133 @@ enum PreparationType {
   final String emoji;
 }
 
+// Helper function for case-insensitive enum list parsing
+List<T> _enumListFromStringList<T>(List<String> stringList, Map<Object?, T> enumMap) {
+  final List<T> result = [];
+  // Create a reverse map from lowercase string to enum value
+  final Map<String, T> reverseEnumMap = enumMap.map((k, v) => MapEntry(k.toString().split('.').last.toLowerCase(), v as T));
+  final Map<String, T> reverseEnumMapOriginalCase = enumMap.map((k, v) => MapEntry(k.toString().split('.').last, v as T));
+
+
+  for (final s in stringList) {
+    // Try original case first, then lowercase
+    T? enumValue = reverseEnumMapOriginalCase[s];
+    enumValue ??= reverseEnumMap[s.toLowerCase()];
+    
+    if (enumValue != null) {
+      result.add(enumValue);
+    } else {
+      print('⚠️ _enumListFromStringList: Could not parse enum value: "$s" for type $T');
+    }
+  }
+  return result;
+}
+
 // Enhanced food tags model
 @freezed
 class FoodTags with _$FoodTags {
   const factory FoodTags({
-    @Default([]) List<FoodType> foodTypes,
-    @Default([]) List<CuisineStyle> cuisineStyles,
+    @JsonKey(fromJson: _foodTypesFromJsonLenient) @Default([]) List<FoodType> foodTypes,
+    @JsonKey(fromJson: _cuisineStylesFromJsonLenient) @Default([]) List<CuisineStyle> cuisineStyles,
     @Default([]) List<DietaryTag> dietaryTags,
-    @Default([]) List<PreparationType> preparationTypes,
-    @Default([]) List<String> customTags, // For flexible tagging
+    @JsonKey(fromJson: _preparationTypesFromJsonLenient) @Default([]) List<PreparationType> preparationTypes,
+    @Default([]) List<String> customTags,
   }) = _FoodTags;
 
   factory FoodTags.fromJson(Map<String, dynamic> json) => _$FoodTagsFromJson(json);
+}
+
+// Custom lenient fromJson for foodTypes
+List<FoodType> _foodTypesFromJsonLenient(List<dynamic> jsonList) {
+  if (jsonList.isEmpty) return [];
+  return jsonList
+      .map((e) {
+        final val = e as String?;
+        if (val == null || val.trim().isEmpty) return null;
+
+        FoodType? type = $enumDecodeNullable(_$FoodTypeEnumMap, val);
+        type ??= $enumDecodeNullable(_$FoodTypeEnumMap, val.toLowerCase());
+
+        if (type == null) {
+          for (final enumValue in FoodType.values) {
+            if (enumValue.displayName.toLowerCase() == val.toLowerCase()) {
+              type = enumValue;
+              break;
+            }
+          }
+        }
+            
+        if (type == null) {
+          print('⚠️ _foodTypesFromJsonLenient: Could not parse FoodType value: "$val", defaulting to processed.');
+          type = FoodType.processed; 
+        }
+        return type;
+      })
+      .where((element) => element != null)
+      .cast<FoodType>()
+      .toList();
+}
+
+// Custom lenient fromJson for cuisineStyles
+List<CuisineStyle> _cuisineStylesFromJsonLenient(List<dynamic> jsonList) {
+  if (jsonList.isEmpty) return [];
+  return jsonList
+      .map((e) {
+        final val = e as String?;
+        if (val == null || val.trim().isEmpty) return null;
+
+        CuisineStyle? style = $enumDecodeNullable(_$CuisineStyleEnumMap, val);
+        style ??= $enumDecodeNullable(_$CuisineStyleEnumMap, val.toLowerCase());
+        
+        if (style == null) {
+          for (final enumValue in CuisineStyle.values) {
+            if (enumValue.displayName.toLowerCase() == val.toLowerCase()) {
+              style = enumValue;
+              break;
+            }
+          }
+        }
+
+        if (style == null) {
+          print('⚠️ _cuisineStylesFromJsonLenient: Could not parse CuisineStyle value: "$val", defaulting to international.');
+          style = CuisineStyle.international;
+        }
+        return style;
+      })
+      .where((element) => element != null)
+      .cast<CuisineStyle>()
+      .toList();
+}
+
+// Custom lenient fromJson for preparationTypes
+List<PreparationType> _preparationTypesFromJsonLenient(List<dynamic> jsonList) {
+  if (jsonList.isEmpty) return [];
+  return jsonList
+      .map((e) {
+        final val = e as String?;
+        if (val == null || val.trim().isEmpty) return null;
+
+        PreparationType? type = $enumDecodeNullable(_$PreparationTypeEnumMap, val);
+        type ??= $enumDecodeNullable(_$PreparationTypeEnumMap, val.toLowerCase());
+
+        if (type == null) {
+          for (final enumValue in PreparationType.values) {
+            if (enumValue.displayName.toLowerCase() == val.toLowerCase()) {
+              type = enumValue;
+              break;
+            }
+          }
+        }
+            
+        if (type == null) {
+          print('⚠️ _preparationTypesFromJsonLenient: Could not parse PreparationType value: "$val", defaulting to raw.');
+          type = PreparationType.raw;
+        }
+        return type;
+      })
+      .where((element) => element != null)
+      .cast<PreparationType>()
+      .toList();
 }
 
 // Search request with mode
@@ -125,13 +240,39 @@ class OnlineFoodResult with _$OnlineFoodResult {
     required String description,
     @Default('') String imageUrl,
     required String provider,
-    required SearchMode searchMode, // Whether this is a dish or ingredient
+    @JsonKey(fromJson: _searchModeFromJsonLenient) required SearchMode searchMode,
     @Default(FoodTags()) FoodTags tags,
-    @Default(0) double estimatedCalories, // Per 100g estimate for quick filtering
+    @Default(0) double estimatedCalories,
   }) = _OnlineFoodResult;
 
   factory OnlineFoodResult.fromJson(Map<String, dynamic> json) => 
       _$OnlineFoodResultFromJson(json);
+}
+
+// Custom lenient fromJson for SearchMode
+SearchMode _searchModeFromJsonLenient(String? val) {
+  if (val == null || val.trim().isEmpty) {
+    print('⚠️ _searchModeFromJsonLenient: Received null or empty value, defaulting to SearchMode.dishes');
+    return SearchMode.dishes;
+  }
+
+  SearchMode? mode = $enumDecodeNullable(_$SearchModeEnumMap, val);
+  mode ??= $enumDecodeNullable(_$SearchModeEnumMap, val.toLowerCase());
+
+  if (mode == null) {
+    for (final enumValue in SearchMode.values) {
+      if (enumValue.displayName.toLowerCase() == val.toLowerCase()) {
+        mode = enumValue;
+        break;
+      }
+    }
+  }
+
+  if (mode == null) {
+    print('⚠️ _searchModeFromJsonLenient: Could not parse SearchMode value: "$val", defaulting to SearchMode.dishes');
+    mode = SearchMode.dishes; 
+  }
+  return mode;
 }
 
 /// Detailed nutrition information from online provider
@@ -140,7 +281,7 @@ class OnlineFoodDetails with _$OnlineFoodDetails {
   const factory OnlineFoodDetails({
     required OnlineFoodResult basicInfo,
     required NutritionInfo nutrition,
-    @Default([]) List<ServingInfo> servingSizes,
+    @Default([]) List<OnlineServingSize> servingSizes,
     @Default('') String ingredients,
     @Default('') String instructions,
   }) = _OnlineFoodDetails;

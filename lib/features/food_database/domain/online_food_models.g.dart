@@ -8,26 +8,20 @@ part of 'online_food_models.dart';
 
 _$FoodTagsImpl _$$FoodTagsImplFromJson(Map<String, dynamic> json) =>
     _$FoodTagsImpl(
-      foodTypes:
-          (json['foodTypes'] as List<dynamic>?)
-              ?.map((e) => $enumDecode(_$FoodTypeEnumMap, e))
-              .toList() ??
-          const [],
-      cuisineStyles:
-          (json['cuisineStyles'] as List<dynamic>?)
-              ?.map((e) => $enumDecode(_$CuisineStyleEnumMap, e))
-              .toList() ??
-          const [],
+      foodTypes: json['foodTypes'] == null
+          ? const []
+          : _foodTypesFromJsonLenient(json['foodTypes'] as List),
+      cuisineStyles: json['cuisineStyles'] == null
+          ? const []
+          : _cuisineStylesFromJsonLenient(json['cuisineStyles'] as List),
       dietaryTags:
           (json['dietaryTags'] as List<dynamic>?)
               ?.map((e) => $enumDecode(_$DietaryTagEnumMap, e))
               .toList() ??
           const [],
-      preparationTypes:
-          (json['preparationTypes'] as List<dynamic>?)
-              ?.map((e) => $enumDecode(_$PreparationTypeEnumMap, e))
-              .toList() ??
-          const [],
+      preparationTypes: json['preparationTypes'] == null
+          ? const []
+          : _preparationTypesFromJsonLenient(json['preparationTypes'] as List),
       customTags:
           (json['customTags'] as List<dynamic>?)
               ?.map((e) => e as String)
@@ -49,6 +43,19 @@ Map<String, dynamic> _$$FoodTagsImplToJson(
       .map((e) => _$PreparationTypeEnumMap[e]!)
       .toList(),
   'customTags': instance.customTags,
+};
+
+const _$DietaryTagEnumMap = {
+  DietaryTag.vegetarian: 'vegetarian',
+  DietaryTag.vegan: 'vegan',
+  DietaryTag.glutenFree: 'glutenFree',
+  DietaryTag.lactoseFree: 'lactoseFree',
+  DietaryTag.keto: 'keto',
+  DietaryTag.lowCarb: 'lowCarb',
+  DietaryTag.highProtein: 'highProtein',
+  DietaryTag.organic: 'organic',
+  DietaryTag.raw: 'raw',
+  DietaryTag.sugarFree: 'sugarFree',
 };
 
 const _$FoodTypeEnumMap = {
@@ -81,19 +88,6 @@ const _$CuisineStyleEnumMap = {
   CuisineStyle.thai: 'thai',
   CuisineStyle.japanese: 'japanese',
   CuisineStyle.international: 'international',
-};
-
-const _$DietaryTagEnumMap = {
-  DietaryTag.vegetarian: 'vegetarian',
-  DietaryTag.vegan: 'vegan',
-  DietaryTag.glutenFree: 'glutenFree',
-  DietaryTag.lactoseFree: 'lactoseFree',
-  DietaryTag.keto: 'keto',
-  DietaryTag.lowCarb: 'lowCarb',
-  DietaryTag.highProtein: 'highProtein',
-  DietaryTag.organic: 'organic',
-  DietaryTag.raw: 'raw',
-  DietaryTag.sugarFree: 'sugarFree',
 };
 
 const _$PreparationTypeEnumMap = {
@@ -142,7 +136,7 @@ _$OnlineFoodResultImpl _$$OnlineFoodResultImplFromJson(
   description: json['description'] as String,
   imageUrl: json['imageUrl'] as String? ?? '',
   provider: json['provider'] as String,
-  searchMode: $enumDecode(_$SearchModeEnumMap, json['searchMode']),
+  searchMode: _searchModeFromJsonLenient(json['searchMode'] as String?),
   tags: json['tags'] == null
       ? const FoodTags()
       : FoodTags.fromJson(json['tags'] as Map<String, dynamic>),
@@ -171,7 +165,7 @@ _$OnlineFoodDetailsImpl _$$OnlineFoodDetailsImplFromJson(
   nutrition: NutritionInfo.fromJson(json['nutrition'] as Map<String, dynamic>),
   servingSizes:
       (json['servingSizes'] as List<dynamic>?)
-          ?.map((e) => ServingInfo.fromJson(e as Map<String, dynamic>))
+          ?.map((e) => OnlineServingSize.fromJson(e as Map<String, dynamic>))
           .toList() ??
       const [],
   ingredients: json['ingredients'] as String? ?? '',

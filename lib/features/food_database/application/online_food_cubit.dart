@@ -3,14 +3,10 @@ import '../domain/i_online_food_service.dart';
 import '../domain/online_food_models.dart';
 import '../../food_logging/domain/i_favorite_food_service.dart';
 import '../../food_logging/domain/user_food_log_model.dart';
-import '../infrastructure/llm_food_service.dart';
+import '../../food_logging/domain/favorite_food_model.dart';
+import '../infrastructure/llm_food_service.dart' as llm_service;
 import '../../food_logging/infrastructure/favorite_food_service.dart';
 import 'online_food_state.dart';
-
-// Provider for LLM service (only provider)
-final llmFoodServiceProvider = Provider<IOnlineFoodService>((ref) {
-  return LLMFoodService();
-});
 
 // Provider for FavoriteFoodService - now the primary food storage
 final favoriteFoodServiceProvider = Provider<IFavoriteFoodService>((ref) {
@@ -19,13 +15,13 @@ final favoriteFoodServiceProvider = Provider<IFavoriteFoodService>((ref) {
 
 // Online food cubit provider - now uses favorite food service
 final onlineFoodProvider = StateNotifierProvider<OnlineFoodCubit, OnlineFoodState>((ref) {
-  final llmService = ref.read(llmFoodServiceProvider);
+  final llmServiceInstance = ref.read(llm_service.llmFoodServiceProvider);
   final favoriteFoodService = ref.read(favoriteFoodServiceProvider);
-  return OnlineFoodCubit(llmService, favoriteFoodService);
+  return OnlineFoodCubit(llmServiceInstance, favoriteFoodService);
 });
 
 class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
-  final IOnlineFoodService _foodService;
+  final llm_service.LLMFoodService _foodService;
   final IFavoriteFoodService _favoriteFoodService;
 
   OnlineFoodCubit(this._foodService, this._favoriteFoodService) 
@@ -269,84 +265,62 @@ class OnlineFoodCubit extends StateNotifier<OnlineFoodState> {
   }
 
   /// Add selected foods to favorites
-  Future<void> addSelectedFoodsToFavorites() async {
+  Future<void> addSelectedFoodsToFavorites({
+    MealType? preferredMealType,
+    double? preferredQuantity,
+    String? preferredServingUnit,
+  }) async {
     if (state.selectedFoodIds.isEmpty) return;
+    
+    state = state.copyWith(isLoading: true, hasError: false, errorMessage: '');
+    
+    int successCount = 0;
+    List<String> failedFoods = [];
 
-    final selectedIds = List<String>.from(state.selectedFoodIds);
-    print('🌐 OnlineFoodCubit: Adding ${selectedIds.length} selected foods to favorites');
-
-    state = state.copyWith(isAddingToDatabase: true);
-
-    try {
-      int successCount = 0;
-      int alreadyExistsCount = 0;
-      int errorCount = 0;
-      
-      for (final foodId in selectedIds) {
-        print('🌐 OnlineFoodCubit: Getting details for "$foodId"');
-        
+    for (final foodId in state.selectedFoodIds) {
+      try {
+        // Get details first (important to get fresh details)
         final detailsResult = await _foodService.getFoodDetails(foodId);
-        if (detailsResult.isFailure) {
-          print('🌐 OnlineFoodCubit: Failed to get details for "$foodId"');
-          errorCount++;
-          continue;
-        }
         
-        final details = detailsResult.success;
-        print('🌐 OnlineFoodCubit: Got details for "${details.basicInfo.name}"');
-        
-        print('🌐 OnlineFoodCubit: Adding "${details.basicInfo.name}" to favorites');
-        final addResult = await _favoriteFoodService.addOnlineFoodToFavorites(details);
-        
-        if (addResult.isSuccess) {
-          successCount++;
-          print('🌐 OnlineFoodCubit: Successfully added "${details.basicInfo.name}" to favorites');
-        } else if (addResult.failure == FavoriteFoodError.alreadyExists) {
-          alreadyExistsCount++;
-          print('🌐 OnlineFoodCubit: "${details.basicInfo.name}" already exists in favorites');
+        if (detailsResult.isSuccess) {
+          final details = detailsResult.success;
+          final favorite = FavoriteFoodModel.fromOnlineFoodDetails(
+            details,
+            preferredMealType: preferredMealType,
+            preferredQuantityGrams: preferredQuantity,
+          );
+          
+          final addResult = await _favoriteFoodService.addToFavorites(favorite);
+          if (addResult.isSuccess) {
+            successCount++;
+          } else {
+            failedFoods.add(details.basicInfo.name);
+          }
         } else {
-          errorCount++;
-          print('🌐 OnlineFoodCubit: Failed to add "${details.basicInfo.name}" to favorites');
+          failedFoods.add('Ukendt ($foodId)'); // Could not get details
         }
+      } catch (e) {
+        failedFoods.add('Ukendt ($foodId) - Fejl: $e');
       }
-
-      // Create summary message
-      final messages = <String>[];
-      if (successCount > 0) {
-        messages.add('✅ $successCount nye favoritter tilføjet');
-      }
-      if (alreadyExistsCount > 0) {
-        messages.add('✅ $alreadyExistsCount fandtes allerede i favoritter');
-      }
-      if (errorCount > 0) {
-        messages.add('❌ $errorCount fejlede');
-      }
-
-      final summaryMessage = messages.join('\n');
-      
-      // Determine if this is truly an error or just info
-      final isError = errorCount > 0 && successCount == 0 && alreadyExistsCount == 0;
-      
-      state = state.copyWith(
-        isAddingToDatabase: false,
-        hasError: isError,
-        errorMessage: summaryMessage,
-        isSelectionMode: false, // Exit selection mode
-        selectedFoodIds: [], // Clear selections
-      );
-
-      print('🌐 OnlineFoodCubit: Batch add completed - Success: $successCount, Already exists: $alreadyExistsCount, Errors: $errorCount');
-
-    } catch (e) {
-      print('🌐 OnlineFoodCubit: Batch add error: $e');
-      state = state.copyWith(
-        isAddingToDatabase: false,
-        hasError: true,
-        errorMessage: '❌ Fejl ved tilføjelse til favoritter',
-        isSelectionMode: false,
-        selectedFoodIds: [],
-      );
     }
+    
+    String message;
+    if (successCount == state.selectedFoodIds.length) {
+      message = '✅ Alle valgte madvarer tilføjet til favoritter!';
+    } else if (successCount > 0) {
+      message = '✅ $successCount madvarer tilføjet. ${failedFoods.length} fejlede: ${failedFoods.join(', ')}';
+    } else {
+      message = '❌ Kunne ikke tilføje nogen af de valgte madvarer. Fejlede: ${failedFoods.join(', ')}';
+    }
+    
+    state = state.copyWith(
+      isLoading: false,
+      hasError: successCount < state.selectedFoodIds.length,
+      errorMessage: message,
+      selectedFoodIds: [], // Clear selection after attempt
+      isSelectionMode: false, // Exit selection mode
+    );
+    print('🌐 OnlineFoodCubit: Added $successCount / ${state.selectedFoodIds.length} to favorites.');
   }
 
   /// Dismiss error

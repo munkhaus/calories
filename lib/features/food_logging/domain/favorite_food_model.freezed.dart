@@ -235,14 +235,22 @@ mixin _$FavoriteFoodModel {
   double get fiberPer100g => throw _privateConstructorUsedError;
   double get sugarPer100g =>
       throw _privateConstructorUsedError; // Default serving information (user's preferred portion)
-  double get defaultQuantity => throw _privateConstructorUsedError;
-  String get defaultServingUnit => throw _privateConstructorUsedError;
+  double get defaultQuantity =>
+      throw _privateConstructorUsedError; // This is now effectively defaultServingGrams if unit is 'gram'
+  String get defaultServingUnit =>
+      throw _privateConstructorUsedError; // Defaulting to 'gram' more strongly
   double get defaultServingGrams =>
-      throw _privateConstructorUsedError; // Available serving sizes
+      throw _privateConstructorUsedError; // Total calories for the default serving (calculated)
+  int get totalCaloriesForServing =>
+      throw _privateConstructorUsedError; // Renamed from 'calories'
+  // Available serving sizes
   List<FavoriteServingSize> get servingSizes =>
       throw _privateConstructorUsedError; // Source and metadata
   FoodSource get source => throw _privateConstructorUsedError;
-  String get sourceProvider => throw _privateConstructorUsedError;
+  String get sourceProvider =>
+      throw _privateConstructorUsedError; // Default to manual
+  bool get isAiGenerated => throw _privateConstructorUsedError;
+  String? get aiSearchQuery => throw _privateConstructorUsedError;
   List<String> get tags => throw _privateConstructorUsedError;
   String get ingredients =>
       throw _privateConstructorUsedError; // Usage tracking
@@ -281,9 +289,12 @@ abstract class $FavoriteFoodModelCopyWith<$Res> {
     double defaultQuantity,
     String defaultServingUnit,
     double defaultServingGrams,
+    int totalCaloriesForServing,
     List<FavoriteServingSize> servingSizes,
     FoodSource source,
     String sourceProvider,
+    bool isAiGenerated,
+    String? aiSearchQuery,
     List<String> tags,
     String ingredients,
     DateTime createdAt,
@@ -320,9 +331,12 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
     Object? defaultQuantity = null,
     Object? defaultServingUnit = null,
     Object? defaultServingGrams = null,
+    Object? totalCaloriesForServing = null,
     Object? servingSizes = null,
     Object? source = null,
     Object? sourceProvider = null,
+    Object? isAiGenerated = null,
+    Object? aiSearchQuery = freezed,
     Object? tags = null,
     Object? ingredients = null,
     Object? createdAt = null,
@@ -383,6 +397,10 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
                 ? _value.defaultServingGrams
                 : defaultServingGrams // ignore: cast_nullable_to_non_nullable
                       as double,
+            totalCaloriesForServing: null == totalCaloriesForServing
+                ? _value.totalCaloriesForServing
+                : totalCaloriesForServing // ignore: cast_nullable_to_non_nullable
+                      as int,
             servingSizes: null == servingSizes
                 ? _value.servingSizes
                 : servingSizes // ignore: cast_nullable_to_non_nullable
@@ -395,6 +413,14 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
                 ? _value.sourceProvider
                 : sourceProvider // ignore: cast_nullable_to_non_nullable
                       as String,
+            isAiGenerated: null == isAiGenerated
+                ? _value.isAiGenerated
+                : isAiGenerated // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            aiSearchQuery: freezed == aiSearchQuery
+                ? _value.aiSearchQuery
+                : aiSearchQuery // ignore: cast_nullable_to_non_nullable
+                      as String?,
             tags: null == tags
                 ? _value.tags
                 : tags // ignore: cast_nullable_to_non_nullable
@@ -444,9 +470,12 @@ abstract class _$$FavoriteFoodModelImplCopyWith<$Res>
     double defaultQuantity,
     String defaultServingUnit,
     double defaultServingGrams,
+    int totalCaloriesForServing,
     List<FavoriteServingSize> servingSizes,
     FoodSource source,
     String sourceProvider,
+    bool isAiGenerated,
+    String? aiSearchQuery,
     List<String> tags,
     String ingredients,
     DateTime createdAt,
@@ -482,9 +511,12 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
     Object? defaultQuantity = null,
     Object? defaultServingUnit = null,
     Object? defaultServingGrams = null,
+    Object? totalCaloriesForServing = null,
     Object? servingSizes = null,
     Object? source = null,
     Object? sourceProvider = null,
+    Object? isAiGenerated = null,
+    Object? aiSearchQuery = freezed,
     Object? tags = null,
     Object? ingredients = null,
     Object? createdAt = null,
@@ -545,6 +577,10 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
             ? _value.defaultServingGrams
             : defaultServingGrams // ignore: cast_nullable_to_non_nullable
                   as double,
+        totalCaloriesForServing: null == totalCaloriesForServing
+            ? _value.totalCaloriesForServing
+            : totalCaloriesForServing // ignore: cast_nullable_to_non_nullable
+                  as int,
         servingSizes: null == servingSizes
             ? _value._servingSizes
             : servingSizes // ignore: cast_nullable_to_non_nullable
@@ -557,6 +593,14 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
             ? _value.sourceProvider
             : sourceProvider // ignore: cast_nullable_to_non_nullable
                   as String,
+        isAiGenerated: null == isAiGenerated
+            ? _value.isAiGenerated
+            : isAiGenerated // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        aiSearchQuery: freezed == aiSearchQuery
+            ? _value.aiSearchQuery
+            : aiSearchQuery // ignore: cast_nullable_to_non_nullable
+                  as String?,
         tags: null == tags
             ? _value._tags
             : tags // ignore: cast_nullable_to_non_nullable
@@ -597,11 +641,14 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
     this.fiberPer100g = 0.0,
     this.sugarPer100g = 0.0,
     this.defaultQuantity = 1.0,
-    this.defaultServingUnit = 'portion',
+    this.defaultServingUnit = 'gram',
     this.defaultServingGrams = 100.0,
+    this.totalCaloriesForServing = 0,
     final List<FavoriteServingSize> servingSizes = const [],
     this.source = FoodSource.userCreated,
-    this.sourceProvider = '',
+    this.sourceProvider = FavoriteFoodModel.manualProvider,
+    this.isAiGenerated = false,
+    this.aiSearchQuery,
     final List<String> tags = const [],
     this.ingredients = '',
     required this.createdAt,
@@ -649,14 +696,22 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
   @override
   @JsonKey()
   final double defaultQuantity;
+  // This is now effectively defaultServingGrams if unit is 'gram'
   @override
   @JsonKey()
   final String defaultServingUnit;
+  // Defaulting to 'gram' more strongly
   @override
   @JsonKey()
   final double defaultServingGrams;
+  // Total calories for the default serving (calculated)
+  @override
+  @JsonKey()
+  final int totalCaloriesForServing;
+  // Renamed from 'calories'
   // Available serving sizes
   final List<FavoriteServingSize> _servingSizes;
+  // Renamed from 'calories'
   // Available serving sizes
   @override
   @JsonKey()
@@ -673,6 +728,12 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
   @override
   @JsonKey()
   final String sourceProvider;
+  // Default to manual
+  @override
+  @JsonKey()
+  final bool isAiGenerated;
+  @override
+  final String? aiSearchQuery;
   final List<String> _tags;
   @override
   @JsonKey()
@@ -696,7 +757,7 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
 
   @override
   String toString() {
-    return 'FavoriteFoodModel(id: $id, foodName: $foodName, description: $description, preferredMealType: $preferredMealType, caloriesPer100g: $caloriesPer100g, proteinPer100g: $proteinPer100g, fatPer100g: $fatPer100g, carbsPer100g: $carbsPer100g, fiberPer100g: $fiberPer100g, sugarPer100g: $sugarPer100g, defaultQuantity: $defaultQuantity, defaultServingUnit: $defaultServingUnit, defaultServingGrams: $defaultServingGrams, servingSizes: $servingSizes, source: $source, sourceProvider: $sourceProvider, tags: $tags, ingredients: $ingredients, createdAt: $createdAt, lastUsed: $lastUsed, usageCount: $usageCount)';
+    return 'FavoriteFoodModel(id: $id, foodName: $foodName, description: $description, preferredMealType: $preferredMealType, caloriesPer100g: $caloriesPer100g, proteinPer100g: $proteinPer100g, fatPer100g: $fatPer100g, carbsPer100g: $carbsPer100g, fiberPer100g: $fiberPer100g, sugarPer100g: $sugarPer100g, defaultQuantity: $defaultQuantity, defaultServingUnit: $defaultServingUnit, defaultServingGrams: $defaultServingGrams, totalCaloriesForServing: $totalCaloriesForServing, servingSizes: $servingSizes, source: $source, sourceProvider: $sourceProvider, isAiGenerated: $isAiGenerated, aiSearchQuery: $aiSearchQuery, tags: $tags, ingredients: $ingredients, createdAt: $createdAt, lastUsed: $lastUsed, usageCount: $usageCount)';
   }
 
   @override
@@ -729,6 +790,11 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
                 other.defaultServingUnit == defaultServingUnit) &&
             (identical(other.defaultServingGrams, defaultServingGrams) ||
                 other.defaultServingGrams == defaultServingGrams) &&
+            (identical(
+                  other.totalCaloriesForServing,
+                  totalCaloriesForServing,
+                ) ||
+                other.totalCaloriesForServing == totalCaloriesForServing) &&
             const DeepCollectionEquality().equals(
               other._servingSizes,
               _servingSizes,
@@ -736,6 +802,10 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
             (identical(other.source, source) || other.source == source) &&
             (identical(other.sourceProvider, sourceProvider) ||
                 other.sourceProvider == sourceProvider) &&
+            (identical(other.isAiGenerated, isAiGenerated) ||
+                other.isAiGenerated == isAiGenerated) &&
+            (identical(other.aiSearchQuery, aiSearchQuery) ||
+                other.aiSearchQuery == aiSearchQuery) &&
             const DeepCollectionEquality().equals(other._tags, _tags) &&
             (identical(other.ingredients, ingredients) ||
                 other.ingredients == ingredients) &&
@@ -764,9 +834,12 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
     defaultQuantity,
     defaultServingUnit,
     defaultServingGrams,
+    totalCaloriesForServing,
     const DeepCollectionEquality().hash(_servingSizes),
     source,
     sourceProvider,
+    isAiGenerated,
+    aiSearchQuery,
     const DeepCollectionEquality().hash(_tags),
     ingredients,
     createdAt,
@@ -806,9 +879,12 @@ abstract class _FavoriteFoodModel extends FavoriteFoodModel {
     final double defaultQuantity,
     final String defaultServingUnit,
     final double defaultServingGrams,
+    final int totalCaloriesForServing,
     final List<FavoriteServingSize> servingSizes,
     final FoodSource source,
     final String sourceProvider,
+    final bool isAiGenerated,
+    final String? aiSearchQuery,
     final List<String> tags,
     final String ingredients,
     required final DateTime createdAt,
@@ -841,17 +917,24 @@ abstract class _FavoriteFoodModel extends FavoriteFoodModel {
   @override
   double get sugarPer100g; // Default serving information (user's preferred portion)
   @override
-  double get defaultQuantity;
+  double get defaultQuantity; // This is now effectively defaultServingGrams if unit is 'gram'
   @override
-  String get defaultServingUnit;
+  String get defaultServingUnit; // Defaulting to 'gram' more strongly
   @override
-  double get defaultServingGrams; // Available serving sizes
+  double get defaultServingGrams; // Total calories for the default serving (calculated)
+  @override
+  int get totalCaloriesForServing; // Renamed from 'calories'
+  // Available serving sizes
   @override
   List<FavoriteServingSize> get servingSizes; // Source and metadata
   @override
   FoodSource get source;
   @override
-  String get sourceProvider;
+  String get sourceProvider; // Default to manual
+  @override
+  bool get isAiGenerated;
+  @override
+  String? get aiSearchQuery;
   @override
   List<String> get tags;
   @override

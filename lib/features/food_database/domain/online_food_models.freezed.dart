@@ -21,9 +21,12 @@ FoodTags _$FoodTagsFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$FoodTags {
+  @JsonKey(fromJson: _foodTypesFromJsonLenient)
   List<FoodType> get foodTypes => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
   List<CuisineStyle> get cuisineStyles => throw _privateConstructorUsedError;
   List<DietaryTag> get dietaryTags => throw _privateConstructorUsedError;
+  @JsonKey(fromJson: _preparationTypesFromJsonLenient)
   List<PreparationType> get preparationTypes =>
       throw _privateConstructorUsedError;
   List<String> get customTags => throw _privateConstructorUsedError;
@@ -44,9 +47,11 @@ abstract class $FoodTagsCopyWith<$Res> {
       _$FoodTagsCopyWithImpl<$Res, FoodTags>;
   @useResult
   $Res call({
-    List<FoodType> foodTypes,
+    @JsonKey(fromJson: _foodTypesFromJsonLenient) List<FoodType> foodTypes,
+    @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     List<CuisineStyle> cuisineStyles,
     List<DietaryTag> dietaryTags,
+    @JsonKey(fromJson: _preparationTypesFromJsonLenient)
     List<PreparationType> preparationTypes,
     List<String> customTags,
   });
@@ -111,9 +116,11 @@ abstract class _$$FoodTagsImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    List<FoodType> foodTypes,
+    @JsonKey(fromJson: _foodTypesFromJsonLenient) List<FoodType> foodTypes,
+    @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     List<CuisineStyle> cuisineStyles,
     List<DietaryTag> dietaryTags,
+    @JsonKey(fromJson: _preparationTypesFromJsonLenient)
     List<PreparationType> preparationTypes,
     List<String> customTags,
   });
@@ -170,9 +177,12 @@ class __$$FoodTagsImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$FoodTagsImpl implements _FoodTags {
   const _$FoodTagsImpl({
+    @JsonKey(fromJson: _foodTypesFromJsonLenient)
     final List<FoodType> foodTypes = const [],
+    @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     final List<CuisineStyle> cuisineStyles = const [],
     final List<DietaryTag> dietaryTags = const [],
+    @JsonKey(fromJson: _preparationTypesFromJsonLenient)
     final List<PreparationType> preparationTypes = const [],
     final List<String> customTags = const [],
   }) : _foodTypes = foodTypes,
@@ -186,7 +196,7 @@ class _$FoodTagsImpl implements _FoodTags {
 
   final List<FoodType> _foodTypes;
   @override
-  @JsonKey()
+  @JsonKey(fromJson: _foodTypesFromJsonLenient)
   List<FoodType> get foodTypes {
     if (_foodTypes is EqualUnmodifiableListView) return _foodTypes;
     // ignore: implicit_dynamic_type
@@ -195,7 +205,7 @@ class _$FoodTagsImpl implements _FoodTags {
 
   final List<CuisineStyle> _cuisineStyles;
   @override
-  @JsonKey()
+  @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
   List<CuisineStyle> get cuisineStyles {
     if (_cuisineStyles is EqualUnmodifiableListView) return _cuisineStyles;
     // ignore: implicit_dynamic_type
@@ -213,7 +223,7 @@ class _$FoodTagsImpl implements _FoodTags {
 
   final List<PreparationType> _preparationTypes;
   @override
-  @JsonKey()
+  @JsonKey(fromJson: _preparationTypesFromJsonLenient)
   List<PreparationType> get preparationTypes {
     if (_preparationTypes is EqualUnmodifiableListView)
       return _preparationTypes;
@@ -289,9 +299,12 @@ class _$FoodTagsImpl implements _FoodTags {
 
 abstract class _FoodTags implements FoodTags {
   const factory _FoodTags({
+    @JsonKey(fromJson: _foodTypesFromJsonLenient)
     final List<FoodType> foodTypes,
+    @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     final List<CuisineStyle> cuisineStyles,
     final List<DietaryTag> dietaryTags,
+    @JsonKey(fromJson: _preparationTypesFromJsonLenient)
     final List<PreparationType> preparationTypes,
     final List<String> customTags,
   }) = _$FoodTagsImpl;
@@ -300,12 +313,15 @@ abstract class _FoodTags implements FoodTags {
       _$FoodTagsImpl.fromJson;
 
   @override
+  @JsonKey(fromJson: _foodTypesFromJsonLenient)
   List<FoodType> get foodTypes;
   @override
+  @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
   List<CuisineStyle> get cuisineStyles;
   @override
   List<DietaryTag> get dietaryTags;
   @override
+  @JsonKey(fromJson: _preparationTypesFromJsonLenient)
   List<PreparationType> get preparationTypes;
   @override
   List<String> get customTags;
@@ -589,8 +605,8 @@ mixin _$OnlineFoodResult {
   String get description => throw _privateConstructorUsedError;
   String get imageUrl => throw _privateConstructorUsedError;
   String get provider => throw _privateConstructorUsedError;
-  SearchMode get searchMode =>
-      throw _privateConstructorUsedError; // Whether this is a dish or ingredient
+  @JsonKey(fromJson: _searchModeFromJsonLenient)
+  SearchMode get searchMode => throw _privateConstructorUsedError;
   FoodTags get tags => throw _privateConstructorUsedError;
   double get estimatedCalories => throw _privateConstructorUsedError;
 
@@ -617,7 +633,7 @@ abstract class $OnlineFoodResultCopyWith<$Res> {
     String description,
     String imageUrl,
     String provider,
-    SearchMode searchMode,
+    @JsonKey(fromJson: _searchModeFromJsonLenient) SearchMode searchMode,
     FoodTags tags,
     double estimatedCalories,
   });
@@ -714,7 +730,7 @@ abstract class _$$OnlineFoodResultImplCopyWith<$Res>
     String description,
     String imageUrl,
     String provider,
-    SearchMode searchMode,
+    @JsonKey(fromJson: _searchModeFromJsonLenient) SearchMode searchMode,
     FoodTags tags,
     double estimatedCalories,
   });
@@ -794,7 +810,7 @@ class _$OnlineFoodResultImpl implements _OnlineFoodResult {
     required this.description,
     this.imageUrl = '',
     required this.provider,
-    required this.searchMode,
+    @JsonKey(fromJson: _searchModeFromJsonLenient) required this.searchMode,
     this.tags = const FoodTags(),
     this.estimatedCalories = 0,
   });
@@ -814,8 +830,8 @@ class _$OnlineFoodResultImpl implements _OnlineFoodResult {
   @override
   final String provider;
   @override
+  @JsonKey(fromJson: _searchModeFromJsonLenient)
   final SearchMode searchMode;
-  // Whether this is a dish or ingredient
   @override
   @JsonKey()
   final FoodTags tags;
@@ -886,6 +902,7 @@ abstract class _OnlineFoodResult implements OnlineFoodResult {
     required final String description,
     final String imageUrl,
     required final String provider,
+    @JsonKey(fromJson: _searchModeFromJsonLenient)
     required final SearchMode searchMode,
     final FoodTags tags,
     final double estimatedCalories,
@@ -905,7 +922,8 @@ abstract class _OnlineFoodResult implements OnlineFoodResult {
   @override
   String get provider;
   @override
-  SearchMode get searchMode; // Whether this is a dish or ingredient
+  @JsonKey(fromJson: _searchModeFromJsonLenient)
+  SearchMode get searchMode;
   @override
   FoodTags get tags;
   @override
@@ -927,7 +945,8 @@ OnlineFoodDetails _$OnlineFoodDetailsFromJson(Map<String, dynamic> json) {
 mixin _$OnlineFoodDetails {
   OnlineFoodResult get basicInfo => throw _privateConstructorUsedError;
   NutritionInfo get nutrition => throw _privateConstructorUsedError;
-  List<ServingInfo> get servingSizes => throw _privateConstructorUsedError;
+  List<OnlineServingSize> get servingSizes =>
+      throw _privateConstructorUsedError;
   String get ingredients => throw _privateConstructorUsedError;
   String get instructions => throw _privateConstructorUsedError;
 
@@ -951,7 +970,7 @@ abstract class $OnlineFoodDetailsCopyWith<$Res> {
   $Res call({
     OnlineFoodResult basicInfo,
     NutritionInfo nutrition,
-    List<ServingInfo> servingSizes,
+    List<OnlineServingSize> servingSizes,
     String ingredients,
     String instructions,
   });
@@ -994,7 +1013,7 @@ class _$OnlineFoodDetailsCopyWithImpl<$Res, $Val extends OnlineFoodDetails>
             servingSizes: null == servingSizes
                 ? _value.servingSizes
                 : servingSizes // ignore: cast_nullable_to_non_nullable
-                      as List<ServingInfo>,
+                      as List<OnlineServingSize>,
             ingredients: null == ingredients
                 ? _value.ingredients
                 : ingredients // ignore: cast_nullable_to_non_nullable
@@ -1041,7 +1060,7 @@ abstract class _$$OnlineFoodDetailsImplCopyWith<$Res>
   $Res call({
     OnlineFoodResult basicInfo,
     NutritionInfo nutrition,
-    List<ServingInfo> servingSizes,
+    List<OnlineServingSize> servingSizes,
     String ingredients,
     String instructions,
   });
@@ -1085,7 +1104,7 @@ class __$$OnlineFoodDetailsImplCopyWithImpl<$Res>
         servingSizes: null == servingSizes
             ? _value._servingSizes
             : servingSizes // ignore: cast_nullable_to_non_nullable
-                  as List<ServingInfo>,
+                  as List<OnlineServingSize>,
         ingredients: null == ingredients
             ? _value.ingredients
             : ingredients // ignore: cast_nullable_to_non_nullable
@@ -1105,7 +1124,7 @@ class _$OnlineFoodDetailsImpl implements _OnlineFoodDetails {
   const _$OnlineFoodDetailsImpl({
     required this.basicInfo,
     required this.nutrition,
-    final List<ServingInfo> servingSizes = const [],
+    final List<OnlineServingSize> servingSizes = const [],
     this.ingredients = '',
     this.instructions = '',
   }) : _servingSizes = servingSizes;
@@ -1117,10 +1136,10 @@ class _$OnlineFoodDetailsImpl implements _OnlineFoodDetails {
   final OnlineFoodResult basicInfo;
   @override
   final NutritionInfo nutrition;
-  final List<ServingInfo> _servingSizes;
+  final List<OnlineServingSize> _servingSizes;
   @override
   @JsonKey()
-  List<ServingInfo> get servingSizes {
+  List<OnlineServingSize> get servingSizes {
     if (_servingSizes is EqualUnmodifiableListView) return _servingSizes;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_servingSizes);
@@ -1189,7 +1208,7 @@ abstract class _OnlineFoodDetails implements OnlineFoodDetails {
   const factory _OnlineFoodDetails({
     required final OnlineFoodResult basicInfo,
     required final NutritionInfo nutrition,
-    final List<ServingInfo> servingSizes,
+    final List<OnlineServingSize> servingSizes,
     final String ingredients,
     final String instructions,
   }) = _$OnlineFoodDetailsImpl;
@@ -1202,7 +1221,7 @@ abstract class _OnlineFoodDetails implements OnlineFoodDetails {
   @override
   NutritionInfo get nutrition;
   @override
-  List<ServingInfo> get servingSizes;
+  List<OnlineServingSize> get servingSizes;
   @override
   String get ingredients;
   @override
