@@ -44,57 +44,53 @@ class LLMFoodService implements IOnlineFoodService {
     try {
       print('🤖 LLMFoodService: Initializing Gemini API...');
       
-      if (_isInitialized && _model != null) {
-        print('🤖 LLMFoodService: Already initialized and model exists.');
-        return Success(null);
-      }
-      
-      if (LLMFoodService._apiKey.isEmpty) {
-        print('❌ LLMFoodService: CRITICAL - No API key found (should be hardcoded). Cannot proceed.');
-        _isInitialized = false; // Ensure not marked as initialized
-        _model = null;
-        return Failure(OnlineFoodError.apiKeyMissing);
-      }
-      
-      print('🤖 LLMFoodService: Hardcoded API key found: ${LLMFoodService._apiKey}');
-      
+      // Always try to create model if it's null, even if _isInitialized was true
       if (_model == null) {
-        print('🤖 LLMFoodService: GenerativeModel is null, attempting to create new instance...');
+        print('🤖 LLMFoodService: Model is null, proceeding with creation/re-creation.');
+        if (LLMFoodService._apiKey.isEmpty) {
+          print('❌ LLMFoodService: CRITICAL - No API key found. Cannot create model.');
+          _isInitialized = false;
+          _model = null;
+          return Failure(OnlineFoodError.apiKeyMissing);
+        }
+        
+        print('🤖 LLMFoodService: Hardcoded API key for model creation: ${LLMFoodService._apiKey.substring(0,10)}... (masked)');
         try {
-          print('🤖 LLMFoodService: ==> Attempting to use API Key for GenerativeModel: ${LLMFoodService._apiKey}');
           _model = GenerativeModel(
-            model: 'gemini-1.5-flash', // Ensure this is a valid and available model
+            model: 'gemini-1.5-flash',
             apiKey: LLMFoodService._apiKey,
             generationConfig: GenerationConfig(
-              temperature: 0.1, // Lower temperature for more deterministic results
-              // topK: 1, // Consider removing or adjusting if too restrictive
-              // topP: 1, // Consider removing or adjusting if too restrictive
-              maxOutputTokens: 8192, // Keep high for detailed JSON
+              temperature: 0.1,
+              maxOutputTokens: 8192,
             ),
           );
-          print('✅ LLMFoodService: GenerativeModel created successfully!');
+          print('✅ LLMFoodService: GenerativeModel created/re-created successfully!');
         } catch (e, stackTrace) {
-          print('❌ LLMFoodService: CRITICAL - Failed to create GenerativeModel instance.');
-          print('❌ LLMFoodService: Error during model creation: $e');
-          print('❌ LLMFoodService: Stack trace for model creation failure: $stackTrace');
-          _isInitialized = false; // Ensure not marked as initialized
+          print('❌ LLMFoodService: CRITICAL - Failed to create/re-create GenerativeModel instance.');
+          print('❌ LLMFoodService: Error: $e');
+          print('❌ LLMFoodService: Stack trace: $stackTrace');
+          _isInitialized = false;
           _model = null;
-          // Attempt to map specific API errors
           if (e.toString().contains('API key not valid') || e.toString().contains('InvalidApiKey')) {
             return Failure(OnlineFoodError.apiKeyMissing);
           }
-          return Failure(OnlineFoodError.providerUnavailable); // General failure if not API key
+          return Failure(OnlineFoodError.providerUnavailable);
         }
       } else {
-        print('🤖 LLMFoodService: GenerativeModel instance already exists.');
+        print('🤖 LLMFoodService: GenerativeModel instance already exists, not re-creating.');
       }
       
-      _isInitialized = true;
-      print('✅ LLMFoodService: Initialization successful. Model is ready.');
+      _isInitialized = _model != null; // Mark as initialized only if model exists
+      if (_isInitialized) {
+        print('✅ LLMFoodService: Initialization/Verification successful. Model is ready.');
+      } else {
+        print('❌ LLMFoodService: Initialization failed, model is null.');
+        // Ensure we return a failure if model creation failed silently or was skipped but model is null
+        return Failure(OnlineFoodError.providerUnavailable); 
+      }
       return Success(null);
     } catch (e, stackTrace) {
-      // This outer catch is for other unexpected errors during initialization
-      print('❌ LLMFoodService: Unexpected error during outer initialization block: $e');
+      print('❌ LLMFoodService: Unexpected error during outer initialize() block: $e');
       print('❌ LLMFoodService: Stack trace: $stackTrace');
       _isInitialized = false;
       _model = null;
@@ -110,29 +106,24 @@ class LLMFoodService implements IOnlineFoodService {
       final initResult = await initialize();
       if (initResult.isFailure) {
         print('❌ LLMFoodService: Initialization failed in searchFoods. Error: ${initResult.failure}');
-        // Ensure the specific error from initialize is returned
         return Failure(initResult.failure);
       }
-      // After successful initialization, _model should not be null.
-      // If it is, something went wrong in initialize() despite it returning Success.
       if (_model == null) {
-          print('❌ LLMFoodService: CRITICAL - Initialization reported success but model is still null!');
-          return Failure(OnlineFoodError.unknown); // Should not happen
+          print('❌ LLMFoodService: CRITICAL - Initialization reported success but model is STILL null!');
+          _isInitialized = false; // Force re-init next time
+          return Failure(OnlineFoodError.unknown); 
       }
       print('🤖 LLMFoodService: Initialization successful in searchFoods.');
     } else {
       print('🤖 LLMFoodService: Already initialized and model exists.');
     }
 
-    // Add a specific check for API key validity right before the call.
-    // This is a bit redundant if initialize() works, but helps pinpoint issues.
     if (LLMFoodService._apiKey.isEmpty) {
         print('❌ LLMFoodService: API key is empty before API call!');
         return Failure(OnlineFoodError.apiKeyMissing);
     }
-    // Log the key to be used, again, to be absolutely sure
-    print('🤖 LLMFoodService: About to make API call with key: ${LLMFoodService._apiKey.substring(0, 10)}... (masked)');
-
+    
+    print('🤖 LLMFoodService: Pre-API call check: Model: gemini-1.5-flash, API Key (masked): ${LLMFoodService._apiKey.substring(0,10)}...');
 
     try {
       print('🤖 LLMFoodService: USING CURRENT DETAILED PROMPT GENERATOR - v2');
@@ -145,6 +136,7 @@ class LLMFoodService implements IOnlineFoodService {
       print('🤖 LLMFoodService: Prompt preview: ${prompt.substring(0, math.min(200, prompt.length))}...');
       print('🤖 LLMFoodService: === REQUEST END ===');
       
+      print('🤖 LLMFoodService: About to call _model!.generateContent with API Key (masked): ${LLMFoodService._apiKey.substring(0,10)}...');
       final response = await _model!.generateContent([Content.text(prompt)]);
       final responseText = response.text ?? '';
       
