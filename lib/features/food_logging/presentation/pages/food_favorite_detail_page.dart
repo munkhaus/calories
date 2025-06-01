@@ -6,6 +6,8 @@ import '../../../../core/theme/app_theme.dart';
 import '../../domain/favorite_food_model.dart';
 import '../../domain/user_food_log_model.dart';
 import '../../infrastructure/favorite_food_service.dart';
+import '../../../food_database/infrastructure/llm_food_service.dart';
+import '../../../food_database/domain/online_food_models.dart';
 
 /// Detailed page for creating and editing food favorites
 class FoodFavoriteDetailPage extends ConsumerStatefulWidget {
@@ -25,38 +27,49 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   final _nameController = TextEditingController();
   final _caloriesController = TextEditingController();
   final _quantityController = TextEditingController();
-  final _servingUnitController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _fatController = TextEditingController();
-  final _carbsController = TextEditingController();
   final _notesController = TextEditingController();
+  final _searchController = TextEditingController();
   
   MealType _selectedMealType = MealType.morgenmad;
+  String _selectedServingUnit = 'stk';
   bool _isLoading = false;
   bool _isEditing = false;
+  bool _useAiSearch = false;
+  bool _isSearching = false;
+  List<OnlineFoodResult> _searchResults = [];
+  LLMFoodService? _llmFoodService;
+
+  // Predefined serving units
+  static const List<String> _servingUnits = [
+    'stk',
+    'portioner',
+    'gram',
+    'skiver',
+    'kopper',
+    'spsk',
+    'tsk',
+    'dl',
+    'liter',
+  ];
 
   @override
   void initState() {
     super.initState();
     _isEditing = widget.existingFavorite != null;
+    _llmFoodService = LLMFoodService();
+    _llmFoodService!.initialize(); // Initialize the AI service
     
     if (_isEditing) {
       final favorite = widget.existingFavorite!;
       _nameController.text = favorite.foodName;
       _caloriesController.text = favorite.caloriesPer100g.toString();
       _quantityController.text = favorite.defaultQuantity.toString();
-      _servingUnitController.text = favorite.defaultServingUnit;
-      _proteinController.text = favorite.proteinPer100g.toString();
-      _fatController.text = favorite.fatPer100g.toString();
-      _carbsController.text = favorite.carbsPer100g.toString();
+      _selectedServingUnit = favorite.defaultServingUnit;
       _selectedMealType = favorite.preferredMealType;
     } else {
       // Set defaults for new favorite
       _quantityController.text = '1';
-      _servingUnitController.text = 'stk';
-      _proteinController.text = '0';
-      _fatController.text = '0';
-      _carbsController.text = '0';
+      _selectedServingUnit = 'stk';
     }
   }
 
@@ -65,11 +78,8 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     _nameController.dispose();
     _caloriesController.dispose();
     _quantityController.dispose();
-    _servingUnitController.dispose();
-    _proteinController.dispose();
-    _fatController.dispose();
-    _carbsController.dispose();
     _notesController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -127,7 +137,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                 SizedBox(height: KSizes.margin2x),
                 
                 Text(
-                  'Indtast detaljerede oplysninger om din favorit mad',
+                  'Indtast de vigtigste oplysninger om din favorit mad',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
                     color: AppColors.textSecondary,
@@ -149,6 +159,120 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                     return null;
                   },
                 ),
+                
+                SizedBox(height: KSizes.margin2x),
+                
+                // AI Search Toggle
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                  ),
+                  child: SwitchListTile(
+                    title: Text(
+                      'Brug AI søgning',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightMedium,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Søg og vælg mad for at få præcise data',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    value: _useAiSearch,
+                    onChanged: (value) {
+                      setState(() {
+                        _useAiSearch = value;
+                        if (!value) {
+                          _searchResults = [];
+                          _searchController.clear();
+                        }
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                    secondary: Icon(
+                      MdiIcons.robot,
+                      color: _useAiSearch ? AppColors.primary : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                
+                if (_useAiSearch) ...[
+                  SizedBox(height: KSizes.margin4x),
+                  
+                  // AI Search Field
+                  TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Søg efter mad',
+                      hintText: 'f.eks. "havregrød" eller "kylling"',
+                      prefixIcon: Icon(MdiIcons.magnify, color: AppColors.primary),
+                      suffixIcon: _isSearching
+                          ? Padding(
+                              padding: EdgeInsets.all(KSizes.margin3x),
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                ),
+                              ),
+                            )
+                          : IconButton(
+                              onPressed: _searchFood,
+                              icon: Icon(MdiIcons.send, color: AppColors.primary),
+                            ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                        borderSide: BorderSide(color: AppColors.primary, width: 2),
+                      ),
+                    ),
+                    onSubmitted: (_) => _searchFood(),
+                  ),
+                  
+                  // Search Results
+                  if (_searchResults.isNotEmpty) ...[
+                    SizedBox(height: KSizes.margin3x),
+                    Text(
+                      'Søgeresultater:',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin2x),
+                    ...(_searchResults.map((food) => Container(
+                      margin: EdgeInsets.only(bottom: KSizes.margin2x),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.border),
+                        borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      ),
+                      child: ListTile(
+                        title: Text(
+                          food.name,
+                          style: TextStyle(fontWeight: KSizes.fontWeightMedium),
+                        ),
+                        subtitle: Text(
+                          food.description,
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                        trailing: Icon(MdiIcons.chevronRight, color: AppColors.primary),
+                        onTap: () => _selectSearchResult(food),
+                      ),
+                    )).toList()),
+                  ],
+                ],
                 
                 SizedBox(height: KSizes.margin4x),
                 
@@ -182,18 +306,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                     SizedBox(width: KSizes.margin3x),
                     Expanded(
                       flex: 1,
-                      child: _buildTextField(
-                        controller: _servingUnitController,
-                        label: 'Enhed',
-                        hint: 'stk',
-                        icon: MdiIcons.formatListBulleted,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Indtast enhed';
-                          }
-                          return null;
-                        },
-                      ),
+                      child: _buildServingUnitDropdown(),
                     ),
                   ],
                 ),
@@ -219,55 +332,6 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                 ),
                 
                 SizedBox(height: KSizes.margin6x),
-                
-                // Nutrition section header
-                Text(
-                  'Næringsindhold (valgfrit)',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeL,
-                    fontWeight: KSizes.fontWeightBold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                
-                SizedBox(height: KSizes.margin4x),
-                
-                // Nutrition row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _proteinController,
-                        label: 'Protein (g)',
-                        hint: '0',
-                        icon: MdiIcons.cow,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    SizedBox(width: KSizes.margin2x),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _fatController,
-                        label: 'Fedt (g)',
-                        hint: '0',
-                        icon: MdiIcons.waterPercent,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    SizedBox(width: KSizes.margin2x),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _carbsController,
-                        label: 'Kulhydrater (g)',
-                        hint: '0',
-                        icon: MdiIcons.grain,
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                SizedBox(height: KSizes.margin4x),
                 
                 // Notes
                 _buildTextField(
@@ -373,6 +437,34 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     );
   }
 
+  Widget _buildServingUnitDropdown() {
+    return DropdownButtonFormField<String>(
+      value: _selectedServingUnit,
+      decoration: InputDecoration(
+        labelText: 'Enhed',
+        prefixIcon: Icon(MdiIcons.formatListBulleted, color: AppColors.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+          borderSide: BorderSide(color: AppColors.primary, width: 2),
+        ),
+      ),
+      items: _servingUnits.map((unit) {
+        return DropdownMenuItem(
+          value: unit,
+          child: Text(unit),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedServingUnit = value!;
+        });
+      },
+    );
+  }
+
   String _getMealTypeDisplayName(MealType mealType) {
     switch (mealType) {
       case MealType.none:
@@ -398,11 +490,6 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
         final name = _nameController.text.trim();
         final calories = int.parse(_caloriesController.text.trim());
         final quantity = double.parse(_quantityController.text.trim());
-        final servingUnit = _servingUnitController.text.trim();
-        final protein = double.tryParse(_proteinController.text.trim()) ?? 0.0;
-        final fat = double.tryParse(_fatController.text.trim()) ?? 0.0;
-        final carbs = double.tryParse(_carbsController.text.trim()) ?? 0.0;
-        final notes = _notesController.text.trim();
 
         final favoriteService = FavoriteFoodService();
         
@@ -412,11 +499,14 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
             foodName: name,
             preferredMealType: _selectedMealType,
             defaultQuantity: quantity,
-            defaultServingUnit: servingUnit,
+            defaultServingUnit: _selectedServingUnit,
             caloriesPer100g: calories,
-            proteinPer100g: protein,
-            fatPer100g: fat,
-            carbsPer100g: carbs,
+            proteinPer100g: 0.0, // Set default nutrition values
+            fatPer100g: 0.0,
+            carbsPer100g: 0.0,
+            usageCount: 0,
+            lastUsed: DateTime.now(),
+            createdAt: DateTime.now(),
           );
           
           final result = await favoriteService.updateFavorite(updatedFavorite);
@@ -445,11 +535,11 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
             foodName: name,
             preferredMealType: _selectedMealType,
             defaultQuantity: quantity,
-            defaultServingUnit: servingUnit,
+            defaultServingUnit: _selectedServingUnit,
             caloriesPer100g: calories,
-            proteinPer100g: protein,
-            fatPer100g: fat,
-            carbsPer100g: carbs,
+            proteinPer100g: 0.0, // Set default nutrition values
+            fatPer100g: 0.0,
+            carbsPer100g: 0.0,
             usageCount: 0,
             lastUsed: DateTime.now(),
             createdAt: DateTime.now(),
@@ -491,6 +581,111 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
           });
         }
       }
+    }
+  }
+
+  Future<void> _searchFood() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) return;
+
+    setState(() {
+      _isSearching = true;
+      _searchResults = [];
+    });
+
+    try {
+      final result = await _llmFoodService!.searchFoods(query);
+      if (result.isSuccess) {
+        setState(() {
+          _searchResults = result.success;
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ingen resultater fundet'),
+              backgroundColor: AppColors.warning,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved søgning: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+        });
+      }
+    }
+  }
+
+  void _selectSearchResult(OnlineFoodResult food) async {
+    try {
+      // Get detailed food information
+      final detailsResult = await _llmFoodService!.getFoodDetails(food.id);
+      
+      if (detailsResult.isSuccess) {
+        final details = detailsResult.success;
+        
+        // Auto-populate fields from AI search result
+        _nameController.text = food.name;
+        _caloriesController.text = details.nutrition.calories.round().toString();
+        
+        // Find the best matching serving size
+        final defaultServing = details.servingSizes.firstWhere(
+          (s) => s.isDefault,
+          orElse: () => details.servingSizes.first,
+        );
+        
+        _quantityController.text = '1';
+        
+        // Try to match serving unit to our predefined units
+        String unit = 'stk'; // default
+        final servingName = defaultServing.name.toLowerCase();
+        if (servingName.contains('gram') || servingName.contains('g')) {
+          unit = 'gram';
+        } else if (servingName.contains('portion')) {
+          unit = 'portioner';
+        } else if (servingName.contains('skive')) {
+          unit = 'skiver';
+        }
+        
+        setState(() {
+          _selectedServingUnit = unit;
+          _useAiSearch = false; // Hide search after selection
+          _searchResults = [];
+          _searchController.clear();
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${food.name} valgt - du kan nu redigere detaljerne'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kunne ikke hente detaljer for ${food.name}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fejl ved valg af mad: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
     }
   }
 } 
