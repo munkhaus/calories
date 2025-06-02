@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
@@ -36,42 +37,39 @@ class ProfilePage extends ConsumerWidget {
               padding: const EdgeInsets.all(KSizes.margin4x),
               child: Column(
                 children: [
-                  // Header with new design
-                  OnboardingSection(
-                    gradientColor: AppColors.primary,
-                    child: OnboardingSectionHeader(
-                      title: userProfile.name.isNotEmpty ? userProfile.name : 'Din Profil',
-                      subtitle: userProfile.name.isNotEmpty 
-                          ? 'Administrer dine indstillinger og præferencer'
-                          : 'Gennemgå onboarding for at sætte din profil op',
-                      icon: MdiIcons.account,
-                      iconColor: AppColors.primary,
-                    ),
+                  // Header with standardized design
+                  StandardPageHeader(
+                    title: userProfile.name.isNotEmpty ? userProfile.name : 'Din Profil',
+                    subtitle: userProfile.name.isNotEmpty 
+                        ? 'Administrer dine indstillinger og præferencer'
+                        : 'Gennemgå onboarding for at sætte din profil op',
+                    icon: MdiIcons.account,
+                    iconColor: AppColors.primary,
                   ),
                   
-                  KSizes.spacingVerticalXL,
+                  const SizedBox(height: KSizes.margin4x),
                   
                   // Profile Summary Card (clickable to edit profile)
                   if (userProfile.name.isNotEmpty) ...[
                     _buildEditableProfileSection(context, ref, userProfile),
-                    KSizes.spacingVerticalXL,
+                    const SizedBox(height: KSizes.margin4x),
                   ],
                   
                   // Physical Stats Card (clickable to edit weight/goals)
                   if (userProfile.heightCm > 0 || userProfile.currentWeightKg > 0) ...[
                     _buildEditablePhysicalStatsSection(context, userProfile),
-                    KSizes.spacingVerticalXL,
+                    const SizedBox(height: KSizes.margin4x),
                   ],
                   
                   // Goals Card (clickable to edit goals)
                   if (userProfile.goalType != null || userProfile.targetCalories > 0) ...[
                     _buildEditableGoalsSection(context, userProfile),
-                    KSizes.spacingVerticalXL,
+                    const SizedBox(height: KSizes.margin4x),
                   ],
                   
                   // Activity Settings Card (clickable)
                   _buildEditableActivitySection(context),
-                  KSizes.spacingVerticalXL,
+                  const SizedBox(height: KSizes.margin4x),
                   
                   // App Settings and Data Management Section
                   _buildAppSettingsSection(context, ref, userProfile),
@@ -214,137 +212,9 @@ class ProfilePage extends ConsumerWidget {
             
             const SizedBox(height: KSizes.margin6x),
             
+            // Content
             ...children,
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppSettingsSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
-    return OnboardingSection(
-      gradientColor: AppColors.warning,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          OnboardingSectionHeader(
-            title: 'App og dataindstillinger',
-            subtitle: 'Administrer dine data og app-indstillinger',
-            icon: MdiIcons.cog,
-            iconColor: AppColors.warning,
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Settings options
-          if (userProfile.name.isEmpty)
-            _buildSettingsOption(
-              title: 'Gennemgå onboarding',
-              subtitle: 'Sæt din profil op med personlige mål og præferencer',
-              icon: MdiIcons.accountPlus,
-              onTap: () => _navigateToOnboarding(context, ref),
-            ),
-
-          _buildSettingsOption(
-            title: 'Slet alle mad favoritter',
-            subtitle: 'Fjern alle dine gemte mad favoritter',
-            icon: MdiIcons.heartRemove,
-            onTap: () => _showClearFavoritesDialog(context, ref),
-          ),
-          
-          _buildSettingsOption(
-            title: 'Information',
-            subtitle: 'Om appen, version og vilkår',
-            icon: MdiIcons.informationOutline,
-            onTap: () => _navigateToInfo(context),
-          ),
-          
-          if (userProfile.name.isNotEmpty)
-            _buildSettingsOption(
-              title: 'Nulstil profil',
-              subtitle: 'Genstart onboarding og ryd alle data',
-              icon: MdiIcons.refresh,
-              onTap: () => _showRestartOnboardingDialog(context, ref),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsOption({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: KSizes.margin4x),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        child: Container(
-          padding: const EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.8),
-                Colors.white.withOpacity(0.4),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(KSizes.radiusL),
-            border: Border.all(
-              color: AppColors.textSecondary.withOpacity(0.1),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  icon,
-                  color: AppColors.primary,
-                  size: KSizes.iconM,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        fontWeight: KSizes.fontWeightMedium,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                MdiIcons.chevronRight,
-                color: AppColors.textTertiary,
-                size: KSizes.iconS,
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -358,13 +228,13 @@ class ProfilePage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(KSizes.margin2x),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.surface.withOpacity(0.3),
               borderRadius: BorderRadius.circular(KSizes.radiusS),
             ),
             child: Icon(
               icon,
-              color: AppColors.primary,
-              size: KSizes.iconM,
+              size: KSizes.iconS,
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(width: KSizes.margin3x),
@@ -385,8 +255,8 @@ class ProfilePage extends ConsumerWidget {
                   value,
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
-                    fontWeight: KSizes.fontWeightMedium,
                     color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -397,11 +267,132 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  int _calculateAge(DateTime dateOfBirth) {
+  Widget _buildAppSettingsSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
+    return OnboardingSection(
+      gradientColor: AppColors.warning,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          OnboardingSectionHeader(
+            title: 'App indstillinger',
+            subtitle: 'Data og systemindstillinger',
+            icon: MdiIcons.cog,
+            iconColor: AppColors.warning,
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Settings options
+          _buildSettingsButton(
+            context,
+            'App information',
+            'Om appen og vilkår',
+            MdiIcons.informationOutline,
+            () => _showInfoPage(context),
+          ),
+          
+          const SizedBox(height: KSizes.margin3x),
+          
+          _buildSettingsButton(
+            context,
+            'Nulstil data',
+            'Slet alle data og start forfra',
+            MdiIcons.deleteOutline,
+            () => _showResetDialog(context, ref),
+            isDestructive: true,
+          ),
+          
+          const SizedBox(height: KSizes.margin3x),
+          
+          _buildSettingsButton(
+            context,
+            'Gennemgå onboarding',
+            'Start setup forfra',
+            MdiIcons.restart,
+            () => _startOnboarding(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsButton(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    VoidCallback onTap, {
+    bool isDestructive = false,
+  }) {
+    final color = isDestructive ? AppColors.error : AppColors.textPrimary;
+    
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(KSizes.radiusM),
+      child: Container(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(KSizes.margin2x),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(KSizes.radiusS),
+              ),
+              child: Icon(
+                icon,
+                size: KSizes.iconM,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: KSizes.margin3x),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeM,
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeS,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              MdiIcons.chevronRight,
+              color: AppColors.textSecondary,
+              size: KSizes.iconS,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper methods
+  int _calculateAge(DateTime birthDate) {
     final now = DateTime.now();
-    int age = now.year - dateOfBirth.year;
-    if (now.month < dateOfBirth.month || 
-        (now.month == dateOfBirth.month && now.day < dateOfBirth.day)) {
+    int age = now.year - birthDate.year;
+    if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
       age--;
     }
     return age;
@@ -419,300 +410,127 @@ class ProfilePage extends ConsumerWidget {
   String _getGoalTypeText(GoalType goalType) {
     switch (goalType) {
       case GoalType.weightLoss:
-        return 'Tab vægt';
-      case GoalType.weightMaintenance:
-        return 'Vedligehold vægt';
+        return 'Tabe sig';
       case GoalType.weightGain:
-        return 'Tag på i vægt';
+        return 'Tage på';
+      case GoalType.weightMaintenance:
+        return 'Fastholde vægt';
       case GoalType.muscleGain:
-        return 'Byg muskler';
+        return 'Bygge muskler';
     }
   }
 
-  void _editProfile(BuildContext context, WidgetRef ref) async {
-    // Navigate to dedicated profile edit page for name, age, and gender
-    Navigator.of(context).push(
+  // Navigation methods
+  void _editProfile(BuildContext context, WidgetRef ref) {
+    Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (context) => const ProfileEditPage(),
       ),
     );
   }
 
-  void _navigateToOnboarding(BuildContext context, WidgetRef ref) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const OnboardingPage(),
-      ),
-    );
-  }
-
-  void _navigateToActivitySettings(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const ActivitySettingsPage(),
-      ),
-    );
-  }
-
-  void _navigateToGoalEdit(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const GoalEditPage(),
-      ),
-    );
-  }
-
-  void _navigateToInfo(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const InfoPage(),
-      ),
-    );
-  }
-
   void _navigateToPhysicalStatsEdit(BuildContext context) {
-    Navigator.of(context).push(
+    Navigator.push(
+      context,
       MaterialPageRoute(
         builder: (context) => const PhysicalStatsEditPage(),
       ),
     );
   }
 
-  void _showRestartOnboardingDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KSizes.radiusXL),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  MdiIcons.refresh,
-                  color: Colors.white,
-                  size: KSizes.iconS,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Text(
-                'Genstart onboarding',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          content: Container(
-            padding: const EdgeInsets.all(KSizes.margin4x),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(KSizes.radiusL),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Er du sikker på, at du vil genstarte onboarding processen?',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    color: AppColors.textPrimary,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: KSizes.margin2x),
-                Text(
-                  'Dine eksisterende data bliver ikke slettet.',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeS,
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KSizes.margin4x,
-                  vertical: KSizes.margin2x,
-                ),
-              ),
-              child: Text(
-                'Annuller',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await ref.read(onboardingProvider.notifier).restartOnboardingFlow();
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  // Navigate to onboarding
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (context) => const OnboardingPage(),
-                    ),
-                    (route) => false,
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.warning,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KSizes.margin4x,
-                  vertical: KSizes.margin2x,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                ),
-              ),
-              child: Text(
-                'Genstart',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+  void _navigateToGoalEdit(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const GoalEditPage(),
+      ),
     );
   }
 
-  void _showClearFavoritesDialog(BuildContext context, WidgetRef ref) {
+  void _navigateToActivitySettings(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ActivitySettingsPage(),
+      ),
+    );
+  }
+
+  void _showInfoPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const InfoPage(isInitialView: false),
+      ),
+    );
+  }
+
+  void _startOnboarding(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const OnboardingPage(),
+      ),
+    );
+  }
+
+  void _showResetDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KSizes.radiusXL),
+      builder: (context) => AlertDialog(
+        title: const Text('Nulstil alle data?'),
+        content: const Text(
+          'Dette vil slette alle dine data permanent, inkluderet mad-favoritter, aktiviteter, '
+          'vægtregistreringer og profil indstillinger. Handlingen kan ikke fortrydes.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuller'),
           ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.warning, AppColors.warning.withOpacity(0.8)],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  MdiIcons.heartRemove,
-                  color: Colors.white,
-                  size: KSizes.iconS,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Text(
-                'Slet alle mad favoritter',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _resetAllData(context, ref);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.error,
+            ),
+            child: const Text('Nulstil'),
           ),
-          content: Container(
-            padding: const EdgeInsets.all(KSizes.margin4x),
-            decoration: BoxDecoration(
-              color: AppColors.warning.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(KSizes.radiusL),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Er du sikker på, at du vil slette alle dine gemte mad favoritter?',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    color: AppColors.textPrimary,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: KSizes.margin2x),
-                Text(
-                  'Dette kan ikke gendannes.',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeS,
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KSizes.margin4x,
-                  vertical: KSizes.margin2x,
-                ),
-              ),
-              child: Text(
-                'Annuller',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final service = FavoriteFoodService();
-                await service.clearAllFavorites();
-                if (context.mounted) {
-                  Navigator.of(context).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('✅ Alle mad favoritter er nu fjernet!'),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.warning,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KSizes.margin4x,
-                  vertical: KSizes.margin2x,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                ),
-              ),
-              child: Text(
-                'Slet',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+        ],
+      ),
     );
+  }
+
+  Future<void> _resetAllData(BuildContext context, WidgetRef ref) async {
+    try {
+      // Clear food favorites
+      final foodService = FavoriteFoodService();
+      await foodService.clearAllFavorites();
+      
+      // Show success message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Alle data er blevet nulstillet'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        
+        // Navigate to onboarding
+        _startOnboarding(context);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved nulstilling: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 } 

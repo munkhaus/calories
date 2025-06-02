@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../shared/widgets/app_page_header.dart';  // Added for StandardPageHeader
 import '../../application/food_logging_notifier.dart';
 import '../../domain/favorite_food_model.dart';
 import '../../infrastructure/favorite_food_service.dart';
@@ -120,71 +121,102 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
     return DefaultTabController(
       length: tabCount,
       child: Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-          title: Text(showOnlyFoodTab 
-              ? '${widget.initialFilter!.displayName} Favoritter'
-              : 'Favoritter'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.textPrimary,
-        titleTextStyle: TextStyle(
-          color: AppColors.textPrimary,
-          fontSize: KSizes.fontSizeXL,
-          fontWeight: KSizes.fontWeightBold,
-        ),
-        bottom: showOnlyFoodTab ? null : TabBar(
-          controller: _tabController,
-            indicatorColor: AppColors.primary,
-          labelColor: AppColors.primary,
-          unselectedLabelColor: AppColors.textSecondary,
-            tabs: const [
-              Tab(text: 'Mad'),
-              Tab(text: 'Aktiviteter'),
-            ],
-        ),
-      ),
+        backgroundColor: AppColors.background,
         floatingActionButton: FloatingActionButton(
-                heroTag: "favorites_fab",
-                onPressed: () {
-                  if (showOnlyFoodTab || _tabController.index == 0) {
-                    _createNewFoodFavorite();
-                  } else {
-                    _createNewActivityFavorite();
-                  }
-                },
-              backgroundColor: AppColors.primary,
-              child: Icon(MdiIcons.plus),
-                tooltip: (showOnlyFoodTab || _tabController.index == 0) ? 'Ny mad favorit' : 'Ny aktivitet favorit',
-            ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppDesign.backgroundGradient,
+          heroTag: "favorites_fab",
+          onPressed: () {
+            if (showOnlyFoodTab || _tabController.index == 0) {
+              _createNewFoodFavorite();
+            } else {
+              _createNewActivityFavorite();
+            }
+          },
+          backgroundColor: AppColors.primary,
+          child: Icon(MdiIcons.plus),
+          tooltip: (showOnlyFoodTab || _tabController.index == 0) ? 'Ny mad favorit' : 'Ny aktivitet favorit',
         ),
-          child: showOnlyFoodTab 
-              ? // Show only food content when filtered
-                _isLoadingFood
-                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                    : _foodError != null
-                        ? _buildErrorState(_foodError!, _loadAllFavorites)
-                        : _buildFoodFavoritesTab()
-              : // Show both tabs when not filtered
-                TabBarView(
-                    controller: _tabController,
-                    children: [
-                _isLoadingFood
-                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                    : _foodError != null
-                        ? _buildErrorState(_foodError!, _loadAllFavorites)
-                        : _buildFoodFavoritesTab(),
-                _isLoadingActivities
-                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                    : _activityError != null
-                        ? _buildErrorState(_activityError!, _loadAllFavorites)
-                        : _buildActivityFavoritesTab(),
-                    ],
-                ),
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: AppDesign.backgroundGradient,
+          ),
+          child: SafeArea(
+            child: Column(
+              children: [
+                // Header section
+                Padding(
+                  padding: const EdgeInsets.all(KSizes.margin4x),
+                  child: StandardPageHeader(
+                    title: showOnlyFoodTab 
+                        ? '${widget.initialFilter!.displayName} Favoritter'
+                        : 'Favoritter',
+                    subtitle: showOnlyFoodTab 
+                        ? 'Dine gemte ${widget.initialFilter!.displayName.toLowerCase()}'
+                        : 'Administrer dine gemte mad og aktiviteter',
+                    icon: MdiIcons.heart,
+                    iconColor: AppColors.primary,
                   ),
+                ),
+                
+                // Tab bar section (only if not filtered)
+                if (!showOnlyFoodTab) 
+                  Container(
+                    margin: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(KSizes.radiusL),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicatorColor: AppColors.primary,
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor: AppColors.textSecondary,
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      tabs: const [
+                        Tab(text: 'Mad'),
+                        Tab(text: 'Aktiviteter'),
+                      ],
+                    ),
+                  ),
+                
+                SizedBox(height: KSizes.margin4x),
+                
+                // Content section
+                Expanded(
+                  child: showOnlyFoodTab 
+                      ? // Show only food content when filtered
+                        _isLoadingFood
+                            ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                            : _foodError != null
+                                ? _buildErrorState(_foodError!, _loadAllFavorites)
+                                : _buildFoodFavoritesTab()
+                      : // Show both tabs when not filtered
+                        TabBarView(
+                            controller: _tabController,
+                            children: [
+                        _isLoadingFood
+                            ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                            : _foodError != null
+                                ? _buildErrorState(_foodError!, _loadAllFavorites)
+                                : _buildFoodFavoritesTab(),
+                        _isLoadingActivities
+                            ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                            : _activityError != null
+                                ? _buildErrorState(_activityError!, _loadAllFavorites)
+                                : _buildActivityFavoritesTab(),
+                            ],
+                        ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
