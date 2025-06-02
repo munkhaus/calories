@@ -16,18 +16,24 @@ class GoalsStepWidget extends ConsumerStatefulWidget {
 class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
   late TextEditingController _targetWeightController;
   late TextEditingController _weeklyGoalController;
+  late FocusNode _targetWeightFocus;
+  late FocusNode _weeklyGoalFocus;
   
   @override
   void initState() {
     super.initState();
     _targetWeightController = TextEditingController();
     _weeklyGoalController = TextEditingController();
+    _targetWeightFocus = FocusNode();
+    _weeklyGoalFocus = FocusNode();
   }
   
   @override
   void dispose() {
     _targetWeightController.dispose();
     _weeklyGoalController.dispose();
+    _targetWeightFocus.dispose();
+    _weeklyGoalFocus.dispose();
     super.dispose();
   }
 
@@ -36,16 +42,18 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
     final state = ref.watch(onboardingProvider);
     final notifier = ref.read(onboardingProvider.notifier);
 
-    // Update controllers when state changes
+    // Update controllers when state changes, but only if the user is not actively editing
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (state.userProfile.targetWeightKg > 0) {
+      // Only update target weight controller if not focused and value differs
+      if (!_targetWeightFocus.hasFocus && state.userProfile.targetWeightKg > 0) {
         final newValue = state.userProfile.targetWeightKg.toStringAsFixed(1);
         if (_targetWeightController.text != newValue) {
           _targetWeightController.text = newValue;
         }
       }
       
-      if (state.userProfile.weeklyGoalKg > 0) {
+      // Only update weekly goal controller if not focused and value differs
+      if (!_weeklyGoalFocus.hasFocus && state.userProfile.weeklyGoalKg > 0) {
         final newValue = state.userProfile.weeklyGoalKg.toStringAsFixed(1);
         if (_weeklyGoalController.text != newValue) {
           _weeklyGoalController.text = newValue;
@@ -174,13 +182,35 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             isActive: state.userProfile.targetWeightKg > 0,
             child: TextFormField(
               controller: _targetWeightController,
+              focusNode: _targetWeightFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               onChanged: (value) {
-                final weight = double.tryParse(value) ?? 0;
-                if (weight >= minWeight && weight <= maxWeight) {
-                  notifier.updateTargetWeight(weight);
+                // Only update state if the value is valid and different from current state
+                final weight = double.tryParse(value);
+                if (weight != null && weight >= minWeight && weight <= maxWeight) {
+                  // Small delay to prevent rapid updates while typing
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (mounted && _targetWeightController.text == value) {
+                      notifier.updateTargetWeight(weight);
+                    }
+                  });
                 }
+              },
+              onEditingComplete: () {
+                // Ensure final validation when user finishes editing
+                final weight = double.tryParse(_targetWeightController.text);
+                if (weight != null && weight >= minWeight && weight <= maxWeight) {
+                  notifier.updateTargetWeight(weight);
+                } else {
+                  // Reset to current state value if invalid
+                  if (state.userProfile.targetWeightKg > 0) {
+                    _targetWeightController.text = state.userProfile.targetWeightKg.toStringAsFixed(1);
+                  } else {
+                    _targetWeightController.clear();
+                  }
+                }
+                _targetWeightFocus.unfocus();
               },
               decoration: InputDecoration(
                 hintText: 'Indtast målvægt',
@@ -214,7 +244,10 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             divisions: ((maxWeight - minWeight) * 2).round(),
             onChanged: (value) {
               notifier.updateTargetWeight(value);
-              _targetWeightController.text = value.toStringAsFixed(1);
+              // Only update text controller if user is not typing in the field
+              if (!_targetWeightFocus.hasFocus) {
+                _targetWeightController.text = value.toStringAsFixed(1);
+              }
             },
             minLabel: '${minWeight.round()} kg',
             maxLabel: '${maxWeight.round()} kg',
@@ -280,13 +313,35 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             isActive: state.userProfile.weeklyGoalKg > 0,
             child: TextFormField(
               controller: _weeklyGoalController,
+              focusNode: _weeklyGoalFocus,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               onChanged: (value) {
-                final goal = double.tryParse(value) ?? 0;
-                if (goal >= min && goal <= max) {
-                  notifier.updateWeeklyGoal(goal);
+                // Only update state if the value is valid and different from current state
+                final goal = double.tryParse(value);
+                if (goal != null && goal >= min && goal <= max) {
+                  // Small delay to prevent rapid updates while typing
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (mounted && _weeklyGoalController.text == value) {
+                      notifier.updateWeeklyGoal(goal);
+                    }
+                  });
                 }
+              },
+              onEditingComplete: () {
+                // Ensure final validation when user finishes editing
+                final goal = double.tryParse(_weeklyGoalController.text);
+                if (goal != null && goal >= min && goal <= max) {
+                  notifier.updateWeeklyGoal(goal);
+                } else {
+                  // Reset to current state value if invalid
+                  if (state.userProfile.weeklyGoalKg > 0) {
+                    _weeklyGoalController.text = state.userProfile.weeklyGoalKg.toStringAsFixed(1);
+                  } else {
+                    _weeklyGoalController.clear();
+                  }
+                }
+                _weeklyGoalFocus.unfocus();
               },
               decoration: InputDecoration(
                 hintText: 'Indtast ugentligt mål',
@@ -320,7 +375,10 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
             divisions: ((max - min) * 10).round(),
             onChanged: (value) {
               notifier.updateWeeklyGoal(value);
-              _weeklyGoalController.text = value.toStringAsFixed(1);
+              // Only update text controller if user is not typing in the field
+              if (!_weeklyGoalFocus.hasFocus) {
+                _weeklyGoalController.text = value.toStringAsFixed(1);
+              }
             },
             minLabel: '${min.toStringAsFixed(1)} kg',
             maxLabel: '${max.toStringAsFixed(1)} kg',

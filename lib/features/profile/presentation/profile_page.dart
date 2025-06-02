@@ -11,6 +11,7 @@ import '../../onboarding/domain/user_profile_model.dart';
 import '../../info/presentation/info_page.dart';
 import '../../food_database/application/food_database_cubit.dart';
 import 'activity_settings_page.dart';
+import 'goal_edit_page.dart';
 
 /// Profile page showing user onboarding results and settings
 class ProfilePage extends ConsumerWidget {
@@ -444,6 +445,14 @@ class ProfilePage extends ConsumerWidget {
             onTap: () => _navigateToActivitySettings(context),
           ),
           
+          // Add goal editing option
+          ProfileOptionCard(
+            title: 'Rediger mål',
+            subtitle: 'Opdater dine vægtmål og ugentlige målsætninger',
+            icon: MdiIcons.bullseyeArrow,
+            onTap: () => _navigateToGoalEdit(context),
+          ),
+          
           if (userProfile.name.isNotEmpty)
             ProfileOptionCard(
               title: 'Rediger profil',
@@ -590,6 +599,14 @@ class ProfilePage extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const ActivitySettingsPage(),
+      ),
+    );
+  }
+
+  void _navigateToGoalEdit(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const GoalEditPage(),
       ),
     );
   }
