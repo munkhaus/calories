@@ -307,9 +307,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   /// Update current work day status (manual override)
   void updateCurrentWorkDayStatus(bool isWorkDay) {
+    print('🔵 updateCurrentWorkDayStatus CALLED with: isWorkDay=$isWorkDay');
+    print('🔵 BEFORE state update - Profile: isWorkDay=${state.userProfile.isCurrentlyWorkDay}, isLeisure=${state.userProfile.isLeisureActivityEnabledToday}');
     state = state.copyWith(
       userProfile: state.userProfile.copyWith(isCurrentlyWorkDay: isWorkDay),
     );
+    print('🔵 AFTER state update - Profile: isWorkDay=${state.userProfile.isCurrentlyWorkDay}, isLeisure=${state.userProfile.isLeisureActivityEnabledToday}');
     _calculateTargets();
     // Auto-save is handled by _calculateTargets for completed users
     if (!state.userProfile.isOnboardingCompleted) {
@@ -319,9 +322,12 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   /// Update leisure activity enabled status for today
   void updateLeisureActivityForToday(bool isEnabled) {
+    print('🟢 updateLeisureActivityForToday CALLED with: isEnabled=$isEnabled');
+    print('🟢 BEFORE state update - Profile: isWorkDay=${state.userProfile.isCurrentlyWorkDay}, isLeisure=${state.userProfile.isLeisureActivityEnabledToday}');
     state = state.copyWith(
       userProfile: state.userProfile.copyWith(isLeisureActivityEnabledToday: isEnabled),
     );
+    print('🟢 AFTER state update - Profile: isWorkDay=${state.userProfile.isCurrentlyWorkDay}, isLeisure=${state.userProfile.isLeisureActivityEnabledToday}');
     _calculateTargets();
     // Auto-save is handled by _calculateTargets for completed users
     if (!state.userProfile.isOnboardingCompleted) {
@@ -391,6 +397,7 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
 
   /// Calculate target calories based on user profile
   int _calculateTargetCalories(UserProfileModel profile) {
+    print('🟡 _calculateTargetCalories USING Profile: isWorkDay=${profile.isCurrentlyWorkDay}, isLeisure=${profile.isLeisureActivityEnabledToday}, TDEE=${profile.tdee}');
     if (profile.dateOfBirth == null || 
         profile.currentWeightKg <= 0 || 
         profile.heightCm <= 0 ||
@@ -445,41 +452,32 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
   }
 
   void _calculateTargets() {
-    // Only calculate if we have all necessary data
     final profile = state.userProfile;
-    
-    // Check for required basic data
-    if (profile.heightCm <= 0 || 
-        profile.currentWeightKg <= 0 || 
-        profile.dateOfBirth == null || 
-        profile.gender == null || 
-        profile.goalType == null) {
-      return;
-    }
-    
-    // Check for activity data - either new system or legacy
-    final hasNewActivitySystem = profile.workActivityLevel != null && profile.leisureActivityLevel != null;
-    final hasLegacyActivitySystem = profile.activityLevel != null;
-    
-    if (!hasNewActivitySystem && !hasLegacyActivitySystem) {
-      return; // No activity data available
-    }
-      
-    final oldTargetCalories = profile.targetCalories;
+    print('🟣 _calculateTargets CALLED');
+    print('🟣 Initial Profile for _calculateTargets: isWorkDay=${profile.isCurrentlyWorkDay}, isLeisure=${profile.isLeisureActivityEnabledToday}');
+
+    // UserProfileModel handles its own BMR and TDEE calculation internally via getters
+    // We just need to ensure the profile object itself is up-to-date with toggle changes before these getters are implicitly called
+    // when _calculateTargetCalories accesses profile.tdee
+
+    // The 'profile' instance here already reflects the latest toggle states
+    // (isCurrentlyWorkDay, isLeisureActivityEnabledToday) due to calls like:
+    // state = state.copyWith(userProfile: state.userProfile.copyWith(isCurrentlyWorkDay: isWorkDay));
+    // BEFORE _calculateTargets() is called.
+
+    // So, when _calculateTargetCalories(profile) is called,
+    // profile.tdee will use the current toggle states.
+
     final targetCalories = _calculateTargetCalories(profile);
-    final macros = _calculateMacronutrients(targetCalories);
     
-    if (oldTargetCalories != targetCalories) {
-      print('🔄 Target calories updated: $oldTargetCalories → $targetCalories (leisure activity: ${profile.isLeisureActivityEnabledToday})');
-    }
-    
+    // We don't need to explicitly set bmr and tdee on the profile using copyWith here,
+    // as they are getters on UserProfileModel that calculate based on its current state.
+    // We only need to update the targetCalories.
     final updatedProfile = profile.copyWith(
-      targetCalories: targetCalories,
-      targetProteinG: macros.protein,
-      targetFatG: macros.fat,
-      targetCarbsG: macros.carbs,
+      targetCalories: targetCalories, // targetCalories is already an int
     );
-    
+    print('🟣 Profile after Target Calories ($targetCalories): isWorkDay=${updatedProfile.isCurrentlyWorkDay}, isLeisure=${updatedProfile.isLeisureActivityEnabledToday}, BMR=${updatedProfile.bmr}, TDEE=${updatedProfile.tdee}');
+
     state = state.copyWith(
       userProfile: updatedProfile,
     );

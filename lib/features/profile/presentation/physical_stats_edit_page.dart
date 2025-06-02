@@ -217,12 +217,8 @@ class _PhysicalStatsEditPageState extends ConsumerState<PhysicalStatsEditPage> {
               onChanged: (value) {
                 final heightValue = double.tryParse(value);
                 if (heightValue != null && heightValue >= minHeight && heightValue <= maxHeight) {
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    if (mounted && !_heightFocus.hasFocus) {
-                      final notifier = ref.read(onboardingProvider.notifier);
-                      notifier.updateHeight(heightValue);
-                    }
-                  });
+                  final notifier = ref.read(onboardingProvider.notifier);
+                  notifier.updateHeight(heightValue);
                 }
               },
               decoration: InputDecoration(
@@ -412,12 +408,8 @@ class _PhysicalStatsEditPageState extends ConsumerState<PhysicalStatsEditPage> {
               onChanged: (value) {
                 final weight = double.tryParse(value);
                 if (weight != null && weight >= minWeight && weight <= maxWeight) {
-                  Future.delayed(const Duration(milliseconds: 200), () {
-                    if (mounted && !_currentWeightFocus.hasFocus) {
-                      final notifier = ref.read(onboardingProvider.notifier);
-                      notifier.updateCurrentWeight(weight);
-                    }
-                  });
+                  final notifier = ref.read(onboardingProvider.notifier);
+                  notifier.updateCurrentWeight(weight);
                 }
               },
               decoration: InputDecoration(

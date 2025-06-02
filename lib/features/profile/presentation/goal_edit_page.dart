@@ -343,9 +343,7 @@ class _GoalEditPageState extends ConsumerState<GoalEditPage> {
                   onChanged: (value) {
                     final notifier = ref.read(onboardingProvider.notifier);
                     notifier.updateTargetWeight(value);
-                    if (!_targetWeightFocus.hasFocus) {
-                      _targetWeightController.text = value.toStringAsFixed(1);
-                    }
+                    _targetWeightController.text = value.toStringAsFixed(1);
                   },
                 ),
               ),
@@ -617,9 +615,7 @@ class _GoalEditPageState extends ConsumerState<GoalEditPage> {
                   onChanged: (value) {
                     final notifier = ref.read(onboardingProvider.notifier);
                     notifier.updateWeeklyGoal(value);
-                    if (!_weeklyGoalFocus.hasFocus) {
-                      _weeklyGoalController.text = value.toStringAsFixed(1);
-                    }
+                    _weeklyGoalController.text = value.toStringAsFixed(1);
                   },
                 ),
               ),

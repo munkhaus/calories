@@ -11,30 +11,78 @@ import '../application/date_aware_providers.dart';
 import '../presentation/calorie_calculation_page.dart';
 
 /// Widget showing daily calorie intake vs goal with contextual guidance and actionable insights
-class CalorieOverviewWidget extends ConsumerWidget {
+class CalorieOverviewWidget extends ConsumerStatefulWidget {
   const CalorieOverviewWidget({super.key});
+
+  @override
+  ConsumerState<CalorieOverviewWidget> createState() => _CalorieOverviewWidgetState();
+}
+
+class _CalorieOverviewWidgetState extends ConsumerState<CalorieOverviewWidget> {
+  @override
+  void initState() {
+    super.initState();
+    // Force initial rebuild
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() {});
+    });
+  }
  
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    print('🔥 CalorieOverviewWidget: BUILD START');
+
+    // CRITICAL FIX: Force rebuild by directly watching onboarding provider
     final onboardingState = ref.watch(onboardingProvider);
     final userProfile = onboardingState.userProfile;
-    final selectedDateNotifier = ref.read(selectedDateProvider.notifier);
+    print('🔥 CalorieOverviewWidget: Watched onboardingProvider. UserProfile TDEE: ${userProfile.tdee}, Work: ${userProfile.isCurrentlyWorkDay}, Leisure: ${userProfile.isLeisureActivityEnabledToday}');
+    
+    // Add explicit listener to force rebuild when onboarding changes
+    ref.listen(onboardingProvider, (previous, next) {
+      print('🔥 CalorieOverviewWidget: ref.listen DETECTED change in onboardingProvider.');
+      print('🔥 CalorieOverviewWidget: Previous TDEE: ${previous?.userProfile.tdee}, New TDEE: ${next.userProfile.tdee}');
+      if (mounted && previous?.userProfile.tdee != next.userProfile.tdee) {
+        print('🔥 CalorieOverviewWidget: TDEE changed AND widget is mounted. Calling setState() to FORCE rebuild.');
+        setState(() {}); // FORCE rebuild when TDEE changes
+      } else {
+        print('🔥 CalorieOverviewWidget: TDEE did NOT change or widget NOT mounted. No forced rebuild via setState().');
+      }
+    });
+    
+    // FORCE widget invalidation when profile changes by adding a key based on TDEE
+    // final widgetKey = Key('calorie_overview_${userProfile.tdee.hashCode}'); // Temporarily disabled to see if direct watch is enough
+    
+    // Also watch for selected date changes
+    final selectedDate = ref.watch(selectedDateProvider);
+    print('🔥 CalorieOverviewWidget: Watched selectedDateProvider. SelectedDate: $selectedDate');
     
     // Trigger date-aware activity loading
-    ref.watch(dateAwareActivityProvider);
+    ref.watch(dateAwareActivityProvider); // This is fine, just triggers loading
+    print('🔥 CalorieOverviewWidget: Watched dateAwareActivityProvider.');
     
-    // Calculate target calories dynamically based on current profile state
-    final currentTdee = _calculateCurrentTdee(userProfile);
-    final dynamicTargetCalories = _calculateDynamicTargetCalories(userProfile, currentTdee);
+    // Force refresh of activity calories when profile changes
+    final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider);
+    print('🔥 CalorieOverviewWidget: Watched activityCaloriesForSelectedDateProvider. Value: $activityCalories');
     
-    final activityCalories = ref.watch(activityCaloriesForSelectedDateProvider).toDouble();
+    // Get consumed calories for selected date
+    final consumedCalories = ref.watch(totalCaloriesForSelectedDateProvider);
+    print('🔥 CalorieOverviewWidget: Watched totalCaloriesForSelectedDateProvider. Value: $consumedCalories');
+    
+    // CRITICAL: Use DIRECT values from profile - no local calculations
+    final currentTdee = userProfile.tdee;
+    final dynamicTargetCalories = userProfile.targetCalories.toDouble();
     final totalAvailableCalories = dynamicTargetCalories + activityCalories;
     
-    // Get consumed calories
-    final consumedCalories = ref.watch(totalCaloriesForSelectedDateProvider);
+    print('🔥 CalorieOverviewWidget: FINAL CALCULATED VALUES FOR UI:');
+    print('🔥 CalorieOverviewWidget: - currentTdee (from userProfile.tdee): $currentTdee');
+    print('🔥 CalorieOverviewWidget: - dynamicTargetCalories (from userProfile.targetCalories): $dynamicTargetCalories');
+    print('🔥 CalorieOverviewWidget: - activityCalories (from provider): $activityCalories');
+    print('🔥 CalorieOverviewWidget: - totalAvailableCalories (dynamicTarget + activity): $totalAvailableCalories');
+    print('🔥 CalorieOverviewWidget: - consumedCalories (from provider): $consumedCalories');
     
     // Calculate remaining calories and progress
     final remainingCalories = totalAvailableCalories - consumedCalories;
+    print('🔥 CalorieOverviewWidget: - remainingCalories: $remainingCalories');
     
     // Calculate time-based context
     final timeContext = _calculateTimeContext();
@@ -52,8 +100,11 @@ class CalorieOverviewWidget extends ConsumerWidget {
     
     final displayProgress = progress.clamp(0.0, 1.2);
     final hasExceededGoal = consumedCalories > totalAvailableCalories;
+    print('🔥 CalorieOverviewWidget: - displayProgress: $displayProgress, hasExceededGoal: $hasExceededGoal');
+    print('🔥 CalorieOverviewWidget: BUILD END. Returning Container...');
     
     return Container(
+      // key: widgetKey, // Temporarily disabled
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: _getContextualGradient(progress, isAheadOfPace),
@@ -216,6 +267,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                         hasExceededGoal 
                             ? '+${(-remainingCalories).toInt()}'
                             : '${remainingCalories.toInt()}',
+                        key: Key('remaining_calories_${remainingCalories.hashCode}'),
                         style: TextStyle(
                           fontSize: 42,
                           fontWeight: FontWeight.w900,
@@ -272,6 +324,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _buildEnhancedStatCard(
+                    key: Key('consumed_card_${consumedCalories.hashCode}'),
                     label: 'Spist i dag',
                     value: '${consumedCalories.toInt()}',
                     unit: 'kcal',
@@ -286,6 +339,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                 
                 Expanded(
                   child: _buildEnhancedStatCard(
+                    key: Key('activity_card_${activityCalories.hashCode}_${dynamicTargetCalories.hashCode}'),
                     label: 'Aktivitet',
                     value: '+${activityCalories.toInt()}',
                     unit: 'kcal',
@@ -352,8 +406,10 @@ class CalorieOverviewWidget extends ConsumerWidget {
     required Color color,
     required IconData icon,
     required String trend,
+    Key? key,
   }) {
     return Container(
+      key: key,
       padding: const EdgeInsets.all(KSizes.margin4x),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -473,122 +529,6 @@ class CalorieOverviewWidget extends ConsumerWidget {
         builder: (context) => const CalorieCalculationPage(),
       ),
     );
-  }
-
-  double _calculateTargetCalories(UserProfileModel profile) {
-    // Use the pre-calculated target calories from user profile
-    // This is already calculated during onboarding with proper goal adjustments
-    return profile.targetCalories.toDouble();
-  }
-  
-  double _calculateCurrentTdee(UserProfileModel profile) {
-    // Calculate BMR first
-    if (profile.dateOfBirth == null || 
-        profile.heightCm <= 0 || 
-        profile.currentWeightKg <= 0 ||
-        profile.gender == null) {
-      return profile.tdee; // Fallback to pre-calculated TDEE
-    }
-
-    // Calculate age from date of birth
-    final now = DateTime.now();
-    final birthDate = profile.dateOfBirth!;
-    int age = now.year - birthDate.year;
-    if (now.month < birthDate.month || 
-        (now.month == birthDate.month && now.day < birthDate.day)) {
-      age--;
-    }
-
-    // Mifflin-St Jeor Equation for BMR
-    double bmr;
-    if (profile.gender == Gender.male) {
-      bmr = (10 * profile.currentWeightKg) + 
-            (6.25 * profile.heightCm) - 
-            (5 * age) + 5;
-    } else {
-      bmr = (10 * profile.currentWeightKg) + 
-            (6.25 * profile.heightCm) - 
-            (5 * age) - 161;
-    }
-
-    double tdee;
-    
-    // Use new activity system if available
-    if (profile.workActivityLevel != null && profile.leisureActivityLevel != null) {
-      // Calculate work activity multiplier based on current day
-      double workMultiplier = 1.2; // Default sedentary baseline
-      
-      // Determine if today is a work day using CURRENT profile state
-      final isWorkDay = profile.useAutomaticWeekdayDetection 
-          ? (now.weekday >= 1 && now.weekday <= 5)
-          : profile.isCurrentlyWorkDay;
-      
-      if (isWorkDay) {
-        workMultiplier = switch (profile.workActivityLevel!) {
-          WorkActivityLevel.sedentary => 1.2,
-          WorkActivityLevel.light => 1.375,
-          WorkActivityLevel.moderate => 1.55,
-          WorkActivityLevel.heavy => 1.725,
-          WorkActivityLevel.veryHeavy => 1.9,
-        };
-      }
-      
-      // Calculate leisure activity addition using CURRENT profile state
-      double leisureAddition = 0.0;
-      if (profile.activityTrackingPreference != ActivityTrackingPreference.manual && 
-          profile.isLeisureActivityEnabledToday) { // This reflects current toggle state
-        leisureAddition = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 0.0,
-          LeisureActivityLevel.lightlyActive => 0.155,
-          LeisureActivityLevel.moderatelyActive => 0.35,
-          LeisureActivityLevel.veryActive => 0.525,
-          LeisureActivityLevel.extraActive => 0.7,
-        };
-      }
-      
-      tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
-    } else {
-      // Fall back to legacy activity level system
-      if (profile.activityLevel == null) {
-        return profile.tdee;
-      }
-      
-      final activityMultiplier = switch (profile.activityLevel!) {
-        ActivityLevel.sedentary => 1.2,
-        ActivityLevel.lightlyActive => 1.375,
-        ActivityLevel.moderatelyActive => 1.55,
-        ActivityLevel.veryActive => 1.725,
-        ActivityLevel.extraActive => 1.9,
-      };
-      
-      tdee = bmr * activityMultiplier;
-    }
-
-    // Return raw TDEE (total daily energy expenditure) without goal adjustments
-    return tdee;
-  }
-
-  double _calculateDynamicTargetCalories(UserProfileModel profile, double currentTdee) {
-    // Apply goal-based calorie adjustment to current TDEE
-    double targetCalories = currentTdee;
-    
-    if (profile.goalType == GoalType.weightLoss) {
-      // Weight loss: create caloric deficit
-      final weeklyDeficitKcal = profile.weeklyGoalKg * 7700.0; // 1 kg fat ≈ 7700 kcal
-      final dailyDeficitKcal = weeklyDeficitKcal / 7.0;
-      targetCalories = currentTdee - dailyDeficitKcal;
-    } else if (profile.goalType == GoalType.weightGain || profile.goalType == GoalType.muscleGain) {
-      // Weight gain: create caloric surplus
-      final weeklySurplusKcal = profile.weeklyGoalKg * 7700.0;
-      final dailySurplusKcal = weeklySurplusKcal / 7.0;
-      targetCalories = currentTdee + dailySurplusKcal;
-    } else if (profile.goalType == GoalType.weightMaintenance) {
-      // Maintenance: no adjustment needed
-      targetCalories = currentTdee;
-    }
-
-    // Safety bounds
-    return targetCalories.clamp(800.0, 4000.0);
   }
 
   String _calculateTimeContext() {

@@ -17,8 +17,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialize test favorites for demonstration
-  FavoriteFoodService.addTestFavorites();
-  FavoriteActivityService.addTestFavorites();
+  // FavoriteFoodService.addTestFavorites();
+  // FavoriteActivityService.addTestFavorites();
   
   runApp(
     const ProviderScope(

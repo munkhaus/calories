@@ -184,8 +184,13 @@ class _WorkDayToggleSection extends ConsumerWidget {
           // Toggle switch
           GestureDetector(
             onTap: () {
+              final newWorkDayStatus = !isWorkDay;
+              print('🔵 DailySettingsWidget: WorkDay TAPPED. New status WILL BE: $newWorkDayStatus');
               notifier.updateWeekdayDetection(false);
-              notifier.updateCurrentWorkDayStatus(!isWorkDay);
+              notifier.updateCurrentWorkDayStatus(newWorkDayStatus);
+              // Log state from onboardingProvider *after* notifier call
+              final updatedProfile = ref.read(onboardingProvider).userProfile;
+              print('🔵 DailySettingsWidget: WorkDay TOGGLED. onboardingProvider NOW has: isWorkDay=${updatedProfile.isCurrentlyWorkDay}, TDEE=${updatedProfile.tdee.toStringAsFixed(2)}');
             },
             child: Container(
               width: 48,
@@ -298,7 +303,12 @@ class _LeisureActivityToggleSection extends ConsumerWidget {
           // Toggle switch
           GestureDetector(
             onTap: () {
-              notifier.updateLeisureActivityForToday(!isLeisureEnabled);
+              final newLeisureStatus = !isLeisureEnabled;
+              print('🔵 DailySettingsWidget: Leisure TAPPED. New status WILL BE: $newLeisureStatus');
+              notifier.updateLeisureActivityForToday(newLeisureStatus);
+              // Log state from onboardingProvider *after* notifier call
+              final updatedProfile = ref.read(onboardingProvider).userProfile;
+              print('🔵 DailySettingsWidget: Leisure TOGGLED. onboardingProvider NOW has: isLeisure=${updatedProfile.isLeisureActivityEnabledToday}, TDEE=${updatedProfile.tdee.toStringAsFixed(2)}');
             },
             child: Container(
               width: 48,
