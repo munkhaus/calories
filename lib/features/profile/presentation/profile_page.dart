@@ -8,6 +8,8 @@ import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
 import '../../info/presentation/info_page.dart';
 import '../../food_database/application/food_database_cubit.dart';
+import '../../food_logging/domain/i_favorite_food_service.dart';
+import '../../food_logging/infrastructure/favorite_food_service.dart';
 import '../../onboarding/presentation/widgets/onboarding_base_layout.dart';
 import 'activity_settings_page.dart';
 import 'goal_edit_page.dart';
@@ -47,26 +49,30 @@ class ProfilePage extends ConsumerWidget {
                   
                   KSizes.spacingVerticalXL,
                   
-                  // Profile Summary Card (only if profile exists)
+                  // Profile Summary Card (clickable to edit profile)
                   if (userProfile.name.isNotEmpty) ...[
-                    _buildProfileSummarySection(context, userProfile),
+                    _buildEditableProfileSection(context, ref, userProfile),
                     KSizes.spacingVerticalXL,
                   ],
                   
-                  // Physical Stats Card (only if data exists)
+                  // Physical Stats Card (clickable to edit weight/goals)
                   if (userProfile.heightCm > 0 || userProfile.currentWeightKg > 0) ...[
-                    _buildPhysicalStatsSection(context, userProfile),
+                    _buildEditablePhysicalStatsSection(context, userProfile),
                     KSizes.spacingVerticalXL,
                   ],
                   
-                  // Goals Card (only if goals exist)
+                  // Goals Card (clickable to edit goals)
                   if (userProfile.goalType != null || userProfile.targetCalories > 0) ...[
-                    _buildGoalsSection(context, userProfile),
+                    _buildEditableGoalsSection(context, userProfile),
                     KSizes.spacingVerticalXL,
                   ],
                   
-                  // Settings and Actions Section
-                  _buildSettingsSection(context, ref, userProfile),
+                  // Activity Settings Card (clickable)
+                  _buildEditableActivitySection(context),
+                  KSizes.spacingVerticalXL,
+                  
+                  // App Settings and Data Management Section
+                  _buildAppSettingsSection(context, ref, userProfile),
                   
                   // Bottom padding
                   const SizedBox(height: 100),
@@ -79,113 +85,149 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileSummarySection(BuildContext context, UserProfileModel userProfile) {
-    return OnboardingSection(
+  Widget _buildEditableProfileSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
+    return _buildClickableSection(
       gradientColor: AppColors.primary,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          OnboardingSectionHeader(
-            title: 'Personlige oplysninger',
-            subtitle: 'Dine grundlæggende profil informationer',
-            icon: MdiIcons.accountDetails,
-            iconColor: AppColors.primary,
+      title: 'Personlige oplysninger',
+      subtitle: 'Navn, alder og køn',
+      icon: MdiIcons.accountDetails,
+      onTap: () => _editProfile(context, ref),
+      children: [
+        if (userProfile.name.isNotEmpty)
+          _buildInfoRow('Navn', userProfile.name, MdiIcons.account),
+        
+        if (userProfile.dateOfBirth != null)
+          _buildInfoRow(
+            'Alder', 
+            '${_calculateAge(userProfile.dateOfBirth!)} år', 
+            MdiIcons.cake,
           ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Profile details
-          if (userProfile.name.isNotEmpty)
-            _buildInfoRow('Navn', userProfile.name, MdiIcons.account),
-          
-          if (userProfile.dateOfBirth != null)
-            _buildInfoRow(
-              'Alder', 
-              '${_calculateAge(userProfile.dateOfBirth!)} år', 
-              MdiIcons.cake,
-            ),
-          
-          if (userProfile.gender != null)
-            _buildInfoRow(
-              'Køn', 
-              _getGenderText(userProfile.gender!), 
-              MdiIcons.humanMaleFemale,
-            ),
-        ],
-      ),
+        
+        if (userProfile.gender != null)
+          _buildInfoRow(
+            'Køn', 
+            _getGenderText(userProfile.gender!), 
+            MdiIcons.humanMaleFemale,
+          ),
+      ],
     );
   }
 
-  Widget _buildPhysicalStatsSection(BuildContext context, UserProfileModel userProfile) {
-    return OnboardingSection(
+  Widget _buildEditablePhysicalStatsSection(BuildContext context, UserProfileModel userProfile) {
+    return _buildClickableSection(
       gradientColor: AppColors.info,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          OnboardingSectionHeader(
-            title: 'Fysiske data',
-            subtitle: 'Højde, vægt og kropssammensætning',
-            icon: MdiIcons.scaleBalance,
-            iconColor: AppColors.info,
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Physical stats
-          if (userProfile.heightCm > 0)
-            _buildInfoRow('Højde', '${userProfile.heightCm.round()} cm', MdiIcons.human),
-          
-          if (userProfile.currentWeightKg > 0)
-            _buildInfoRow('Nuværende vægt', '${userProfile.currentWeightKg.toStringAsFixed(1)} kg', MdiIcons.scale),
-          
-          if (userProfile.targetWeightKg > 0)
-            _buildInfoRow('Målvægt', '${userProfile.targetWeightKg.toStringAsFixed(1)} kg', MdiIcons.target),
-          
-          if (userProfile.bmr > 0)
-            _buildInfoRow('BMR', '${userProfile.bmr.round()} kcal/dag', MdiIcons.fire),
-        ],
-      ),
+      title: 'Fysiske data',
+      subtitle: 'Højde, vægt og kropssammensætning',
+      icon: MdiIcons.scaleBalance,
+      onTap: () => _navigateToGoalEdit(context),
+      children: [
+        if (userProfile.heightCm > 0)
+          _buildInfoRow('Højde', '${userProfile.heightCm.round()} cm', MdiIcons.human),
+        
+        if (userProfile.currentWeightKg > 0)
+          _buildInfoRow('Nuværende vægt', '${userProfile.currentWeightKg.toStringAsFixed(1)} kg', MdiIcons.scale),
+        
+        if (userProfile.targetWeightKg > 0)
+          _buildInfoRow('Målvægt', '${userProfile.targetWeightKg.toStringAsFixed(1)} kg', MdiIcons.target),
+        
+        if (userProfile.bmr > 0)
+          _buildInfoRow('BMR', '${userProfile.bmr.round()} kcal/dag', MdiIcons.fire),
+      ],
     );
   }
 
-  Widget _buildGoalsSection(BuildContext context, UserProfileModel userProfile) {
-    return OnboardingSection(
+  Widget _buildEditableGoalsSection(BuildContext context, UserProfileModel userProfile) {
+    return _buildClickableSection(
       gradientColor: AppColors.success,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          OnboardingSectionHeader(
-            title: 'Mål og præferencer',
-            subtitle: 'Dine mål og træningsindstillinger',
-            icon: MdiIcons.target,
-            iconColor: AppColors.success,
-          ),
-          
-          const SizedBox(height: KSizes.margin6x),
-          
-          // Goals info
-          if (userProfile.goalType != null)
-            _buildInfoRow('Mål', _getGoalTypeText(userProfile.goalType!), MdiIcons.bullseyeArrow),
-          
-          if (userProfile.targetCalories > 0)
-            _buildInfoRow('Dagligt kaloriemål', '${userProfile.targetCalories.round()} kcal', MdiIcons.fire),
-          
-          if (userProfile.weeklyGoalKg != 0)
-            _buildInfoRow('Ugentlig vægtændring', '${userProfile.weeklyGoalKg > 0 ? '+' : ''}${userProfile.weeklyGoalKg.toStringAsFixed(1)} kg', MdiIcons.trendingUp),
-        ],
+      title: 'Mål og præferencer',
+      subtitle: 'Vægtmål og ugentlige målsætninger',
+      icon: MdiIcons.target,
+      onTap: () => _navigateToGoalEdit(context),
+      children: [
+        if (userProfile.goalType != null)
+          _buildInfoRow('Mål', _getGoalTypeText(userProfile.goalType!), MdiIcons.bullseyeArrow),
+        
+        if (userProfile.targetCalories > 0)
+          _buildInfoRow('Dagligt kaloriemål', '${userProfile.targetCalories.round()} kcal', MdiIcons.fire),
+        
+        if (userProfile.weeklyGoalKg != 0)
+          _buildInfoRow('Ugentlig vægtændring', '${userProfile.weeklyGoalKg > 0 ? '+' : ''}${userProfile.weeklyGoalKg.toStringAsFixed(1)} kg', MdiIcons.trendingUp),
+      ],
+    );
+  }
+
+  Widget _buildEditableActivitySection(BuildContext context) {
+    return _buildClickableSection(
+      gradientColor: AppColors.secondary,
+      title: 'Aktivitetsindstillinger',
+      subtitle: 'Aktivitetsniveau og træningstyper',
+      icon: MdiIcons.runFast,
+      onTap: () => _navigateToActivitySettings(context),
+      children: [
+        _buildInfoRow('Indstillinger', 'Klik for at redigere', MdiIcons.cog),
+      ],
+    );
+  }
+
+  Widget _buildClickableSection({
+    required Color gradientColor,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+    required List<Widget> children,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(KSizes.radiusXL),
+      child: OnboardingSection(
+        gradientColor: gradientColor,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: OnboardingSectionHeader(
+                    title: title,
+                    subtitle: subtitle,
+                    icon: icon,
+                    iconColor: gradientColor,
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(KSizes.margin2x),
+                  decoration: BoxDecoration(
+                    color: gradientColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusS),
+                  ),
+                  child: Icon(
+                    MdiIcons.chevronRight,
+                    color: gradientColor,
+                    size: KSizes.iconM,
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: KSizes.margin6x),
+            
+            ...children,
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSettingsSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
+  Widget _buildAppSettingsSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
     return OnboardingSection(
       gradientColor: AppColors.warning,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           OnboardingSectionHeader(
-            title: 'Indstillinger og handlinger',
-            subtitle: 'Administrer din app og dine data',
+            title: 'App og dataindstillinger',
+            subtitle: 'Administrer dine data og app-indstillinger',
             icon: MdiIcons.cog,
             iconColor: AppColors.warning,
           ),
@@ -200,34 +242,12 @@ class ProfilePage extends ConsumerWidget {
               icon: MdiIcons.accountPlus,
               onTap: () => _navigateToOnboarding(context, ref),
             ),
-          
+
           _buildSettingsOption(
-            title: 'Aktivitetsindstillinger',
-            subtitle: 'Justér aktivitetsniveau og træningstyper',
-            icon: MdiIcons.runFast,
-            onTap: () => _navigateToActivitySettings(context),
-          ),
-          
-          _buildSettingsOption(
-            title: 'Rediger mål',
-            subtitle: 'Opdater dine vægtmål og ugentlige målsætninger',
-            icon: MdiIcons.bullseyeArrow,
-            onTap: () => _navigateToGoalEdit(context),
-          ),
-          
-          if (userProfile.name.isNotEmpty)
-            _buildSettingsOption(
-              title: 'Rediger profil',
-              subtitle: 'Opdater personlige oplysninger og mål',
-              icon: MdiIcons.pencil,
-              onTap: () => _editProfile(context, ref),
-            ),
-          
-          _buildSettingsOption(
-            title: '🧪 Genberegn kalorier (DEBUG)',
-            subtitle: 'Tvinger genberegning af kaloriemål (fikser gamle beregninger)',
-            icon: MdiIcons.calculator,
-            onTap: () => _forceRecalculateCalories(context, ref),
+            title: 'Slet alle mad favoritter',
+            subtitle: 'Fjern alle dine gemte mad favoritter',
+            icon: MdiIcons.heartRemove,
+            onTap: () => _showClearFavoritesDialog(context, ref),
           ),
           
           _buildSettingsOption(
@@ -244,13 +264,6 @@ class ProfilePage extends ConsumerWidget {
               icon: MdiIcons.refresh,
               onTap: () => _showRestartOnboardingDialog(context, ref),
             ),
-          
-          _buildSettingsOption(
-            title: 'Slet maddatabasen',
-            subtitle: 'Fjern alle madoplysninger og data',
-            icon: MdiIcons.delete,
-            onTap: () => _showDeleteFoodDatabaseDialog(context, ref),
-          ),
         ],
       ),
     );
@@ -415,7 +428,8 @@ class ProfilePage extends ConsumerWidget {
   }
 
   void _editProfile(BuildContext context, WidgetRef ref) async {
-    // Restart onboarding flow to start from the beginning
+    // Navigate to onboarding flow to edit profile information (name, age, gender)
+    // This will start from the beginning but allows editing basic profile info
     await ref.read(onboardingProvider.notifier).restartOnboardingFlow();
     
     if (context.mounted) {
@@ -578,137 +592,7 @@ class ProfilePage extends ConsumerWidget {
     );
   }
 
-  void _forceRecalculateCalories(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(KSizes.radiusXL),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.success, AppColors.success.withOpacity(0.8)],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  MdiIcons.calculator,
-                  color: Colors.white,
-                  size: KSizes.iconS,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin3x),
-              Text(
-                'Genberegn kalorier',
-                style: TextStyle(
-                  fontSize: KSizes.fontSizeL,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          content: Container(
-            padding: const EdgeInsets.all(KSizes.margin4x),
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(KSizes.radiusL),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Vil du genberegne dit kaloriemål med de opdaterede beregninger?',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeM,
-                    color: AppColors.textPrimary,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: KSizes.margin2x),
-                Text(
-                  'Dette vil rette eventuelle gamle fejlberegninger.',
-                  style: TextStyle(
-                    fontSize: KSizes.fontSizeS,
-                    color: AppColors.textSecondary,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KSizes.margin4x,
-                  vertical: KSizes.margin2x,
-                ),
-              ),
-              child: Text(
-                'Annuller',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                // Show loading
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-                
-                // Force recalculate
-                await ref.read(onboardingProvider.notifier).forceRecalculateTargets();
-                
-                if (context.mounted) {
-                  Navigator.of(context).pop(); // Close loading
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('✅ Kalorier genberegnet!'),
-                      backgroundColor: AppColors.success,
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.success,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: KSizes.margin4x,
-                  vertical: KSizes.margin2x,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusL),
-                ),
-              ),
-              child: Text(
-                'Genberegn',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showDeleteFoodDatabaseDialog(BuildContext context, WidgetRef ref) {
+  void _showClearFavoritesDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) {
@@ -727,14 +611,14 @@ class ProfilePage extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(KSizes.radiusM),
                 ),
                 child: Icon(
-                  MdiIcons.delete,
+                  MdiIcons.heartRemove,
                   color: Colors.white,
                   size: KSizes.iconS,
                 ),
               ),
               const SizedBox(width: KSizes.margin3x),
               Text(
-                'Slet maddatabasen',
+                'Slet alle mad favoritter',
                 style: TextStyle(
                   fontSize: KSizes.fontSizeL,
                   fontWeight: FontWeight.w600,
@@ -753,7 +637,7 @@ class ProfilePage extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'Er du sikker på, at du vil slette alle madoplysninger og data?',
+                  'Er du sikker på, at du vil slette alle dine gemte mad favoritter?',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
                     color: AppColors.textPrimary,
@@ -791,12 +675,13 @@ class ProfilePage extends ConsumerWidget {
             ),
             ElevatedButton(
               onPressed: () async {
-                await ref.read(foodDatabaseProvider.notifier).clearAllFoods();
+                final service = FavoriteFoodService();
+                await service.clearAllFavorites();
                 if (context.mounted) {
                   Navigator.of(context).pop();
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('✅ Maddatabasen er nu tom!'),
+                      content: Text('✅ Alle mad favoritter er nu fjernet!'),
                       backgroundColor: AppColors.success,
                     ),
                   );
