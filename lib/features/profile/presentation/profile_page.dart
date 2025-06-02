@@ -3,13 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../core/constants/k_sizes.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../shared/widgets/app_page_header.dart';
-import '../../../shared/widgets/app_option_card.dart';
 import '../../onboarding/application/onboarding_notifier.dart';
 import '../../onboarding/presentation/onboarding_page.dart';
 import '../../onboarding/domain/user_profile_model.dart';
 import '../../info/presentation/info_page.dart';
 import '../../food_database/application/food_database_cubit.dart';
+import '../../onboarding/presentation/widgets/onboarding_base_layout.dart';
 import 'activity_settings_page.dart';
 import 'goal_edit_page.dart';
 
@@ -34,20 +33,16 @@ class ProfilePage extends ConsumerWidget {
               child: Column(
                 children: [
                   // Header with new design
-                  StandardPageHeader(
-                    title: userProfile.name.isNotEmpty ? userProfile.name : 'Din Profil',
-                    subtitle: userProfile.name.isNotEmpty 
-                        ? 'Administrer dine indstillinger og præferencer'
-                        : 'Gennemgå onboarding for at sætte din profil op',
-                    icon: MdiIcons.account,
-                    iconColor: AppColors.primary,
-                    onInfoTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const InfoPage(),
-                        ),
-                      );
-                    },
+                  OnboardingSection(
+                    gradientColor: AppColors.primary,
+                    child: OnboardingSectionHeader(
+                      title: userProfile.name.isNotEmpty ? userProfile.name : 'Din Profil',
+                      subtitle: userProfile.name.isNotEmpty 
+                          ? 'Administrer dine indstillinger og præferencer'
+                          : 'Gennemgå onboarding for at sætte din profil op',
+                      icon: MdiIcons.account,
+                      iconColor: AppColors.primary,
+                    ),
                   ),
                   
                   KSizes.spacingVerticalXL,
@@ -85,74 +80,16 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildProfileSummarySection(BuildContext context, UserProfileModel userProfile) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return OnboardingSection(
+      gradientColor: AppColors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary,
-                      AppColors.primary.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.accountDetails,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Personlige oplysninger',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Dine grundlæggende profil informationer',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          OnboardingSectionHeader(
+            title: 'Personlige oplysninger',
+            subtitle: 'Dine grundlæggende profil informationer',
+            icon: MdiIcons.accountDetails,
+            iconColor: AppColors.primary,
           ),
           
           const SizedBox(height: KSizes.margin6x),
@@ -180,74 +117,16 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildPhysicalStatsSection(BuildContext context, UserProfileModel userProfile) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return OnboardingSection(
+      gradientColor: AppColors.info,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.secondary,
-                      AppColors.secondary.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.secondary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.scaleBalance,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Fysiske data',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Højde, vægt og kropssammensætning',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          OnboardingSectionHeader(
+            title: 'Fysiske data',
+            subtitle: 'Højde, vægt og kropssammensætning',
+            icon: MdiIcons.scaleBalance,
+            iconColor: AppColors.info,
           ),
           
           const SizedBox(height: KSizes.margin6x),
@@ -270,74 +149,16 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildGoalsSection(BuildContext context, UserProfileModel userProfile) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return OnboardingSection(
+      gradientColor: AppColors.success,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.success,
-                      AppColors.success.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.success.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.target,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mål og præferencer',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Dine mål og træningsindstillinger',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          OnboardingSectionHeader(
+            title: 'Mål og præferencer',
+            subtitle: 'Dine mål og træningsindstillinger',
+            icon: MdiIcons.target,
+            iconColor: AppColors.success,
           ),
           
           const SizedBox(height: KSizes.margin6x),
@@ -357,96 +178,37 @@ class ProfilePage extends ConsumerWidget {
   }
 
   Widget _buildSettingsSection(BuildContext context, WidgetRef ref, UserProfileModel userProfile) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(KSizes.radiusXL),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
-            blurRadius: KSizes.blurRadiusL,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return OnboardingSection(
+      gradientColor: AppColors.warning,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.info,
-                      AppColors.info.withOpacity(0.8),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.info.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  MdiIcons.cog,
-                  color: Colors.white,
-                  size: KSizes.iconL,
-                ),
-              ),
-              const SizedBox(width: KSizes.margin4x),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Indstillinger og handlinger',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeXL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'Administrer din app og dine data',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          OnboardingSectionHeader(
+            title: 'Indstillinger og handlinger',
+            subtitle: 'Administrer din app og dine data',
+            icon: MdiIcons.cog,
+            iconColor: AppColors.warning,
           ),
           
           const SizedBox(height: KSizes.margin6x),
           
           // Settings options
           if (userProfile.name.isEmpty)
-            ProfileOptionCard(
+            _buildSettingsOption(
               title: 'Gennemgå onboarding',
               subtitle: 'Sæt din profil op med personlige mål og præferencer',
               icon: MdiIcons.accountPlus,
               onTap: () => _navigateToOnboarding(context, ref),
             ),
           
-          ProfileOptionCard(
+          _buildSettingsOption(
             title: 'Aktivitetsindstillinger',
             subtitle: 'Justér aktivitetsniveau og træningstyper',
             icon: MdiIcons.runFast,
             onTap: () => _navigateToActivitySettings(context),
           ),
           
-          // Add goal editing option
-          ProfileOptionCard(
+          _buildSettingsOption(
             title: 'Rediger mål',
             subtitle: 'Opdater dine vægtmål og ugentlige målsætninger',
             icon: MdiIcons.bullseyeArrow,
@@ -454,22 +216,21 @@ class ProfilePage extends ConsumerWidget {
           ),
           
           if (userProfile.name.isNotEmpty)
-            ProfileOptionCard(
+            _buildSettingsOption(
               title: 'Rediger profil',
               subtitle: 'Opdater personlige oplysninger og mål',
               icon: MdiIcons.pencil,
               onTap: () => _editProfile(context, ref),
             ),
           
-          // DEBUG: Force recalculate calories
-          ProfileOptionCard(
+          _buildSettingsOption(
             title: '🧪 Genberegn kalorier (DEBUG)',
             subtitle: 'Tvinger genberegning af kaloriemål (fikser gamle beregninger)',
             icon: MdiIcons.calculator,
             onTap: () => _forceRecalculateCalories(context, ref),
           ),
           
-          ProfileOptionCard(
+          _buildSettingsOption(
             title: 'Information',
             subtitle: 'Om appen, version og vilkår',
             icon: MdiIcons.informationOutline,
@@ -477,20 +238,99 @@ class ProfilePage extends ConsumerWidget {
           ),
           
           if (userProfile.name.isNotEmpty)
-            ProfileOptionCard(
+            _buildSettingsOption(
               title: 'Nulstil profil',
               subtitle: 'Genstart onboarding og ryd alle data',
               icon: MdiIcons.refresh,
               onTap: () => _showRestartOnboardingDialog(context, ref),
             ),
           
-          ProfileOptionCard(
+          _buildSettingsOption(
             title: 'Slet maddatabasen',
             subtitle: 'Fjern alle madoplysninger og data',
             icon: MdiIcons.delete,
             onTap: () => _showDeleteFoodDatabaseDialog(context, ref),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: KSizes.margin4x),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        child: Container(
+          padding: const EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.8),
+                Colors.white.withOpacity(0.4),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+            border: Border.all(
+              color: AppColors.textSecondary.withOpacity(0.1),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppColors.primary,
+                  size: KSizes.iconM,
+                ),
+              ),
+              const SizedBox(width: KSizes.margin3x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeM,
+                        fontWeight: KSizes.fontWeightMedium,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                MdiIcons.chevronRight,
+                color: AppColors.textTertiary,
+                size: KSizes.iconS,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

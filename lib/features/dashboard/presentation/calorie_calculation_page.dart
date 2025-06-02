@@ -314,9 +314,9 @@ class CalorieCalculationPage extends ConsumerWidget {
           const SizedBox(height: KSizes.margin6x),
           
           OnboardingHelpText(
-            text: 'Din TDEE (${currentTdee.toInt()} kcal) justeres med ${(dynamicTargetCalories - currentTdee).toInt()} kcal for at nå dit mål. '
+            text: 'Din TDEE (${currentTdee.round()} kcal) justeres med ${(dynamicTargetCalories - currentTdee).round()} kcal for at nå dit mål. '
                   'Fritidsaktivitet er ${leisureActivityEnabled ? 'aktiveret' : 'deaktiveret'} i dag. '
-                  'Cirklen viser spiste kalorier (${consumedCalories.toInt()}) ud af tilgængelige kalorier (${totalAvailableCalories.toInt()}).',
+                  'Cirklen viser spiste kalorier (${consumedCalories.round()}) ud af tilgængelige kalorier (${totalAvailableCalories.round()}).',
             type: OnboardingHelpType.neutral,
           ),
         ],
@@ -372,18 +372,18 @@ class CalorieCalculationPage extends ConsumerWidget {
         };
       }
 
-      double leisureMultiplier = 1.0;
+      double leisureAddition = 0.0;
       if (profile.isLeisureActivityEnabledToday) {
-        leisureMultiplier = switch (profile.leisureActivityLevel!) {
-          LeisureActivityLevel.sedentary => 1.0,
-          LeisureActivityLevel.lightlyActive => 1.2,
-          LeisureActivityLevel.moderatelyActive => 1.375,
-          LeisureActivityLevel.veryActive => 1.55,
-          LeisureActivityLevel.extraActive => 1.725,
+        leisureAddition = switch (profile.leisureActivityLevel!) {
+          LeisureActivityLevel.sedentary => 0.0,
+          LeisureActivityLevel.lightlyActive => 0.155,
+          LeisureActivityLevel.moderatelyActive => 0.35,
+          LeisureActivityLevel.veryActive => 0.525,
+          LeisureActivityLevel.extraActive => 0.7,
         };
       }
 
-      tdee = bmr * workMultiplier * leisureMultiplier;
+      tdee = (bmr * workMultiplier) + (bmr * leisureAddition);
     } else {
       tdee = profile.tdee;
     }
