@@ -8,6 +8,7 @@ import '../../onboarding/domain/user_profile_model.dart';
 import '../../food_logging/application/food_logging_notifier.dart';
 import '../application/selected_date_provider.dart';
 import '../application/date_aware_providers.dart';
+import '../presentation/calorie_calculation_page.dart';
 
 /// Widget showing daily calorie intake vs goal with contextual guidance and actionable insights
 class CalorieOverviewWidget extends ConsumerWidget {
@@ -133,7 +134,7 @@ class CalorieOverviewWidget extends ConsumerWidget {
                 // Info button
                 _buildControlButton(
                   icon: MdiIcons.informationOutline,
-                  onTap: () => _showCalorieDetails(context, userProfile),
+                  onTap: () => _showDetailedCalorieBreakdown(context, userProfile, ref),
                   isPrimary: true,
                 ),
               ],
@@ -465,173 +466,13 @@ class CalorieOverviewWidget extends ConsumerWidget {
     }
   }
 
-  void _showCalorieDetails(BuildContext context, UserProfileModel userProfile) {
-    // Calculate current TDEE for display purposes (this is raw TDEE without goal adjustments)
-    final currentTdee = _calculateCurrentTdee(userProfile);
-    final bmr = userProfile.bmr;
-    
-    // Calculate dynamic target calories based on current leisure activity status
-    final dynamicTargetCalories = _calculateDynamicTargetCalories(userProfile, currentTdee);
-    
-    // For activity calories, get the current values from providers (would be better to pass these)
-    final activityCalories = 0.0; // This would need to be passed from the build method
-    final totalAvailableCalories = dynamicTargetCalories + activityCalories;
-    final consumedCalories = 0.0; // This would need to be passed from the build method
-    final remainingCalories = totalAvailableCalories - consumedCalories;
-    
-    final now = DateTime.now();
-    final startOfDay = DateTime(now.year, now.month, now.day);
-    final minutesSinceStartOfDay = now.difference(startOfDay).inMinutes;
-    final percentOfDayPassed = minutesSinceStartOfDay / (24 * 60);
-    final tdeeCaloriesBurnedSoFar = currentTdee * percentOfDayPassed;
-    
-    // Determine work day status
-    final isWorkDay = userProfile.useAutomaticWeekdayDetection 
-        ? (now.weekday >= 1 && now.weekday <= 5)
-        : userProfile.isCurrentlyWorkDay;
-    
-    // Determine leisure activity status
-    final leisureActivityEnabled = userProfile.isLeisureActivityEnabledToday;
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(MdiIcons.calculator, color: AppColors.primary),
-            SizedBox(width: KSizes.margin2x),
-            Text('Kalorie Beregning'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _DetailSection(
-                title: '📊 Grundberegning',
-                items: [
-                  _DetailItem('BMR (Grundstofskifte)', '${bmr.toInt()} kcal/dag', 'Din krop forbrænder dette i hvile'),
-                  _DetailItem('TDEE (Total daglig energi)', '${currentTdee.toInt()} kcal/dag', 'BMR + aktivitetsniveau'),
-                  _DetailItem('Forbrændt så langt i dag', '${tdeeCaloriesBurnedSoFar.toInt()} kcal', '${(percentOfDayPassed * 100).toInt()}% af dagen er gået'),
-                ],
-              ),
-              
-              SizedBox(height: KSizes.margin3x),
-              
-              _DetailSection(
-                title: '🎯 Dit Mål',
-                items: [
-                  _DetailItem('Dagligt mål', '${dynamicTargetCalories.toInt()} kcal', _getGoalTypeText(userProfile.goalType)),
-                  _DetailItem('Måljustering', '${(dynamicTargetCalories - currentTdee).toInt()} kcal', _getGoalAdjustmentText(userProfile.goalType, userProfile.weeklyGoalKg)),
-                  _DetailItem('Type dag', isWorkDay ? 'Arbejdsdag' : 'Fridag', _getWorkDayExplanation(userProfile)),
-                  _DetailItem('Fritidsaktivitet', leisureActivityEnabled ? 'Aktiveret' : 'Deaktiveret', leisureActivityEnabled ? 'Fritidsaktivitet tæller med i dagens TDEE' : 'Kun arbejdsaktivitet tæller med'),
-                ],
-              ),
-              
-              SizedBox(height: KSizes.margin3x),
-              
-              _DetailSection(
-                title: '🏃‍♂️ Aktivitet & Resultater',
-                items: [
-                  _DetailItem('Ekstra aktivitet', '${activityCalories.toInt()} kcal', 'Fra træning og motion'),
-                  _DetailItem('Tilgængelige kalorier', '${totalAvailableCalories.toInt()} kcal', 'Mål + aktivitet'),
-                  _DetailItem('Spist i dag', '${consumedCalories.toInt()} kcal', 'Progress: ${((consumedCalories / totalAvailableCalories) * 100).toInt()}%'),
-                  _DetailItem('Tilbage at spise', '${remainingCalories.toInt()} kcal', remainingCalories < 0 ? 'Over målet!' : 'Kan stadig spises'),
-                ],
-              ),
-              
-              SizedBox(height: KSizes.margin3x),
-              
-              Container(
-                padding: EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  color: AppColors.info.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                  border: Border.all(color: AppColors.info.withOpacity(0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '💡 Forklaring',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeM,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.info,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: KSizes.margin2x),
-                    Text(
-                      'Din TDEE (${currentTdee.toInt()} kcal) justeres med ${(dynamicTargetCalories - currentTdee).toInt()} kcal for at nå dit mål. '
-                      'Fritidsaktivitet er ${leisureActivityEnabled ? 'aktiveret' : 'deaktiveret'} i dag. '
-                      'Cirklen viser spiste kalorier (${consumedCalories.toInt()}) ud af tilgængelige kalorier (${totalAvailableCalories.toInt()}).',
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: AppColors.textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Forstået'),
-          ),
-        ],
+  void _showDetailedCalorieBreakdown(BuildContext context, UserProfileModel userProfile, WidgetRef ref) {
+    // Navigate to the new dedicated page instead of showing a dialog
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CalorieCalculationPage(),
       ),
     );
-  }
-  
-  String _getGoalTypeText(GoalType? goalType) {
-    switch (goalType) {
-      case GoalType.weightLoss:
-        return 'Vægttab';
-      case GoalType.weightGain:
-        return 'Vægtøgning';
-      case GoalType.muscleGain:
-        return 'Muskelvækst';
-      case GoalType.weightMaintenance:
-        return 'Vægtvedligeholdelse';
-      default:
-        return 'Ikke sat';
-    }
-  }
-  
-  String _getWorkDayExplanation(UserProfileModel profile) {
-    if (profile.workActivityLevel == null) {
-      return 'Bruger gammelt aktivitetssystem';
-    }
-    
-    if (profile.useAutomaticWeekdayDetection) {
-      return 'Automatisk detekteret (Man-Fre = arbejdsdage)';
-    } else {
-      return 'Manuel indstilling';
-    }
-  }
-
-  String _getGoalAdjustmentText(GoalType? goalType, double weeklyGoalKg) {
-    switch (goalType) {
-      case GoalType.weightLoss:
-        return 'Underskud for ${weeklyGoalKg}kg/uge vægttab';
-      case GoalType.weightGain:
-        return 'Overskud for ${weeklyGoalKg}kg/uge vægtøgning';
-      case GoalType.muscleGain:
-        return 'Overskud for ${weeklyGoalKg}kg/uge muskelvækst';
-      case GoalType.weightMaintenance:
-        return 'Ingen justering - vedligehold vægt';
-      default:
-        return 'Ingen justering';
-    }
   }
 
   double _calculateTargetCalories(UserProfileModel profile) {
