@@ -49,48 +49,41 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppDesign.backgroundGradient,
-      ),
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: EdgeInsets.all(KSizes.margin4x),
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: widget.onClose,
-                  icon: Icon(
-                    MdiIcons.close,
-                    color: AppColors.textPrimary,
-                    size: KSizes.iconM,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'Scan stregkode',
-                    style: TextStyle(
-                      fontSize: KSizes.fontSizeXL,
-                      fontWeight: KSizes.fontWeightBold,
-                      color: AppColors.textPrimary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                IconButton(
-                  onPressed: _toggleFlash,
-                  icon: Icon(
-                    _flashOn ? MdiIcons.flashlight : MdiIcons.flashlightOff,
-                    color: AppColors.textPrimary,
-                    size: KSizes.iconM,
-                  ),
-                ),
-              ],
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(
+          'Scan stregkode',
+          style: TextStyle(
+            fontSize: KSizes.fontSizeL,
+            fontWeight: KSizes.fontWeightBold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: widget.onClose,
+          icon: Icon(
+            MdiIcons.close,
+            color: Colors.white,
+            size: KSizes.iconL,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: _toggleFlash,
+            icon: Icon(
+              _flashOn ? MdiIcons.flashlight : MdiIcons.flashlightOff,
+              color: Colors.white,
+              size: KSizes.iconL,
             ),
           ),
-          
+        ],
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
           // Scanner area
           Expanded(
             flex: 4,
@@ -170,110 +163,165 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
           ),
           
           // Instructions and error message
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: EdgeInsets.all(KSizes.margin4x),
-              child: Column(
-                children: [
-                  if (_errorMessage != null) ...[
-                    Container(
-                      padding: EdgeInsets.all(KSizes.margin4x),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(KSizes.radiusM),
-                        border: Border.all(
-                          color: AppColors.error.withOpacity(0.3),
-                        ),
+          Container(
+            padding: EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(KSizes.radiusXL),
+                topRight: Radius.circular(KSizes.radiusXL),
+              ),
+            ),
+            child: Column(
+              children: [
+                // Handle bar
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: EdgeInsets.only(bottom: KSizes.margin4x),
+                  decoration: BoxDecoration(
+                    color: AppColors.textTertiary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: EdgeInsets.all(KSizes.margin4x),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(KSizes.radiusM),
+                      border: Border.all(
+                        color: AppColors.error.withOpacity(0.3),
                       ),
-                      child: Row(
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          MdiIcons.alertCircle,
+                          color: AppColors.error,
+                          size: KSizes.iconM,
+                        ),
+                        SizedBox(width: KSizes.margin3x),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeM,
+                              color: AppColors.error,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: KSizes.margin4x),
+                ],
+                
+                // Instructions
+                Container(
+                  padding: EdgeInsets.all(KSizes.margin4x),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    border: Border.all(
+                      color: AppColors.info.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
                         children: [
                           Icon(
-                            MdiIcons.alertCircle,
-                            color: AppColors.error,
+                            MdiIcons.barcodeScan,
+                            color: AppColors.info,
                             size: KSizes.iconM,
                           ),
                           SizedBox(width: KSizes.margin3x),
                           Expanded(
                             child: Text(
-                              _errorMessage!,
+                              'Placer stregkoden i rammen',
                               style: TextStyle(
-                                fontSize: KSizes.fontSizeM,
-                                color: AppColors.error,
+                                fontSize: KSizes.fontSizeL,
+                                fontWeight: KSizes.fontWeightMedium,
+                                color: AppColors.info,
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: KSizes.margin4x),
-                  ],
-                  
-                  // Instructions
-                  Container(
-                    padding: EdgeInsets.all(KSizes.margin4x),
-                    decoration: BoxDecoration(
-                      color: AppColors.info.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(KSizes.radiusM),
-                      border: Border.all(
-                        color: AppColors.info.withOpacity(0.3),
+                      SizedBox(height: KSizes.margin2x),
+                      Text(
+                        'Vi henter automatisk ernæringsdata fra Open Food Facts database når stregkoden scannes.',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              MdiIcons.barcodeScan,
-                              color: AppColors.info,
-                              size: KSizes.iconM,
-                            ),
-                            SizedBox(width: KSizes.margin3x),
-                            Expanded(
-                              child: Text(
-                                'Placer stregkoden i rammen',
-                                style: TextStyle(
-                                  fontSize: KSizes.fontSizeL,
-                                  fontWeight: KSizes.fontWeightMedium,
-                                  color: AppColors.info,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: KSizes.margin2x),
-                        Text(
-                          'Vi henter automatisk ernæringsdata fra Open Food Facts database når stregkoden scannes.',
-                          style: TextStyle(
-                            fontSize: KSizes.fontSizeM,
-                            color: AppColors.textSecondary,
-                            height: 1.4,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                  
-                  SizedBox(height: KSizes.margin4x),
-                  
-                  // Manual input option
-                  TextButton.icon(
-                    onPressed: _showManualBarcodeInput,
-                    icon: Icon(
-                      MdiIcons.keyboard,
+                ),
+                
+                SizedBox(height: KSizes.margin4x),
+                
+                // Manual input option
+                OutlinedButton.icon(
+                  onPressed: _showManualBarcodeInput,
+                  icon: Icon(
+                    MdiIcons.keyboard,
+                    color: AppColors.primary,
+                  ),
+                  label: Text(
+                    'Indtast stregkode manuelt',
+                    style: TextStyle(
                       color: AppColors.primary,
+                      fontSize: KSizes.fontSizeM,
+                      fontWeight: KSizes.fontWeightMedium,
                     ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: KSizes.margin6x,
+                      vertical: KSizes.margin3x,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(KSizes.radiusL),
+                    ),
+                    side: BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                ),
+                
+                SizedBox(height: KSizes.margin4x),
+                
+                // Cancel button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: widget.onClose,
+                    icon: Icon(MdiIcons.close, size: KSizes.iconM),
                     label: Text(
-                      'Indtast stregkode manuelt',
+                      'Annuller',
                       style: TextStyle(
-                        color: AppColors.primary,
-                        fontSize: KSizes.fontSizeM,
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightMedium,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.textSecondary,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.all(KSizes.margin4x),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(KSizes.radiusL),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                
+                // Safe area padding at bottom
+                SizedBox(height: MediaQuery.of(context).padding.bottom + KSizes.margin2x),
+              ],
             ),
           ),
         ],

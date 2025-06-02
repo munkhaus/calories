@@ -61,11 +61,13 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       _caloriesPer100gController.text = favorite.caloriesPer100g > 0 
                                           ? favorite.caloriesPer100g.toStringAsFixed(0) 
                                           : '0';
-      _portionGramsController.text = favorite.defaultServingGrams > 0
-                                        ? favorite.defaultServingGrams.toStringAsFixed(0)
-                                        : (favorite.defaultQuantity > 0 && favorite.defaultServingUnit == 'gram' 
-                                            ? favorite.defaultQuantity.toStringAsFixed(0) 
-                                            : '100');
+      if (_getFoodType() == FoodType.meal) {
+        _portionGramsController.text = favorite.defaultServingGrams > 0
+                                          ? favorite.defaultServingGrams.toStringAsFixed(0)
+                                          : (favorite.defaultQuantity > 0 && favorite.defaultServingUnit == 'gram' 
+                                              ? favorite.defaultQuantity.toStringAsFixed(0) 
+                                              : '100');
+      }
       _calculateTotalCalories();
     } else if (_currentAiFoodDetails != null) {
       // New favorite from AI search (using full details)
@@ -76,13 +78,15 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                                           ? _currentAiFoodDetails!.nutrition.calories.toStringAsFixed(0)
                                           : '0';
 
-      final defaultServing = _currentAiFoodDetails!.servingSizes.firstWhere(
-        (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
-        orElse: () => _currentAiFoodDetails!.servingSizes.isNotEmpty 
-                      ? _currentAiFoodDetails!.servingSizes.first 
-                      : const online_models.OnlineServingSize(name: '100 gram', grams: 100, isDefault: true),
-      );
-      _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
+      if (_getFoodType() == FoodType.meal) {
+        final defaultServing = _currentAiFoodDetails!.servingSizes.firstWhere(
+          (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
+          orElse: () => _currentAiFoodDetails!.servingSizes.isNotEmpty 
+                        ? _currentAiFoodDetails!.servingSizes.first 
+                        : const online_models.OnlineServingSize(name: '100 gram', grams: 100, isDefault: true),
+        );
+        _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
+      }
       
       _calculateTotalCalories();
     } else {
@@ -91,7 +95,9 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       _notesController.text = '';
       _selectedMealType = MealType.none;
       _caloriesPer100gController.text = '0';
-      _portionGramsController.text = '100'; 
+      if (_getFoodType() == FoodType.meal) {
+        _portionGramsController.text = '100';
+      }
       _calculateTotalCalories();
     }
 
@@ -448,17 +454,19 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
 
     double caloriesPer100g;
     double totalCaloriesForServing;
-    final portionGrams = double.tryParse(_portionGramsController.text) ?? 100.0;
+    double portionGrams;
     final inputCalories = double.tryParse(_caloriesPer100gController.text) ?? 0.0;
     
     if (_getFoodType() == FoodType.meal) {
       // For meals: input is total calories, calculate calories per 100g
+      portionGrams = double.tryParse(_portionGramsController.text) ?? 100.0;
       totalCaloriesForServing = inputCalories;
       caloriesPer100g = portionGrams > 0 ? (inputCalories / portionGrams) * 100.0 : 0.0;
     } else {
-      // For ingredients: input is calories per 100g, calculate total calories
+      // For ingredients: only calories per 100g, no reference portion
       caloriesPer100g = inputCalories;
-      totalCaloriesForServing = (caloriesPer100g / 100.0) * portionGrams;
+      portionGrams = 100.0; // Default to 100g for storage purposes
+      totalCaloriesForServing = caloriesPer100g; // Same as per 100g for storage
     }
 
     // Ensure servingSizes is initialized, possibly from _currentAiFoodDetails if available
@@ -598,17 +606,19 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                                         ? details.nutrition.calories.toStringAsFixed(0) 
                                         : '0';
         
-    final online_models.OnlineServingSize defaultServing = details.servingSizes.firstWhere(
-      (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
-          orElse: () => details.servingSizes.isNotEmpty 
-              ? details.servingSizes.first 
-                    : const online_models.OnlineServingSize(name: '100 gram', grams: 100, isDefault: true), // Ensure this returns OnlineServingSize
-    );
-    _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
+    if (_getFoodType() == FoodType.meal) {
+      final defaultServing = details.servingSizes.firstWhere(
+        (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
+        orElse: () => details.servingSizes.isNotEmpty 
+            ? details.servingSizes.first 
+            : const online_models.OnlineServingSize(name: '100 gram', grams: 100, isDefault: true),
+      );
+      _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
+    }
     
     _calculateTotalCalories();
-    }
   }
+}
 
 class AiSearchDialog extends ConsumerStatefulWidget {
   final String initialQuery;

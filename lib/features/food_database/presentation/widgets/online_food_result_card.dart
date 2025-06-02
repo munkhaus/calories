@@ -210,41 +210,6 @@ class OnlineFoodResultCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFoodTypeTag(FoodType type) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: KSizes.margin2x,
-        vertical: KSizes.margin1x,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(KSizes.radiusXS),
-        border: Border.all(
-          color: AppColors.secondary.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            type.emoji,
-            style: TextStyle(fontSize: KSizes.fontSizeXS),
-          ),
-          SizedBox(width: KSizes.margin1x),
-          Text(
-            type.displayName,
-            style: TextStyle(
-              fontSize: KSizes.fontSizeXS,
-              fontWeight: KSizes.fontWeightMedium,
-              color: AppColors.secondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   IconData _getFoodIcon() {
     final name = foodResult.name.toLowerCase();
     

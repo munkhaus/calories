@@ -126,11 +126,11 @@ void main() {
             provider: 'test',
             searchMode: online_models.SearchMode.ingredients,
             estimatedCalories: 350.0,
-            tags: const online_models.FoodTags(
-              foodTypes: [online_models.FoodType.dairy],
-              cuisineStyles: [online_models.CuisineStyle.danish],
+            tags: online_models.FoodTags(
+              foodTypes: [],
+              cuisineStyles: [],
               dietaryTags: [],
-              preparationTypes: [online_models.PreparationType.fresh],
+              preparationTypes: [],
               customTags: ['ost'],
             ),
           ),
