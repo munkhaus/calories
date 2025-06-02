@@ -113,6 +113,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
       children: [
         // Name section
         OnboardingSection(
+          gradientColor: AppColors.primary,
           child: _buildNameSection(context, state, notifier),
         ),
         
@@ -120,6 +121,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
         
         // Date of birth section
         OnboardingSection(
+          gradientColor: AppColors.info,
           child: _buildDateOfBirthSection(context, state, notifier),
         ),
         
@@ -127,6 +129,7 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
         
         // Gender section
         OnboardingSection(
+          gradientColor: AppColors.success,
           child: _buildGenderSection(context, state, notifier),
         ),
       ],
@@ -140,12 +143,15 @@ class _PersonalInfoStepWidgetState extends ConsumerState<PersonalInfoStepWidget>
         OnboardingSectionHeader(
           title: 'Hvad hedder du?',
           subtitle: 'Dit navn gør appen mere personlig og hjælper os med at skræddersy din oplevelse.',
+          icon: MdiIcons.account,
+          iconColor: AppColors.primary,
         ),
         
         KSizes.spacingVerticalL,
         
         OnboardingInputContainer(
           isActive: state.userProfile.name.isNotEmpty,
+          borderColor: AppColors.primary,
           child: TextField(
             controller: _nameController,
             focusNode: _nameFocus,

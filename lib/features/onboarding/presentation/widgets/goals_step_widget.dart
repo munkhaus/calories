@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/onboarding_notifier.dart';
@@ -67,12 +68,15 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
       children: [
         // Goal selection cards - simplified
         OnboardingSection(
+          gradientColor: AppColors.primary,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               OnboardingSectionHeader(
                 title: 'Vælg dit hovedmål',
                 subtitle: 'Dit mål påvirker dine daglige kalorier.',
+                icon: MdiIcons.flagTriangle,
+                iconColor: AppColors.primary,
               ),
               
               KSizes.spacingVerticalL,
@@ -167,19 +171,95 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
         : currentWeight > 0 ? currentWeight : minWeight;
 
     return OnboardingSection(
+      gradientColor: AppColors.success,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           OnboardingSectionHeader(
             title: title,
             subtitle: 'Sæt et realistisk mål.',
+            icon: MdiIcons.target,
+            iconColor: AppColors.success,
           ),
           
           KSizes.spacingVerticalL,
           
-          // Target weight input - simplified styling
+          // Current vs target display (like goal edit page)
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin4x),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.success.withOpacity(0.05),
+                  AppColors.success.withOpacity(0.02),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(KSizes.radiusL),
+              border: Border.all(
+                color: AppColors.success.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nuværende vægt',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '${currentWeight.toStringAsFixed(1)} kg',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  MdiIcons.arrowRight,
+                  color: AppColors.success,
+                  size: KSizes.iconM,
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Målvægt',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    Text(
+                      '${targetWeight.toStringAsFixed(1)} kg',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.success,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: KSizes.margin6x),
+          
+          // Target weight input
           OnboardingInputContainer(
             isActive: state.userProfile.targetWeightKg > 0,
+            borderColor: AppColors.success,
             child: TextFormField(
               controller: _targetWeightController,
               focusNode: _targetWeightFocus,
@@ -298,12 +378,15 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
         : defaultValue;
 
     return OnboardingSection(
+      gradientColor: goalType == GoalType.weightLoss ? AppColors.warning : AppColors.info,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           OnboardingSectionHeader(
             title: title,
             subtitle: 'Vælg et bæredygtigt tempo.',
+            icon: goalType == GoalType.weightLoss ? MdiIcons.trendingDown : MdiIcons.trendingUp,
+            iconColor: goalType == GoalType.weightLoss ? AppColors.warning : AppColors.info,
           ),
           
           KSizes.spacingVerticalL,
@@ -311,6 +394,7 @@ class _GoalsStepWidgetState extends ConsumerState<GoalsStepWidget> {
           // Weekly goal input - simplified styling
           OnboardingInputContainer(
             isActive: state.userProfile.weeklyGoalKg > 0,
+            borderColor: goalType == GoalType.weightLoss ? AppColors.warning : AppColors.info,
             child: TextFormField(
               controller: _weeklyGoalController,
               focusNode: _weeklyGoalFocus,

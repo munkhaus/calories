@@ -69,6 +69,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
       children: [
         // Height section
         OnboardingSection(
+          gradientColor: AppColors.info,
           child: _buildHeightSection(context, state, notifier),
         ),
         
@@ -76,6 +77,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         
         // Current weight section  
         OnboardingSection(
+          gradientColor: AppColors.primary,
           child: _buildCurrentWeightSection(context, state, notifier),
         ),
         
@@ -97,6 +99,8 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         OnboardingSectionHeader(
           title: 'Hvor høj er du?',
           subtitle: 'Indtast din højde i centimeter.',
+          icon: MdiIcons.humanMaleHeight,
+          iconColor: AppColors.info,
         ),
         
         KSizes.spacingVerticalL,
@@ -104,6 +108,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         // Height input with simplified styling
         OnboardingInputContainer(
           isActive: state.userProfile.heightCm > 0,
+          borderColor: AppColors.info,
           child: TextField(
             controller: _heightController,
             focusNode: _heightFocus,
@@ -185,6 +190,8 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         OnboardingSectionHeader(
           title: 'Hvad vejer du nu?',
           subtitle: 'Indtast din nuværende vægt i kilogram.',
+          icon: MdiIcons.scaleBalance,
+          iconColor: AppColors.primary,
         ),
         
         KSizes.spacingVerticalL,
@@ -192,6 +199,7 @@ class _PhysicalInfoStepWidgetState extends ConsumerState<PhysicalInfoStepWidget>
         // Weight input with simplified styling
         OnboardingInputContainer(
           isActive: state.userProfile.currentWeightKg > 0,
+          borderColor: AppColors.primary,
           child: TextField(
             controller: _currentWeightController,
             focusNode: _currentWeightFocus,

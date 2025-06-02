@@ -81,63 +81,115 @@ class OnboardingStepHeader extends StatelessWidget {
   }
 }
 
-/// Simplified section container - removed unnecessary card styling
+/// Simplified section container - modern styling like goal edit page
 class OnboardingSection extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
+  final Color? gradientColor;
 
   const OnboardingSection({
     super.key,
     required this.child,
     this.padding,
+    this.gradientColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = gradientColor ?? AppColors.success;
+    
     return Container(
       width: double.infinity,
-      padding: padding ?? EdgeInsets.all(KSizes.margin4x),
+      padding: padding ?? EdgeInsets.all(KSizes.margin6x),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        border: Border.all(
-          color: AppColors.border.withOpacity(0.1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            color.withOpacity(0.02),
+          ],
         ),
+        borderRadius: BorderRadius.circular(KSizes.radiusXL),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.08),
+            blurRadius: KSizes.blurRadiusL,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: child,
     );
   }
 }
 
-/// Simplified section header - removed redundant icons
+/// Simplified section header - modern typography
 class OnboardingSectionHeader extends StatelessWidget {
   final String title;
   final String subtitle;
+  final IconData? icon;
+  final Color? iconColor;
 
   const OnboardingSectionHeader({
     super.key,
     required this.title,
     required this.subtitle,
+    this.icon,
+    this.iconColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: KSizes.fontWeightSemiBold,
-            color: AppColors.textPrimary,
+        if (icon != null) ...[
+          Container(
+            padding: const EdgeInsets.all(KSizes.margin3x),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  iconColor ?? AppColors.primary,
+                  (iconColor ?? AppColors.primary).withOpacity(0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+              boxShadow: [
+                BoxShadow(
+                  color: (iconColor ?? AppColors.primary).withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon!,
+              color: Colors.white,
+              size: KSizes.iconM,
+            ),
           ),
-        ),
-        KSizes.spacingVerticalXS,
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: AppColors.textSecondary,
-            height: 1.3,
+          const SizedBox(width: KSizes.margin3x),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeXL,
+                  fontWeight: KSizes.fontWeightBold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeM,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -145,30 +197,39 @@ class OnboardingSectionHeader extends StatelessWidget {
   }
 }
 
-/// Simplified input container - only primary color, reduced styling
+/// Modern input container - matching goal edit page
 class OnboardingInputContainer extends StatelessWidget {
   final Widget child;
   final bool isActive;
+  final Color? borderColor;
 
   const OnboardingInputContainer({
     super.key,
     required this.child,
     this.isActive = false,
+    this.borderColor,
   });
 
   @override
   Widget build(BuildContext context) {
+    final color = borderColor ?? AppColors.success;
+    
     return Container(
-      padding: EdgeInsets.all(KSizes.margin4x),
+      padding: EdgeInsets.all(KSizes.margin3x),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(KSizes.radiusM),
         border: Border.all(
-          color: isActive 
-            ? AppColors.primary
-            : AppColors.primary.withOpacity(0.2),
+          color: isActive ? color.withOpacity(0.3) : AppColors.border,
           width: isActive ? 2 : 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );
