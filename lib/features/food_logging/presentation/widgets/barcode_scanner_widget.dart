@@ -41,6 +41,10 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
 
   @override
   void dispose() {
+    // Mark as processing to prevent any pending operations
+    _isProcessing = true;
+    _hasFoundBarcode = true;
+    
     // Ensure scanner is stopped before disposal
     _controller?.stop();
     _controller?.dispose();
@@ -94,8 +98,23 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
                   onDetect: (capture) {
                     final List<Barcode> barcodes = capture.barcodes;
                     for (final barcode in barcodes) {
+                      // Enhanced validation before processing
                       if (!_isProcessing && !_hasFoundBarcode && barcode.rawValue != null) {
-                        _processBarcode(barcode.rawValue!);
+                        final barcodeValue = barcode.rawValue!.trim();
+                        
+                        // Skip empty, very short, or obviously invalid barcodes
+                        if (barcodeValue.isEmpty || 
+                            barcodeValue.length < 6 || 
+                            barcodeValue.contains('(') ||  // Skip barcodes with parentheses that might cause issues
+                            barcodeValue.contains(')') ||
+                            barcodeValue.contains(' ') ||
+                            !RegExp(r'^\d+$').hasMatch(barcodeValue)) {
+                          print('🚫 Skipping invalid barcode: "$barcodeValue"');
+                          continue; // Skip this barcode and try the next one
+                        }
+                        
+                        print('✅ Processing valid barcode: "$barcodeValue"');
+                        _processBarcode(barcodeValue);
                         break;
                       }
                     }
@@ -343,6 +362,8 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
   Future<void> _processBarcode(String barcode) async {
     if (_isProcessing || _hasFoundBarcode) return;
 
+    print('🔄 Processing barcode: $barcode');
+
     if (mounted) {
       setState(() {
         _isProcessing = true;
@@ -352,34 +373,52 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
     }
 
     try {
-      // Stop the scanner immediately
+      // Stop the scanner immediately to prevent duplicate scans
       await _controller?.stop();
+      
+      // Add a small delay to debounce rapid scans
+      await Future.delayed(const Duration(milliseconds: 200));
       
       final result = await BarcodeFoodService.fetchFoodFromBarcode(barcode);
       
       if (result.isSuccess) {
+        print('✅ Barcode processing successful');
         // Call the callback after stopping scanner
         widget.onFoodFound(result.success);
       } else {
+        print('❌ Barcode processing failed: ${result.failure.message}');
         // Reset if there was an error so user can try again
         if (mounted) {
           setState(() {
             _hasFoundBarcode = false;
             _errorMessage = result.failure.message;
           });
-          // Restart scanner for retry
-          await _controller?.start();
+          
+          // Add delay before restarting scanner to prevent immediate re-scanning
+          await Future.delayed(const Duration(milliseconds: 1000));
+          
+          // Restart scanner for retry only if still mounted and not processing another barcode
+          if (mounted && !_hasFoundBarcode) {
+            await _controller?.start();
+          }
         }
       }
     } catch (e) {
+      print('💥 Exception in barcode processing: $e');
       // Reset on error so user can try again
       if (mounted) {
         setState(() {
           _hasFoundBarcode = false;
-          _errorMessage = 'Uventet fejl: $e';
+          _errorMessage = 'Uventet fejl ved scanning. Prøv igen.';
         });
-        // Restart scanner for retry
-        await _controller?.start();
+        
+        // Add delay before restarting scanner
+        await Future.delayed(const Duration(milliseconds: 1000));
+        
+        // Restart scanner for retry only if still mounted and not processing another barcode
+        if (mounted && !_hasFoundBarcode) {
+          await _controller?.start();
+        }
       }
     } finally {
       if (mounted) {
