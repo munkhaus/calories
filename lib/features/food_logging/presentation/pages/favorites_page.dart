@@ -56,6 +56,15 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
     final int tabCount = widget.initialFilter != null ? 1 : 2;
     _tabController = TabController(length: tabCount, vsync: this);
     
+    // Add listener to update UI when tab changes
+    _tabController.addListener(() {
+      if (mounted) {
+        setState(() {
+          // This will trigger a rebuild to update tab appearances
+        });
+      }
+    });
+    
     // Set initial filter based on widget parameter
     _selectedFoodFilter = widget.initialFilter;
     
@@ -161,26 +170,98 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                 if (!showOnlyFoodTab) 
                   Container(
                     margin: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                    padding: EdgeInsets.all(KSizes.margin1x),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(KSizes.radiusL),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: AppColors.primary.withOpacity(0.08),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: TabBar(
-                      controller: _tabController,
-                      indicatorColor: AppColors.primary,
-                      labelColor: AppColors.primary,
-                      unselectedLabelColor: AppColors.textSecondary,
-                      indicatorSize: TabBarIndicatorSize.tab,
-                      tabs: const [
-                        Tab(text: 'Mad'),
-                        Tab(text: 'Aktiviteter'),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _tabController.animateTo(0),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                              decoration: BoxDecoration(
+                                color: _tabController.index == 0 
+                                    ? AppColors.primary 
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    MdiIcons.silverwareForkKnife,
+                                    size: KSizes.iconS,
+                                    color: _tabController.index == 0 
+                                        ? Colors.white 
+                                        : AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: KSizes.margin2x),
+                                  Text(
+                                    'Mad',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeL,
+                                      fontWeight: _tabController.index == 0 
+                                          ? KSizes.fontWeightBold 
+                                          : KSizes.fontWeightMedium,
+                                      color: _tabController.index == 0 
+                                          ? Colors.white 
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => _tabController.animateTo(1),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: KSizes.margin3x),
+                              decoration: BoxDecoration(
+                                color: _tabController.index == 1 
+                                    ? AppColors.primary 
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(KSizes.radiusM),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    MdiIcons.runFast,
+                                    size: KSizes.iconS,
+                                    color: _tabController.index == 1 
+                                        ? Colors.white 
+                                        : AppColors.textSecondary,
+                                  ),
+                                  SizedBox(width: KSizes.margin2x),
+                                  Text(
+                                    'Aktiviteter',
+                                    style: TextStyle(
+                                      fontSize: KSizes.fontSizeL,
+                                      fontWeight: _tabController.index == 1 
+                                          ? KSizes.fontWeightBold 
+                                          : KSizes.fontWeightMedium,
+                                      color: _tabController.index == 1 
+                                          ? Colors.white 
+                                          : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
