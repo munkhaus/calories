@@ -815,8 +815,22 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> {
   /// Use food favorite with better UX
   Future<void> _useFoodFavorite(FavoriteFoodModel favorite) async {
     try {
-      // Convert favorite to UserFoodLogModel and log directly
-      final foodLog = favorite.toUserFoodLog();
+      UserFoodLogModel foodLog;
+      
+      // If it's an ingredient, show gram selection dialog
+      if (favorite.foodType == FoodType.ingredient) {
+        final gramSelection = await _showGramSelectionDialog(favorite);
+        if (gramSelection == null) return; // User cancelled
+        
+        // Create food log with custom gram amount
+        foodLog = favorite.toUserFoodLog(
+          quantity: gramSelection['grams'],
+          servingUnit: 'gram',
+        );
+      } else {
+        // For meals, use default portion
+        foodLog = favorite.toUserFoodLog();
+      }
 
       // Log the food using the provider
       await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
@@ -831,11 +845,15 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> {
       
       if (mounted) {
         // Show simple success message and navigate back to dashboard
+        final portionText = favorite.foodType == FoodType.ingredient 
+            ? '${foodLog.quantity.round()}g'
+            : '1 portion';
+            
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${favorite.foodName} tilføjet'),
+            content: Text('${favorite.foodName} ($portionText) tilføjet - ${foodLog.calories} kcal'),
             backgroundColor: AppColors.success,
-            duration: Duration(seconds: 2),
+            duration: Duration(seconds: 3),
           ),
         );
         
@@ -852,6 +870,118 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> {
         );
       }
     }
+  }
+
+  /// Show dialog for selecting gram amount for ingredients
+  Future<Map<String, dynamic>?> _showGramSelectionDialog(FavoriteFoodModel favorite) {
+    final gramController = TextEditingController(text: '100');
+    
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(KSizes.radiusL),
+        ),
+        title: Row(
+          children: [
+            Icon(MdiIcons.scaleBalance, color: AppColors.secondary),
+            SizedBox(width: KSizes.margin2x),
+            Expanded(
+              child: Text(
+                'Hvor meget ${favorite.foodName}?',
+                style: TextStyle(fontSize: KSizes.fontSizeL),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Angiv antal gram du vil spise:',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            SizedBox(height: KSizes.margin4x),
+            
+            // Gram input
+            TextField(
+              controller: gramController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Gram',
+                suffixText: 'g',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                helperText: '${favorite.caloriesPer100g} kcal per 100g',
+              ),
+              onChanged: (value) {
+                // Update calories preview in real time if needed
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin4x),
+            
+            // Calories preview
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: gramController,
+              builder: (context, value, child) {
+                final grams = double.tryParse(value.text) ?? 0.0;
+                final calories = (favorite.caloriesPer100g * grams / 100).round();
+                
+                return Container(
+                  padding: EdgeInsets.all(KSizes.margin3x),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(KSizes.radiusM),
+                    border: Border.all(
+                      color: AppColors.info.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(MdiIcons.calculator, color: AppColors.info, size: KSizes.iconS),
+                      SizedBox(width: KSizes.margin2x),
+                      Text(
+                        '${grams.round()}g = $calories kcal',
+                        style: TextStyle(
+                          fontSize: KSizes.fontSizeM,
+                          fontWeight: KSizes.fontWeightMedium,
+                          color: AppColors.info,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Annuller'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final grams = double.tryParse(gramController.text) ?? 100.0;
+              Navigator.of(context).pop({
+                'grams': grams,
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+            ),
+            child: Text('Spis nu'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _handleFavoriteAction(String value, FavoriteFoodModel favorite) {

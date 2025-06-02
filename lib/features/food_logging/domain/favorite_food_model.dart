@@ -287,13 +287,20 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
     final useServingUnit = servingUnit ?? defaultServingUnit;
     final useMealType = mealType ?? preferredMealType;
     
-    // Find serving size info
-    final servingInfo = servingSizes.firstWhere(
-      (s) => s.name.toLowerCase() == useServingUnit.toLowerCase(),
-      orElse: () => FavoriteServingSize(name: useServingUnit, grams: defaultServingGrams),
-    );
+    double totalGrams;
     
-    final totalGrams = servingInfo.grams * useQuantity;
+    // For ingredients with gram serving unit, quantity IS the grams
+    if (foodType == FoodType.ingredient && useServingUnit.toLowerCase() == 'gram') {
+      totalGrams = useQuantity;
+    } else {
+      // For meals or other serving units, use the traditional calculation
+      final servingInfo = servingSizes.firstWhere(
+        (s) => s.name.toLowerCase() == useServingUnit.toLowerCase(),
+        orElse: () => FavoriteServingSize(name: useServingUnit, grams: defaultServingGrams),
+      );
+      totalGrams = servingInfo.grams * useQuantity;
+    }
+    
     final factor = totalGrams / 100; // Convert from per 100g to actual serving
     
     return UserFoodLogModel(
