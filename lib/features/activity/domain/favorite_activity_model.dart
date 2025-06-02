@@ -1,4 +1,5 @@
 import 'user_activity_log_model.dart';
+import '../infrastructure/activity_calorie_data.dart';
 
 /// Model for favorite activity items that can be quickly selected for logging
 class FavoriteActivityModel {
@@ -7,7 +8,9 @@ class FavoriteActivityModel {
   final ActivityInputType inputType;
   final double durationMinutes;
   final double distanceKm;
-  final ActivityIntensity intensity;
+  final ActivityIntensity intensity; // Legacy field
+  final ActivityCategory activityCategory; // New field for category
+  final ActivityIntensityLevel intensityLevel; // New field for 4-level intensity
   final int caloriesBurned;
   final String notes;
   final DateTime createdAt;
@@ -20,7 +23,9 @@ class FavoriteActivityModel {
     this.inputType = ActivityInputType.varighed,
     this.durationMinutes = 0.0,
     this.distanceKm = 0.0,
-    this.intensity = ActivityIntensity.moderat,
+    this.intensity = ActivityIntensity.moderat, // Legacy default
+    this.activityCategory = ActivityCategory.anden,
+    this.intensityLevel = ActivityIntensityLevel.moderat,
     this.caloriesBurned = 0,
     this.notes = '',
     required this.createdAt,
@@ -37,6 +42,8 @@ class FavoriteActivityModel {
       durationMinutes: (json['durationMinutes'] ?? 0.0).toDouble(),
       distanceKm: (json['distanceKm'] ?? 0.0).toDouble(),
       intensity: _intensityFromString(json['intensity'] ?? 'moderat'),
+      activityCategory: _categoryFromString(json['activityCategory'] ?? 'anden'),
+      intensityLevel: _intensityLevelFromString(json['intensityLevel'] ?? 'moderat'),
       caloriesBurned: json['caloriesBurned'] ?? 0,
       notes: json['notes'] ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
@@ -54,6 +61,8 @@ class FavoriteActivityModel {
       'durationMinutes': durationMinutes,
       'distanceKm': distanceKm,
       'intensity': _intensityToString(intensity),
+      'activityCategory': _categoryToString(activityCategory),
+      'intensityLevel': _intensityLevelToString(intensityLevel),
       'caloriesBurned': caloriesBurned,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
@@ -70,6 +79,8 @@ class FavoriteActivityModel {
     double? durationMinutes,
     double? distanceKm,
     ActivityIntensity? intensity,
+    ActivityCategory? activityCategory,
+    ActivityIntensityLevel? intensityLevel,
     int? caloriesBurned,
     String? notes,
     DateTime? createdAt,
@@ -83,6 +94,8 @@ class FavoriteActivityModel {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       distanceKm: distanceKm ?? this.distanceKm,
       intensity: intensity ?? this.intensity,
+      activityCategory: activityCategory ?? this.activityCategory,
+      intensityLevel: intensityLevel ?? this.intensityLevel,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
@@ -100,6 +113,8 @@ class FavoriteActivityModel {
       durationMinutes: activityLog.durationMinutes,
       distanceKm: activityLog.distanceKm,
       intensity: activityLog.intensity,
+      activityCategory: activityLog.activityCategory,
+      intensityLevel: activityLog.intensityLevel,
       caloriesBurned: activityLog.caloriesBurned,
       notes: activityLog.notes,
       createdAt: DateTime.now(),
@@ -117,6 +132,8 @@ class FavoriteActivityModel {
       durationMinutes: durationMinutes,
       distanceKm: distanceKm,
       intensity: intensity,
+      activityCategory: activityCategory,
+      intensityLevel: intensityLevel,
       caloriesBurned: caloriesBurned,
       notes: notes,
       loggedAt: DateTime.now().toIso8601String(),
@@ -133,7 +150,7 @@ class FavoriteActivityModel {
 
   /// Get display text for the activity
   String get displayText {
-    final buffer = StringBuffer(activityName);
+    final buffer = StringBuffer('${activityCategory.emoji} $activityName');
     
     if (inputType == ActivityInputType.varighed && durationMinutes > 0) {
       buffer.write(' (${durationMinutes.round()} min)');
@@ -142,11 +159,12 @@ class FavoriteActivityModel {
     }
     
     buffer.write(' - ${caloriesBurned} kcal');
+    buffer.write(' • ${intensityLevel.displayName}');
     
     return buffer.toString();
   }
 
-  // Helper methods for JSON conversion
+  // Helper methods for JSON conversion (maintain legacy support)
   static ActivityInputType _inputTypeFromString(String value) {
     switch (value.toLowerCase()) {
       case 'distance':
@@ -185,5 +203,31 @@ class FavoriteActivityModel {
       case ActivityIntensity.haardt:
         return 'haardt';
     }
+  }
+
+  static ActivityCategory _categoryFromString(String value) {
+    for (final category in ActivityCategory.values) {
+      if (category.name.toLowerCase() == value.toLowerCase()) {
+        return category;
+      }
+    }
+    return ActivityCategory.anden;
+  }
+
+  static String _categoryToString(ActivityCategory category) {
+    return category.name;
+  }
+
+  static ActivityIntensityLevel _intensityLevelFromString(String value) {
+    for (final level in ActivityIntensityLevel.values) {
+      if (level.name.toLowerCase() == value.toLowerCase()) {
+        return level;
+      }
+    }
+    return ActivityIntensityLevel.moderat;
+  }
+
+  static String _intensityLevelToString(ActivityIntensityLevel level) {
+    return level.name;
   }
 } 

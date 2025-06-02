@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../application/activity_notifier.dart';
 import '../../domain/user_activity_log_model.dart';
+import '../../infrastructure/activity_calorie_data.dart';
+import '../../infrastructure/activity_calorie_calculator.dart';
+import '../../../onboarding/application/onboarding_notifier.dart';
 
 /// Page for manually creating and logging a custom activity
-class ManualActivityPage extends StatefulWidget {
+class ManualActivityPage extends ConsumerStatefulWidget {
   final ActivityNotifier notifier;
 
   const ManualActivityPage({
@@ -16,18 +20,39 @@ class ManualActivityPage extends StatefulWidget {
   });
 
   @override
-  State<ManualActivityPage> createState() => _ManualActivityPageState();
+  ConsumerState<ManualActivityPage> createState() => _ManualActivityPageState();
 }
 
-class _ManualActivityPageState extends State<ManualActivityPage> {
+class _ManualActivityPageState extends ConsumerState<ManualActivityPage> {
   final TextEditingController _activityNameController = TextEditingController();
   final TextEditingController _valueController = TextEditingController();
   final TextEditingController _caloriesController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
   
   ActivityInputType _inputType = ActivityInputType.varighed;
-  ActivityIntensity _intensity = ActivityIntensity.moderat;
+  ActivityIntensity _intensity = ActivityIntensity.moderat; // Legacy field
+  ActivityCategory _activityCategory = ActivityCategory.anden;
+  ActivityIntensityLevel _intensityLevel = ActivityIntensityLevel.moderat;
   bool _isLogging = false;
+  bool _useAutomaticCalories = true; // New field for automatic vs manual calories
+  ActivityCalorieEstimate? _currentEstimate;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Set defaults
+    _valueController.text = '30';
+    _caloriesController.text = '200';
+    
+    // Load user weight and calculate initial estimate
+    _loadUserWeightAndCalculate();
+    
+    // Add listeners for automatic calculation
+    _valueController.addListener(_onValueChanged);
+    _weightController.addListener(_onValueChanged);
+  }
 
   @override
   void dispose() {
@@ -35,7 +60,64 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
     _valueController.dispose();
     _caloriesController.dispose();
     _notesController.dispose();
+    _weightController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserWeightAndCalculate() async {
+    // Try to get weight from user profile first
+    final onboardingState = ref.read(onboardingProvider);
+    final profileWeight = onboardingState.userProfile.currentWeightKg;
+    
+    double weight;
+    if (profileWeight > 0) {
+      // Use profile weight
+      weight = profileWeight;
+    } else {
+      // Fallback to stored weight from calculator service
+      weight = await ActivityCalorieCalculator.getUserWeight();
+    }
+    
+    _weightController.text = weight.toStringAsFixed(1);
+    _calculateCalories();
+  }
+
+  void _onValueChanged() {
+    if (_useAutomaticCalories) {
+      _calculateCalories();
+    }
+  }
+
+  Future<void> _calculateCalories() async {
+    if (!_useAutomaticCalories) return;
+
+    final valueText = _valueController.text.trim();
+    final weightText = _weightController.text.trim();
+
+    double? value = double.tryParse(valueText);
+    double? weight = double.tryParse(weightText);
+
+    if (weight == null || weight <= 0 || value == null || value <= 0) return;
+
+    try {
+      final estimate = await ActivityCalorieCalculator.estimateCalories(
+        category: _activityCategory,
+        intensity: _intensityLevel,
+        durationMinutes: _inputType == ActivityInputType.varighed ? value : null,
+        distanceKm: _inputType == ActivityInputType.distance ? value : null,
+        userWeightKg: weight,
+      );
+
+      if (mounted) {
+        setState(() {
+          _currentEstimate = estimate;
+          _caloriesController.text = estimate.estimatedCalories.toString();
+        });
+      }
+    } catch (e) {
+      // Handle calculation error
+      print('Error calculating calories: $e');
+    }
   }
 
   @override
@@ -63,6 +145,11 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
             
             const SizedBox(height: KSizes.margin6x),
             
+            // Activity category dropdown
+            _buildCategorySection(),
+            
+            const SizedBox(height: KSizes.margin6x),
+            
             // Input type selection
             _buildInputTypeSection(),
             
@@ -73,13 +160,29 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
             
             const SizedBox(height: KSizes.margin6x),
             
-            // Intensity selection
+            // Intensity selection (4 levels)
             _buildIntensitySection(),
+            
+            const SizedBox(height: KSizes.margin6x),
+            
+            // User weight for calculation
+            _buildWeightSection(),
+            
+            const SizedBox(height: KSizes.margin6x),
+            
+            // Calorie calculation toggle
+            _buildCalorieCalculationToggle(),
             
             const SizedBox(height: KSizes.margin6x),
             
             // Calorie input
             _buildCalorieSection(),
+            
+            // Show calculation details if using automatic
+            if (_useAutomaticCalories && _currentEstimate != null) ...[
+              const SizedBox(height: KSizes.margin4x),
+              _buildCalculationDetails(),
+            ],
             
             const SizedBox(height: KSizes.margin6x),
             
@@ -119,6 +222,47 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
               color: AppColors.primary,
             ),
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCategorySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Kategori',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: KSizes.fontWeightBold,
+          ),
+        ),
+        
+        const SizedBox(height: KSizes.margin3x),
+        
+        DropdownButtonFormField<ActivityCategory>(
+          value: _activityCategory,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+            ),
+            prefixIcon: Icon(
+              MdiIcons.formatListBulleted,
+              color: AppColors.primary,
+            ),
+          ),
+          items: ActivityCategory.values.map((category) {
+            return DropdownMenuItem(
+              value: category,
+              child: Text('${category.emoji} ${category.displayName}'),
+            );
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _activityCategory = value!;
+            });
+            _onValueChanged(); // Trigger recalculation
+          },
         ),
       ],
     );
@@ -178,6 +322,7 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
           _inputType = type;
           _valueController.clear();
         });
+        _onValueChanged(); // Trigger recalculation
       },
       child: Container(
         padding: EdgeInsets.all(KSizes.margin4x),
@@ -274,7 +419,7 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
         const SizedBox(height: KSizes.margin3x),
         
         Column(
-          children: ActivityIntensity.values.map((intensity) => 
+          children: ActivityIntensityLevel.values.map((intensity) => 
             _buildIntensityOption(intensity)
           ).toList(),
         ),
@@ -282,15 +427,18 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
     );
   }
 
-  Widget _buildIntensityOption(ActivityIntensity intensity) {
-    final isSelected = _intensity == intensity;
-    final color = _getIntensityColor(intensity);
+  Widget _buildIntensityOption(ActivityIntensityLevel intensity) {
+    final isSelected = _intensityLevel == intensity;
+    final color = _getIntensityLevelColor(intensity);
     
     return GestureDetector(
       onTap: () {
         setState(() {
-          _intensity = intensity;
+          _intensityLevel = intensity;
+          // Map to legacy intensity for backward compatibility
+          _intensity = _mapToLegacyIntensity(intensity);
         });
+        _onValueChanged(); // Trigger recalculation
       },
       child: Container(
         margin: EdgeInsets.only(bottom: KSizes.margin2x),
@@ -318,7 +466,7 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
             
             Expanded(
               child: Text(
-                _getIntensityDisplayName(intensity),
+                intensity.displayName,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: isSelected ? color : AppColors.textPrimary,
                   fontWeight: KSizes.fontWeightMedium,
@@ -334,6 +482,150 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildWeightSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Din vægt (kg)',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            fontWeight: KSizes.fontWeightBold,
+          ),
+        ),
+        
+        const SizedBox(height: KSizes.margin3x),
+        
+        TextField(
+          controller: _weightController,
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+          ],
+          decoration: InputDecoration(
+            hintText: 'f.eks. 70',
+            suffixText: 'kg',
+            suffixStyle: TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: KSizes.fontSizeM,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(KSizes.radiusM),
+            ),
+            prefixIcon: Icon(
+              MdiIcons.scaleBalance,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCalorieCalculationToggle() {
+    return Container(
+      padding: EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(color: AppColors.border.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            _useAutomaticCalories ? MdiIcons.calculator : MdiIcons.pencil,
+            color: _useAutomaticCalories ? AppColors.success : AppColors.warning,
+          ),
+          SizedBox(width: KSizes.margin3x),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _useAutomaticCalories ? 'Automatisk beregning' : 'Manuel indtastning',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeM,
+                    fontWeight: KSizes.fontWeightBold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  _useAutomaticCalories 
+                      ? 'Kalorier beregnes ud fra kategori og intensitet'
+                      : 'Indtast kalorier manuelt',
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _useAutomaticCalories,
+            onChanged: (value) {
+              setState(() {
+                _useAutomaticCalories = value;
+                if (value) {
+                  _calculateCalories(); // Recalculate when switching to automatic
+                }
+              });
+            },
+            activeColor: AppColors.success,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationDetails() {
+    if (_currentEstimate == null) return SizedBox.shrink();
+    
+    return Container(
+      padding: EdgeInsets.all(KSizes.margin4x),
+      decoration: BoxDecoration(
+        color: AppColors.info.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(KSizes.radiusM),
+        border: Border.all(color: AppColors.info.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(MdiIcons.calculator, color: AppColors.info, size: KSizes.iconS),
+              SizedBox(width: KSizes.margin2x),
+              Text(
+                'Kalorie beregning',
+                style: TextStyle(
+                  fontSize: KSizes.fontSizeM,
+                  fontWeight: KSizes.fontWeightBold,
+                  color: AppColors.info,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: KSizes.margin2x),
+          Text(
+            _currentEstimate!.formattedEstimate,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeS,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: KSizes.margin1x),
+          Text(
+            _currentEstimate!.description,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeXS,
+              color: AppColors.textTertiary,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -354,11 +646,12 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
         TextField(
           controller: _caloriesController,
           keyboardType: TextInputType.number,
+          enabled: !_useAutomaticCalories,
           inputFormatters: [
             FilteringTextInputFormatter.digitsOnly,
           ],
           decoration: InputDecoration(
-            hintText: 'Kalorier forbrændt',
+            hintText: _useAutomaticCalories ? 'Automatisk beregnet' : 'Kalorier forbrændt',
             suffixText: 'kcal',
             suffixStyle: TextStyle(
               color: AppColors.textSecondary,
@@ -464,10 +757,13 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
            _activityNameController.text.trim().isNotEmpty &&
            _valueController.text.isNotEmpty &&
            _caloriesController.text.isNotEmpty &&
+           _weightController.text.isNotEmpty &&
            double.tryParse(_valueController.text) != null &&
            double.parse(_valueController.text) > 0 &&
            int.tryParse(_caloriesController.text) != null &&
-           int.parse(_caloriesController.text) > 0;
+           int.parse(_caloriesController.text) > 0 &&
+           double.tryParse(_weightController.text) != null &&
+           double.parse(_weightController.text) > 0;
   }
 
   Future<void> _logActivity() async {
@@ -480,6 +776,10 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
       final value = double.parse(_valueController.text);
       final calories = int.parse(_caloriesController.text);
       final notes = _notesController.text.trim();
+      final weight = double.tryParse(_weightController.text.trim()) ?? 70.0;
+
+      // Save user weight for future calculations
+      await ActivityCalorieCalculator.setUserWeight(weight);
 
       final activity = UserActivityLogModel(
         userId: 1, // TODO: Get real user ID
@@ -487,10 +787,12 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
         inputType: _inputType,
         durationMinutes: _inputType == ActivityInputType.varighed ? value : 0,
         distanceKm: _inputType == ActivityInputType.distance ? value : 0,
-        intensity: _intensity,
+        intensity: _intensity, // Legacy field
+        activityCategory: _activityCategory, // New field
+        intensityLevel: _intensityLevel, // New field
         caloriesBurned: calories,
         isManualEntry: true,
-        isCaloriesAdjusted: false,
+        isCaloriesAdjusted: !_useAutomaticCalories, // True if manual calories
         notes: notes,
       );
 
@@ -521,25 +823,29 @@ class _ManualActivityPageState extends State<ManualActivityPage> {
     }
   }
 
-  Color _getIntensityColor(ActivityIntensity intensity) {
+  Color _getIntensityLevelColor(ActivityIntensityLevel intensity) {
     switch (intensity) {
-      case ActivityIntensity.let:
+      case ActivityIntensityLevel.let:
         return AppColors.success;
-      case ActivityIntensity.moderat:
+      case ActivityIntensityLevel.moderat:
         return AppColors.primary;
-      case ActivityIntensity.haardt:
+      case ActivityIntensityLevel.haard:
+        return AppColors.warning;
+      case ActivityIntensityLevel.ekstremt:
         return AppColors.error;
     }
   }
 
-  String _getIntensityDisplayName(ActivityIntensity intensity) {
-    switch (intensity) {
-      case ActivityIntensity.let:
-        return 'Let';
-      case ActivityIntensity.moderat:
-        return 'Moderat';
-      case ActivityIntensity.haardt:
-        return 'Hård';
+  // Map new intensity levels to legacy for backward compatibility
+  ActivityIntensity _mapToLegacyIntensity(ActivityIntensityLevel level) {
+    switch (level) {
+      case ActivityIntensityLevel.let:
+        return ActivityIntensity.let;
+      case ActivityIntensityLevel.moderat:
+        return ActivityIntensity.moderat;
+      case ActivityIntensityLevel.haard:
+      case ActivityIntensityLevel.ekstremt:
+        return ActivityIntensity.haardt;
     }
   }
 } 

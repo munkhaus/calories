@@ -1,4 +1,6 @@
-/// Enum for activity intensity levels
+import '../infrastructure/activity_calorie_data.dart';
+
+/// Enum for activity intensity levels (legacy - kept for backward compatibility)
 enum ActivityIntensity {
   let,
   moderat,
@@ -20,7 +22,9 @@ class UserActivityLogModel {
   final ActivityInputType inputType;
   final double durationMinutes;
   final double distanceKm;
-  final ActivityIntensity intensity;
+  final ActivityIntensity intensity; // Legacy field
+  final ActivityCategory activityCategory; // New field for category
+  final ActivityIntensityLevel intensityLevel; // New field for 4-level intensity
   final int caloriesBurned;
   final bool isManualEntry;
   final bool isCaloriesAdjusted;
@@ -36,7 +40,9 @@ class UserActivityLogModel {
     this.inputType = ActivityInputType.varighed,
     this.durationMinutes = 0.0,
     this.distanceKm = 0.0,
-    this.intensity = ActivityIntensity.moderat,
+    this.intensity = ActivityIntensity.moderat, // Legacy default
+    this.activityCategory = ActivityCategory.anden,
+    this.intensityLevel = ActivityIntensityLevel.moderat,
     this.caloriesBurned = 0,
     this.isManualEntry = false,
     this.isCaloriesAdjusted = false,
@@ -55,6 +61,8 @@ class UserActivityLogModel {
       durationMinutes: (json['duration_minutes'] ?? 0.0).toDouble(),
       distanceKm: (json['distance_km'] ?? 0.0).toDouble(),
       intensity: _intensityFromString(json['intensity'] ?? 'moderat'),
+      activityCategory: _categoryFromString(json['activity_category'] ?? 'anden'),
+      intensityLevel: _intensityLevelFromString(json['intensity_level'] ?? 'moderat'),
       caloriesBurned: json['calories_burned'] ?? 0,
       isManualEntry: json['is_manual_entry'] == 1,
       isCaloriesAdjusted: json['is_calories_adjusted'] == 1,
@@ -74,6 +82,8 @@ class UserActivityLogModel {
       'duration_minutes': durationMinutes,
       'distance_km': distanceKm,
       'intensity': _intensityToString(intensity),
+      'activity_category': _categoryToString(activityCategory),
+      'intensity_level': _intensityLevelToString(intensityLevel),
       'calories_burned': caloriesBurned,
       'is_manual_entry': isManualEntry ? 1 : 0,
       'is_calories_adjusted': isCaloriesAdjusted ? 1 : 0,
@@ -123,6 +133,32 @@ class UserActivityLogModel {
     }
   }
 
+  static ActivityCategory _categoryFromString(String value) {
+    for (final category in ActivityCategory.values) {
+      if (category.name.toLowerCase() == value.toLowerCase()) {
+        return category;
+      }
+    }
+    return ActivityCategory.anden;
+  }
+
+  static String _categoryToString(ActivityCategory category) {
+    return category.name;
+  }
+
+  static ActivityIntensityLevel _intensityLevelFromString(String value) {
+    for (final level in ActivityIntensityLevel.values) {
+      if (level.name.toLowerCase() == value.toLowerCase()) {
+        return level;
+      }
+    }
+    return ActivityIntensityLevel.moderat;
+  }
+
+  static String _intensityLevelToString(ActivityIntensityLevel level) {
+    return level.name;
+  }
+
   UserActivityLogModel copyWith({
     int? logEntryId,
     int? userId,
@@ -132,6 +168,8 @@ class UserActivityLogModel {
     double? durationMinutes,
     double? distanceKm,
     ActivityIntensity? intensity,
+    ActivityCategory? activityCategory,
+    ActivityIntensityLevel? intensityLevel,
     int? caloriesBurned,
     bool? isManualEntry,
     bool? isCaloriesAdjusted,
@@ -148,6 +186,8 @@ class UserActivityLogModel {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       distanceKm: distanceKm ?? this.distanceKm,
       intensity: intensity ?? this.intensity,
+      activityCategory: activityCategory ?? this.activityCategory,
+      intensityLevel: intensityLevel ?? this.intensityLevel,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       isManualEntry: isManualEntry ?? this.isManualEntry,
       isCaloriesAdjusted: isCaloriesAdjusted ?? this.isCaloriesAdjusted,

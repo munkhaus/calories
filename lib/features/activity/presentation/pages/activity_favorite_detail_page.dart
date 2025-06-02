@@ -119,7 +119,7 @@ class _ActivityFavoriteDetailPageState extends ConsumerState<ActivityFavoriteDet
                 SizedBox(height: KSizes.margin2x),
                 
                 Text(
-                  'Indtast detaljerede oplysninger om din favorit aktivitet',
+                  'Gem dine foretrukne aktiviteter for hurtig logging',
                   style: TextStyle(
                     fontSize: KSizes.fontSizeM,
                     color: AppColors.textSecondary,
@@ -193,11 +193,11 @@ class _ActivityFavoriteDetailPageState extends ConsumerState<ActivityFavoriteDet
                 
                 SizedBox(height: KSizes.margin4x),
                 
-                // Calories
+                // Calories field
                 _buildTextField(
                   controller: _caloriesController,
                   label: 'Kalorier forbrændt',
-                  hint: 'f.eks. 250',
+                  hint: 'f.eks. 300',
                   icon: MdiIcons.fire,
                   keyboardType: TextInputType.number,
                   validator: (value) {
@@ -268,12 +268,14 @@ class _ActivityFavoriteDetailPageState extends ConsumerState<ActivityFavoriteDet
     TextInputType? keyboardType,
     int maxLines = 1,
     String? Function(String?)? validator,
+    bool enabled = true,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
+      enabled: enabled,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
