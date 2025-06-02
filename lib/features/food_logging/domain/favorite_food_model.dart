@@ -5,11 +5,39 @@ import '../../food_database/domain/online_food_models.dart';
 part 'favorite_food_model.freezed.dart';
 part 'favorite_food_model.g.dart';
 
+/// Type of food favorite
+enum FoodType {
+  meal('Ret'),
+  ingredient('Fødevare');
+
+  const FoodType(this.displayName);
+  final String displayName;
+
+  String get emoji {
+    switch (this) {
+      case FoodType.meal:
+        return '🍽️';
+      case FoodType.ingredient:
+        return '🥕';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case FoodType.meal:
+        return 'Komplekse retter og måltider';
+      case FoodType.ingredient:
+        return 'Enkle fødevarer og ingredienser';
+    }
+  }
+}
+
 /// Source of the favorite food data
 enum FoodSource {
   userCreated('Bruger'),
   onlineDatabase('Online'),
-  imported('Importeret');
+  imported('Importeret'),
+  barcode('Stregkode');
 
   const FoodSource(this.displayName);
   final String displayName;
@@ -22,6 +50,8 @@ enum FoodSource {
         return '🌐';
       case FoodSource.imported:
         return '📥';
+      case FoodSource.barcode:
+        return '📦';
     }
   }
 }
@@ -70,6 +100,9 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
     @Default('') String description,
     @Default(MealType.none) MealType preferredMealType,
     
+    // Food type classification
+    @Default(FoodType.meal) FoodType foodType,
+    
     // Nutrition per 100g
     @Default(0) int caloriesPer100g,
     @Default(0.0) double proteinPer100g,
@@ -94,6 +127,7 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
     @Default(FavoriteFoodModel.manualProvider) String sourceProvider, // Default to manual
     @Default(false) bool isAiGenerated,
     String? aiSearchQuery,
+    String? barcodeData, // Store barcode if from barcode scan
     @Default([]) List<String> tags,
     @Default('') String ingredients,
     
@@ -106,7 +140,7 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
   factory FavoriteFoodModel.fromJson(Map<String, dynamic> json) => 
       _$FavoriteFoodModelFromJson(json);
 
-  /// Create favorite from UserFoodLogModel
+  /// Create favorite from UserFoodLog (usually meals)
   factory FavoriteFoodModel.fromUserFoodLog(UserFoodLogModel foodLog) {
     // Calculate per 100g values from the logged portion
     final totalGrams = foodLog.quantity * 100; // Assume 100g default if no serving info
@@ -119,6 +153,7 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       foodName: foodLog.foodName,
       preferredMealType: foodLog.mealType,
+      foodType: FoodType.meal, // User food logs are typically meals
       caloriesPer100g: caloriesPer100g,
       proteinPer100g: proteinPer100g,
       fatPer100g: fatPer100g,
@@ -139,10 +174,58 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
     );
   }
 
-  /// Create favorite from OnlineFoodDetails
+  /// Create ingredient-type favorite from barcode data
+  factory FavoriteFoodModel.fromBarcodeData({
+    required String barcode,
+    required String foodName,
+    required int caloriesPer100g,
+    String? brand,
+    String? description,
+    double? proteinPer100g,
+    double? fatPer100g,
+    double? carbsPer100g,
+    double? fiberPer100g,
+    double? sugarPer100g,
+    List<String>? ingredients,
+  }) {
+    return FavoriteFoodModel(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      foodName: foodName,
+      description: description ?? (brand != null ? '$brand - $foodName' : ''),
+      foodType: FoodType.ingredient, // Barcode scanned items are ingredients
+      caloriesPer100g: caloriesPer100g,
+      proteinPer100g: proteinPer100g ?? 0.0,
+      fatPer100g: fatPer100g ?? 0.0,
+      carbsPer100g: carbsPer100g ?? 0.0,
+      fiberPer100g: fiberPer100g ?? 0.0,
+      sugarPer100g: sugarPer100g ?? 0.0,
+      defaultQuantity: 100.0, // Default to 100g for ingredients
+      defaultServingUnit: 'gram',
+      defaultServingGrams: 100.0,
+      totalCaloriesForServing: caloriesPer100g, // 100g = calories per 100g
+      source: FoodSource.barcode,
+      sourceProvider: 'barcode',
+      barcodeData: barcode,
+      ingredients: ingredients?.join(', ') ?? '',
+      tags: brand != null ? [brand] : [],
+      servingSizes: [
+        FavoriteServingSize(
+          name: '100 gram',
+          grams: 100.0,
+          isDefault: true,
+        ),
+      ],
+      createdAt: DateTime.now(),
+      lastUsed: DateTime.now(),
+      usageCount: 1,
+    );
+  }
+
+  /// Create favorite from OnlineFoodDetails (can be meals or ingredients)
   factory FavoriteFoodModel.fromOnlineFoodDetails(OnlineFoodDetails details, {
     MealType? preferredMealType,
     double? preferredQuantityGrams, // Quantity is now grams
+    FoodType? foodType, // Allow explicit food type specification
   }) {
     final nutrition = details.nutrition;
     final basicInfo = details.basicInfo;
@@ -166,6 +249,7 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
       foodName: basicInfo.name,
       description: basicInfo.description,
       preferredMealType: preferredMealType ?? _inferMealTypeFromTags(basicInfo.tags),
+      foodType: foodType ?? _inferFoodTypeFromName(basicInfo.name), // Infer type from name if not specified
       caloriesPer100g: nutrition.calories.round(),
       proteinPer100g: nutrition.protein,
       fatPer100g: nutrition.fat,
@@ -266,6 +350,46 @@ class FavoriteFoodModel with _$FavoriteFoodModel {
         if (lower == 'snack') return MealType.snack;
     }
     return MealType.none;
+  }
+
+  static FoodType _inferFoodTypeFromName(String foodName) {
+    final lower = foodName.toLowerCase();
+    
+    // Keywords that suggest this is a complex meal/dish
+    final mealKeywords = [
+      'ret', 'måltid', 'ragu', 'steg', 'gryde', 'suppe', 'salat',
+      'sandwich', 'burger', 'pizza', 'pasta', 'lasagne', 'risotto',
+      'curry', 'stir-fry', 'casserole', 'pie', 'stew', 'soup',
+      'dinner', 'lunch', 'breakfast', 'meal', 'dish',
+      'med', 'og', 'i', // Danish prepositions indicating complex dishes
+    ];
+    
+    // Keywords that suggest this is a simple ingredient/food item
+    final ingredientKeywords = [
+      'æble', 'banan', 'tomat', 'løg', 'gulerød', 'kartoffel',
+      'kylling', 'oksekød', 'laks', 'torsk', 'ris', 'pasta',
+      'brød', 'smør', 'ost', 'mælk', 'æg', 'mel', 'sukker',
+      'apple', 'banana', 'tomato', 'onion', 'carrot', 'potato',
+      'chicken', 'beef', 'salmon', 'cod', 'rice', 'bread',
+      'butter', 'cheese', 'milk', 'egg', 'flour', 'sugar',
+    ];
+    
+    // Check for complex meal indicators first
+    for (final keyword in mealKeywords) {
+      if (lower.contains(keyword)) {
+        return FoodType.meal;
+      }
+    }
+    
+    // Check for simple ingredient indicators
+    for (final keyword in ingredientKeywords) {
+      if (lower == keyword || lower.startsWith('$keyword ') || lower.endsWith(' $keyword')) {
+        return FoodType.ingredient;
+      }
+    }
+    
+    // Default to ingredient for single words, meal for multiple words
+    return lower.split(' ').length == 1 ? FoodType.ingredient : FoodType.meal;
   }
 
   static List<String> extractTagsFromFoodTags(FoodTags foodTags) {

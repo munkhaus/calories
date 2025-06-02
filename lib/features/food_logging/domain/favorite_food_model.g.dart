@@ -31,6 +31,8 @@ _$FavoriteFoodModelImpl _$$FavoriteFoodModelImplFromJson(
   preferredMealType:
       $enumDecodeNullable(_$MealTypeEnumMap, json['preferredMealType']) ??
       MealType.none,
+  foodType:
+      $enumDecodeNullable(_$FoodTypeEnumMap, json['foodType']) ?? FoodType.meal,
   caloriesPer100g: (json['caloriesPer100g'] as num?)?.toInt() ?? 0,
   proteinPer100g: (json['proteinPer100g'] as num?)?.toDouble() ?? 0.0,
   fatPer100g: (json['fatPer100g'] as num?)?.toDouble() ?? 0.0,
@@ -55,6 +57,7 @@ _$FavoriteFoodModelImpl _$$FavoriteFoodModelImplFromJson(
       json['sourceProvider'] as String? ?? FavoriteFoodModel.manualProvider,
   isAiGenerated: json['isAiGenerated'] as bool? ?? false,
   aiSearchQuery: json['aiSearchQuery'] as String?,
+  barcodeData: json['barcodeData'] as String?,
   tags:
       (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const [],
@@ -71,6 +74,7 @@ Map<String, dynamic> _$$FavoriteFoodModelImplToJson(
   'foodName': instance.foodName,
   'description': instance.description,
   'preferredMealType': _$MealTypeEnumMap[instance.preferredMealType]!,
+  'foodType': _$FoodTypeEnumMap[instance.foodType]!,
   'caloriesPer100g': instance.caloriesPer100g,
   'proteinPer100g': instance.proteinPer100g,
   'fatPer100g': instance.fatPer100g,
@@ -86,6 +90,7 @@ Map<String, dynamic> _$$FavoriteFoodModelImplToJson(
   'sourceProvider': instance.sourceProvider,
   'isAiGenerated': instance.isAiGenerated,
   'aiSearchQuery': instance.aiSearchQuery,
+  'barcodeData': instance.barcodeData,
   'tags': instance.tags,
   'ingredients': instance.ingredients,
   'createdAt': instance.createdAt.toIso8601String(),
@@ -101,8 +106,14 @@ const _$MealTypeEnumMap = {
   MealType.snack: 'snack',
 };
 
+const _$FoodTypeEnumMap = {
+  FoodType.meal: 'meal',
+  FoodType.ingredient: 'ingredient',
+};
+
 const _$FoodSourceEnumMap = {
   FoodSource.userCreated: 'userCreated',
   FoodSource.onlineDatabase: 'onlineDatabase',
   FoodSource.imported: 'imported',
+  FoodSource.barcode: 'barcode',
 };

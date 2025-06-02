@@ -5,23 +5,25 @@ import 'package:result_type/result_type.dart';
 
 import 'package:calories/features/food_logging/presentation/pages/food_favorite_detail_page.dart';
 import 'package:calories/features/food_database/infrastructure/llm_food_service.dart';
-import 'package:calories/features/food_database/domain/online_food_models.dart';
+import 'package:calories/features/food_database/domain/online_food_models.dart' as online_models;
 import 'package:calories/features/food_logging/domain/favorite_food_model.dart';
 import 'package:calories/features/food_logging/domain/user_food_log_model.dart'; // For MealType
+import 'package:calories/core/theme/app_theme.dart';
+import 'package:calories/core/constants/k_sizes.dart';
 
 // Simple mock implementation for testing
 class TestLLMFoodService extends LLMFoodService {
-  List<OnlineFoodResult> _mockResults = [];
-  OnlineFoodError? _mockError;
+  List<online_models.OnlineFoodResult> _mockResults = [];
+  online_models.OnlineFoodError? _mockError;
   bool _isAvailable = true;
   
   // Setup methods for testing
-  void setMockResults(List<OnlineFoodResult> results) {
+  void setMockResults(List<online_models.OnlineFoodResult> results) {
     _mockResults = results;
     _mockError = null;
   }
   
-  void setMockError(OnlineFoodError error) {
+  void setMockError(online_models.OnlineFoodError error) {
     _mockError = error;
     _mockResults = [];
   }
@@ -37,7 +39,7 @@ class TestLLMFoodService extends LLMFoodService {
   bool get isAvailable => _isAvailable;
 
   @override
-  Future<Result<List<OnlineFoodResult>, OnlineFoodError>> searchFoods(String query) async {
+  Future<Result<List<online_models.OnlineFoodResult>, online_models.OnlineFoodError>> searchFoods(String query) async {
     print('🧪 TestLLMFoodService: searchFoods called with query: "$query"');
     
     // Simulate API delay
@@ -50,6 +52,11 @@ class TestLLMFoodService extends LLMFoodService {
     
     print('🧪 TestLLMFoodService: Returning ${_mockResults.length} results');
     return Success(_mockResults);
+  }
+
+  @override  
+  Future<Result<online_models.OnlineFoodDetails, online_models.OnlineFoodError>> getFoodDetails(String id) async {
+    return Failure(online_models.OnlineFoodError.unknown);
   }
 }
 
@@ -111,19 +118,19 @@ void main() {
         
         // Setup mock to return success with valid results
         final mockResults = [
-          OnlineFoodResult(
+          online_models.OnlineFoodResult(
             id: 'test_ost_1',
             name: 'Test Danbo',
             description: 'Test Danish cheese',
             imageUrl: '',
             provider: 'test',
-            searchMode: SearchMode.ingredients,
+            searchMode: online_models.SearchMode.ingredients,
             estimatedCalories: 350.0,
-            tags: const FoodTags(
-              foodTypes: [FoodType.dairy],
-              cuisineStyles: [CuisineStyle.danish],
+            tags: const online_models.FoodTags(
+              foodTypes: [online_models.FoodType.dairy],
+              cuisineStyles: [online_models.CuisineStyle.danish],
               dietaryTags: [],
-              preparationTypes: [PreparationType.fresh],
+              preparationTypes: [online_models.PreparationType.fresh],
               customTags: ['ost'],
             ),
           ),
@@ -344,7 +351,7 @@ void main() {
         print('🧪 Testing real enum validation scenario from logs');
         
         // Setup mock error to simulate enum validation failure
-        testLLMService.setMockError(OnlineFoodError.noResults);
+        testLLMService.setMockError(online_models.OnlineFoodError.noResults);
         
         await tester.pumpWidget(
           ProviderScope(

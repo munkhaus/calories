@@ -7,18 +7,20 @@ import '../../domain/favorite_food_model.dart';
 import '../../domain/user_food_log_model.dart';
 import '../../infrastructure/favorite_food_service.dart';
 import '../../../food_database/infrastructure/llm_food_service.dart' as llm_service;
-import '../../../food_database/domain/online_food_models.dart';
+import '../../../food_database/domain/online_food_models.dart' as online_models;
 import '../../../food_database/application/online_food_cubit.dart';
 
 /// Detailed page for creating and editing food favorites
 class FoodFavoriteDetailPage extends ConsumerStatefulWidget {
   final FavoriteFoodModel? existingFavorite;
   final bool logOnSave; // New parameter
+  final FoodType? forcedFoodType; // Force a specific food type
   
   FoodFavoriteDetailPage({
     super.key,
     this.existingFavorite,
     this.logOnSave = false, // Default to false
+    this.forcedFoodType, // Optional parameter to force food type
   });
 
   @override
@@ -38,7 +40,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   MealType _selectedMealType = MealType.none;
   bool _isLoading = false;
   bool _isEditing = false;
-  OnlineFoodDetails? _currentAiFoodDetails; // To store fetched AI result details for saving
+  online_models.OnlineFoodDetails? _currentAiFoodDetails; // To store fetched AI result details for saving
   late bool _logOnSave; // State variable
 
   @override
@@ -78,7 +80,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
         (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
         orElse: () => _currentAiFoodDetails!.servingSizes.isNotEmpty 
                       ? _currentAiFoodDetails!.servingSizes.first 
-                      : const OnlineServingSize(name: '100 gram', grams: 100, isDefault: true),
+                      : const online_models.OnlineServingSize(name: '100 gram', grams: 100, isDefault: true),
       );
       _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
       
@@ -535,7 +537,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     // Get the LLM service from the provider using the alias
     final llmServiceInstance = ref.read(llm_service.llmFoodServiceProvider);
 
-    final OnlineFoodDetails? selectedFoodDetails = await showDialog<OnlineFoodDetails>(
+    final online_models.OnlineFoodDetails? selectedFoodDetails = await showDialog<online_models.OnlineFoodDetails>(
       context: context,
       builder: (BuildContext dialogContext) {
         return AiSearchDialog(
@@ -557,7 +559,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   }
 
   // New method to populate form fields from OnlineFoodDetails
-  void _populateFormFromAiDetails(OnlineFoodDetails details) {
+  void _populateFormFromAiDetails(online_models.OnlineFoodDetails details) {
     _nameController.text = details.basicInfo.name;
     _notesController.text = details.basicInfo.description;
     _selectedMealType = MealType.none; 
@@ -566,11 +568,11 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                                         ? details.nutrition.calories.toStringAsFixed(0) 
                                         : '0';
         
-    final OnlineServingSize defaultServing = details.servingSizes.firstWhere(
+    final online_models.OnlineServingSize defaultServing = details.servingSizes.firstWhere(
       (s) => s.isDefault || s.name.toLowerCase().contains('standard') || s.name.toLowerCase().contains('portion'),
           orElse: () => details.servingSizes.isNotEmpty 
               ? details.servingSizes.first 
-                    : const OnlineServingSize(name: '100 gram', grams: 100, isDefault: true), // Ensure this returns OnlineServingSize
+                    : const online_models.OnlineServingSize(name: '100 gram', grams: 100, isDefault: true), // Ensure this returns OnlineServingSize
     );
     _portionGramsController.text = defaultServing.grams > 0 ? defaultServing.grams.toStringAsFixed(0) : '100';
     
@@ -581,7 +583,7 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
 class AiSearchDialog extends ConsumerStatefulWidget {
   final String initialQuery;
   final llm_service.LLMFoodService llmFoodService; // Use aliased type
-  final ValueChanged<OnlineFoodDetails> onFoodDetailsSelected;
+  final ValueChanged<online_models.OnlineFoodDetails> onFoodDetailsSelected;
 
   const AiSearchDialog({
     super.key,
@@ -598,7 +600,7 @@ class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
   final _searchController = TextEditingController();
   bool _isSearching = false;
   bool _isFetchingDetails = false;
-  OnlineFoodError? _error;
+  online_models.OnlineFoodError? _error;
 
   @override
   void initState() {
@@ -636,7 +638,7 @@ class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
     }
   }
 
-  Future<void> _fetchAndSelectDetails(OnlineFoodResult shortResult) async {
+  Future<void> _fetchAndSelectDetails(online_models.OnlineFoodResult shortResult) async {
     setState(() {
       _isFetchingDetails = true;
       _error = null;
@@ -660,7 +662,7 @@ class _AiSearchDialogState extends ConsumerState<AiSearchDialog> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = OnlineFoodError.unknown; 
+          _error = online_models.OnlineFoodError.unknown; 
         });
       }
     } finally {

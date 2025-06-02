@@ -227,6 +227,8 @@ mixin _$FavoriteFoodModel {
   String get foodName => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
   MealType get preferredMealType =>
+      throw _privateConstructorUsedError; // Food type classification
+  FoodType get foodType =>
       throw _privateConstructorUsedError; // Nutrition per 100g
   int get caloriesPer100g => throw _privateConstructorUsedError;
   double get proteinPer100g => throw _privateConstructorUsedError;
@@ -251,6 +253,8 @@ mixin _$FavoriteFoodModel {
       throw _privateConstructorUsedError; // Default to manual
   bool get isAiGenerated => throw _privateConstructorUsedError;
   String? get aiSearchQuery => throw _privateConstructorUsedError;
+  String? get barcodeData =>
+      throw _privateConstructorUsedError; // Store barcode if from barcode scan
   List<String> get tags => throw _privateConstructorUsedError;
   String get ingredients =>
       throw _privateConstructorUsedError; // Usage tracking
@@ -280,6 +284,7 @@ abstract class $FavoriteFoodModelCopyWith<$Res> {
     String foodName,
     String description,
     MealType preferredMealType,
+    FoodType foodType,
     int caloriesPer100g,
     double proteinPer100g,
     double fatPer100g,
@@ -295,6 +300,7 @@ abstract class $FavoriteFoodModelCopyWith<$Res> {
     String sourceProvider,
     bool isAiGenerated,
     String? aiSearchQuery,
+    String? barcodeData,
     List<String> tags,
     String ingredients,
     DateTime createdAt,
@@ -322,6 +328,7 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
     Object? foodName = null,
     Object? description = null,
     Object? preferredMealType = null,
+    Object? foodType = null,
     Object? caloriesPer100g = null,
     Object? proteinPer100g = null,
     Object? fatPer100g = null,
@@ -337,6 +344,7 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
     Object? sourceProvider = null,
     Object? isAiGenerated = null,
     Object? aiSearchQuery = freezed,
+    Object? barcodeData = freezed,
     Object? tags = null,
     Object? ingredients = null,
     Object? createdAt = null,
@@ -361,6 +369,10 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
                 ? _value.preferredMealType
                 : preferredMealType // ignore: cast_nullable_to_non_nullable
                       as MealType,
+            foodType: null == foodType
+                ? _value.foodType
+                : foodType // ignore: cast_nullable_to_non_nullable
+                      as FoodType,
             caloriesPer100g: null == caloriesPer100g
                 ? _value.caloriesPer100g
                 : caloriesPer100g // ignore: cast_nullable_to_non_nullable
@@ -421,6 +433,10 @@ class _$FavoriteFoodModelCopyWithImpl<$Res, $Val extends FavoriteFoodModel>
                 ? _value.aiSearchQuery
                 : aiSearchQuery // ignore: cast_nullable_to_non_nullable
                       as String?,
+            barcodeData: freezed == barcodeData
+                ? _value.barcodeData
+                : barcodeData // ignore: cast_nullable_to_non_nullable
+                      as String?,
             tags: null == tags
                 ? _value.tags
                 : tags // ignore: cast_nullable_to_non_nullable
@@ -461,6 +477,7 @@ abstract class _$$FavoriteFoodModelImplCopyWith<$Res>
     String foodName,
     String description,
     MealType preferredMealType,
+    FoodType foodType,
     int caloriesPer100g,
     double proteinPer100g,
     double fatPer100g,
@@ -476,6 +493,7 @@ abstract class _$$FavoriteFoodModelImplCopyWith<$Res>
     String sourceProvider,
     bool isAiGenerated,
     String? aiSearchQuery,
+    String? barcodeData,
     List<String> tags,
     String ingredients,
     DateTime createdAt,
@@ -502,6 +520,7 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
     Object? foodName = null,
     Object? description = null,
     Object? preferredMealType = null,
+    Object? foodType = null,
     Object? caloriesPer100g = null,
     Object? proteinPer100g = null,
     Object? fatPer100g = null,
@@ -517,6 +536,7 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
     Object? sourceProvider = null,
     Object? isAiGenerated = null,
     Object? aiSearchQuery = freezed,
+    Object? barcodeData = freezed,
     Object? tags = null,
     Object? ingredients = null,
     Object? createdAt = null,
@@ -541,6 +561,10 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
             ? _value.preferredMealType
             : preferredMealType // ignore: cast_nullable_to_non_nullable
                   as MealType,
+        foodType: null == foodType
+            ? _value.foodType
+            : foodType // ignore: cast_nullable_to_non_nullable
+                  as FoodType,
         caloriesPer100g: null == caloriesPer100g
             ? _value.caloriesPer100g
             : caloriesPer100g // ignore: cast_nullable_to_non_nullable
@@ -601,6 +625,10 @@ class __$$FavoriteFoodModelImplCopyWithImpl<$Res>
             ? _value.aiSearchQuery
             : aiSearchQuery // ignore: cast_nullable_to_non_nullable
                   as String?,
+        barcodeData: freezed == barcodeData
+            ? _value.barcodeData
+            : barcodeData // ignore: cast_nullable_to_non_nullable
+                  as String?,
         tags: null == tags
             ? _value._tags
             : tags // ignore: cast_nullable_to_non_nullable
@@ -634,6 +662,7 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
     this.foodName = '',
     this.description = '',
     this.preferredMealType = MealType.none,
+    this.foodType = FoodType.meal,
     this.caloriesPer100g = 0,
     this.proteinPer100g = 0.0,
     this.fatPer100g = 0.0,
@@ -649,6 +678,7 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
     this.sourceProvider = FavoriteFoodModel.manualProvider,
     this.isAiGenerated = false,
     this.aiSearchQuery,
+    this.barcodeData,
     final List<String> tags = const [],
     this.ingredients = '',
     required this.createdAt,
@@ -673,6 +703,10 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
   @override
   @JsonKey()
   final MealType preferredMealType;
+  // Food type classification
+  @override
+  @JsonKey()
+  final FoodType foodType;
   // Nutrition per 100g
   @override
   @JsonKey()
@@ -734,7 +768,11 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
   final bool isAiGenerated;
   @override
   final String? aiSearchQuery;
+  @override
+  final String? barcodeData;
+  // Store barcode if from barcode scan
   final List<String> _tags;
+  // Store barcode if from barcode scan
   @override
   @JsonKey()
   List<String> get tags {
@@ -757,7 +795,7 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
 
   @override
   String toString() {
-    return 'FavoriteFoodModel(id: $id, foodName: $foodName, description: $description, preferredMealType: $preferredMealType, caloriesPer100g: $caloriesPer100g, proteinPer100g: $proteinPer100g, fatPer100g: $fatPer100g, carbsPer100g: $carbsPer100g, fiberPer100g: $fiberPer100g, sugarPer100g: $sugarPer100g, defaultQuantity: $defaultQuantity, defaultServingUnit: $defaultServingUnit, defaultServingGrams: $defaultServingGrams, totalCaloriesForServing: $totalCaloriesForServing, servingSizes: $servingSizes, source: $source, sourceProvider: $sourceProvider, isAiGenerated: $isAiGenerated, aiSearchQuery: $aiSearchQuery, tags: $tags, ingredients: $ingredients, createdAt: $createdAt, lastUsed: $lastUsed, usageCount: $usageCount)';
+    return 'FavoriteFoodModel(id: $id, foodName: $foodName, description: $description, preferredMealType: $preferredMealType, foodType: $foodType, caloriesPer100g: $caloriesPer100g, proteinPer100g: $proteinPer100g, fatPer100g: $fatPer100g, carbsPer100g: $carbsPer100g, fiberPer100g: $fiberPer100g, sugarPer100g: $sugarPer100g, defaultQuantity: $defaultQuantity, defaultServingUnit: $defaultServingUnit, defaultServingGrams: $defaultServingGrams, totalCaloriesForServing: $totalCaloriesForServing, servingSizes: $servingSizes, source: $source, sourceProvider: $sourceProvider, isAiGenerated: $isAiGenerated, aiSearchQuery: $aiSearchQuery, barcodeData: $barcodeData, tags: $tags, ingredients: $ingredients, createdAt: $createdAt, lastUsed: $lastUsed, usageCount: $usageCount)';
   }
 
   @override
@@ -772,6 +810,8 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
                 other.description == description) &&
             (identical(other.preferredMealType, preferredMealType) ||
                 other.preferredMealType == preferredMealType) &&
+            (identical(other.foodType, foodType) ||
+                other.foodType == foodType) &&
             (identical(other.caloriesPer100g, caloriesPer100g) ||
                 other.caloriesPer100g == caloriesPer100g) &&
             (identical(other.proteinPer100g, proteinPer100g) ||
@@ -806,6 +846,8 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
                 other.isAiGenerated == isAiGenerated) &&
             (identical(other.aiSearchQuery, aiSearchQuery) ||
                 other.aiSearchQuery == aiSearchQuery) &&
+            (identical(other.barcodeData, barcodeData) ||
+                other.barcodeData == barcodeData) &&
             const DeepCollectionEquality().equals(other._tags, _tags) &&
             (identical(other.ingredients, ingredients) ||
                 other.ingredients == ingredients) &&
@@ -825,6 +867,7 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
     foodName,
     description,
     preferredMealType,
+    foodType,
     caloriesPer100g,
     proteinPer100g,
     fatPer100g,
@@ -840,6 +883,7 @@ class _$FavoriteFoodModelImpl extends _FavoriteFoodModel {
     sourceProvider,
     isAiGenerated,
     aiSearchQuery,
+    barcodeData,
     const DeepCollectionEquality().hash(_tags),
     ingredients,
     createdAt,
@@ -870,6 +914,7 @@ abstract class _FavoriteFoodModel extends FavoriteFoodModel {
     final String foodName,
     final String description,
     final MealType preferredMealType,
+    final FoodType foodType,
     final int caloriesPer100g,
     final double proteinPer100g,
     final double fatPer100g,
@@ -885,6 +930,7 @@ abstract class _FavoriteFoodModel extends FavoriteFoodModel {
     final String sourceProvider,
     final bool isAiGenerated,
     final String? aiSearchQuery,
+    final String? barcodeData,
     final List<String> tags,
     final String ingredients,
     required final DateTime createdAt,
@@ -903,7 +949,9 @@ abstract class _FavoriteFoodModel extends FavoriteFoodModel {
   @override
   String get description;
   @override
-  MealType get preferredMealType; // Nutrition per 100g
+  MealType get preferredMealType; // Food type classification
+  @override
+  FoodType get foodType; // Nutrition per 100g
   @override
   int get caloriesPer100g;
   @override
@@ -935,6 +983,8 @@ abstract class _FavoriteFoodModel extends FavoriteFoodModel {
   bool get isAiGenerated;
   @override
   String? get aiSearchQuery;
+  @override
+  String? get barcodeData; // Store barcode if from barcode scan
   @override
   List<String> get tags;
   @override

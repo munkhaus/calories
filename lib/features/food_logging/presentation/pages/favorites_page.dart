@@ -14,6 +14,7 @@ import '../../../activity/domain/user_activity_log_model.dart';
 import '../../presentation/pages/food_favorite_detail_page.dart';
 import '../../../activity/application/activity_notifier.dart'; // For logging activity
 import '../../../dashboard/application/date_aware_providers.dart'; // Added import
+import '../widgets/barcode_scanner_widget.dart'; // Added for barcode scanning
 
 /// Page for managing food and activity favorites
 class FavoritesPage extends ConsumerStatefulWidget {
@@ -203,16 +204,112 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
       );
     }
 
+    // Separate favorites by food type
+    final meals = _foodFavorites.where((f) => f.foodType == FoodType.meal).toList();
+    final ingredients = _foodFavorites.where((f) => f.foodType == FoodType.ingredient).toList();
+
     return RefreshIndicator(
       onRefresh: _loadAllFavorites,
-      child: ListView.builder(
+      child: ListView(
         padding: const EdgeInsets.all(KSizes.margin4x),
-        itemCount: _foodFavorites.length,
-        itemBuilder: (context, index) {
-          final favorite = _foodFavorites[index];
-          return _buildFoodFavoriteCard(favorite);
-        },
+        children: [
+          // Meals section
+          _buildFoodSection(
+            title: 'Retter 🍽️',
+            subtitle: 'Komplette måltider og retter',
+            count: meals.length,
+            favorites: meals,
+            color: AppColors.primary,
+          ),
+          
+          if (meals.isNotEmpty && ingredients.isNotEmpty)
+            SizedBox(height: KSizes.margin4x),
+          
+          // Ingredients section
+          _buildFoodSection(
+            title: 'Fødevarer 🥕',
+            subtitle: 'Individuelle ingredienser og fødevarer',
+            count: ingredients.length,
+            favorites: ingredients,
+            color: AppColors.secondary,
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildFoodSection({
+    required String title,
+    required String subtitle,
+    required int count,
+    required List<FavoriteFoodModel> favorites,
+    required Color color,
+  }) {
+    if (favorites.isEmpty) return SizedBox.shrink();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Section header
+        Container(
+          padding: EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(KSizes.radiusM),
+            border: Border.all(
+              color: color.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(KSizes.margin2x),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(KSizes.radiusS),
+                ),
+                child: Icon(
+                  title.contains('Retter') ? MdiIcons.silverwareForkKnife : MdiIcons.carrot,
+                  color: Colors.white,
+                  size: KSizes.iconM,
+                ),
+              ),
+              SizedBox(width: KSizes.margin3x),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '$title ($count)',
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        SizedBox(height: KSizes.margin3x),
+        
+        // Favorites list
+        ...favorites.map((favorite) => Padding(
+          padding: EdgeInsets.only(bottom: KSizes.margin3x),
+          child: _buildFoodFavoriteCard(favorite),
+        )),
+      ],
     );
   }
 
@@ -297,6 +394,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
   }
 
   Widget _buildFoodFavoriteCard(FavoriteFoodModel favorite) {
+    // Get color based on food type
+    final cardColor = favorite.foodType == FoodType.ingredient 
+        ? AppColors.secondary 
+        : _getMealColor(favorite.preferredMealType);
+    
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: KSizes.margin3x),
@@ -317,12 +419,14 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
               Container(
                 padding: const EdgeInsets.all(KSizes.margin2x),
                 decoration: BoxDecoration(
-                  color: _getMealColor(favorite.preferredMealType).withOpacity(0.1),
+                  color: cardColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(KSizes.radiusS),
                 ),
                 child: Icon(
-                  _getMealIcon(favorite.preferredMealType),
-                  color: _getMealColor(favorite.preferredMealType),
+                  favorite.foodType == FoodType.ingredient 
+                      ? MdiIcons.carrot 
+                      : _getMealIcon(favorite.preferredMealType),
+                  color: cardColor,
                   size: KSizes.iconM,
                 ),
               ),
@@ -331,17 +435,47 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      favorite.foodName,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            favorite.foodName,
+                            style: TextStyle(
+                              fontSize: KSizes.fontSizeL,
+                              fontWeight: KSizes.fontWeightBold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        // Scannet badge for barcode items
+                        if (favorite.barcodeData?.isNotEmpty == true) ...[
+                          SizedBox(width: KSizes.margin2x),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: KSizes.margin2x,
+                              vertical: KSizes.margin1x,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.info,
+                              borderRadius: BorderRadius.circular(KSizes.radiusXS),
+                            ),
+                            child: Text(
+                              'Scannet',
+                              style: TextStyle(
+                                fontSize: KSizes.fontSizeXS,
+                                color: Colors.white,
+                                fontWeight: KSizes.fontWeightMedium,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      '${favorite.mealTypeDisplayName} • ${favorite.defaultServingCalories} kcal',
+                      favorite.foodType == FoodType.ingredient
+                          ? '${favorite.foodType.description} • ${favorite.defaultServingCalories} kcal'
+                          : '${favorite.mealTypeDisplayName} • ${favorite.defaultServingCalories} kcal',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
                         color: AppColors.textSecondary,
@@ -397,6 +531,11 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
               _buildInfoChip('${favorite.defaultQuantity} ${favorite.defaultServingUnit}', MdiIcons.scaleBalance),
               SizedBox(width: KSizes.margin2x),
               _buildInfoChip('Brugt ${favorite.usageCount} gange', MdiIcons.heart),
+              // Add brand info chip for scanned items
+              if (favorite.tags.isNotEmpty) ...[
+                SizedBox(width: KSizes.margin2x),
+                _buildInfoChip(favorite.tags.first, MdiIcons.tag),
+              ],
             ],
           ),
         ],
@@ -764,14 +903,256 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
   }
 
   void _createNewFoodFavorite() async {
+    _showAddFavoriteOptions();
+  }
+
+  void _showAddFavoriteOptions() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(KSizes.radiusXL),
+            topRight: Radius.circular(KSizes.radiusXL),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              margin: EdgeInsets.only(bottom: KSizes.margin4x),
+              decoration: BoxDecoration(
+                color: AppColors.textTertiary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            
+            // Title
+            Text(
+              'Tilføj Mad Favorit',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeXL,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            
+            SizedBox(height: KSizes.margin2x),
+            
+            Text(
+              'Vælg hvordan du vil tilføje din favorit',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            
+            SizedBox(height: KSizes.margin6x),
+            
+            // Create meal option
+            _buildOptionCard(
+              icon: MdiIcons.silverwareForkKnife,
+              title: 'Opret Ret',
+              subtitle: 'Tilføj en ret eller måltid manuelt',
+              color: AppColors.primary,
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToCreateMeal();
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Scan ingredient option
+            _buildOptionCard(
+              icon: MdiIcons.barcodeScan,
+              title: 'Scan Fødevare',
+              subtitle: 'Scan stregkode på fødevarer (automatisk portionsberegning)',
+              color: AppColors.secondary,
+              onTap: () {
+                Navigator.pop(context);
+                _navigateToBarcodeScan();
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin6x),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        child: Container(
+          padding: EdgeInsets.all(KSizes.margin4x),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+            border: Border.all(
+              color: color.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(KSizes.margin3x),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(KSizes.radiusM),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: KSizes.iconL,
+                ),
+              ),
+              
+              SizedBox(width: KSizes.margin4x),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeL,
+                        fontWeight: KSizes.fontWeightBold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    SizedBox(height: KSizes.margin1x),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: KSizes.fontSizeS,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              Icon(
+                MdiIcons.chevronRight,
+                color: AppColors.textTertiary,
+                size: KSizes.iconM,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _navigateToCreateMeal() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => FoodFavoriteDetailPage(logOnSave: false), // Edit mode for new
+        builder: (context) => FoodFavoriteDetailPage(
+          logOnSave: false,
+          forcedFoodType: FoodType.meal,
+        ),
       ),
     );
     if (result != null && result is FavoriteFoodModel || result == true) { 
       _loadAllFavorites();
     }
+  }
+
+  Future<void> _navigateToBarcodeScan() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => BarcodeScannerWidget(
+          onFoodFound: (favorite) {
+            // Return the favorite and close the scanner
+            Navigator.of(context).pop(favorite);
+          },
+          onClose: () {
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+    
+    if (result != null && result is FavoriteFoodModel) {
+      try {
+        // Save the scanned food as a favorite
+        final saveResult = await _foodService.addToFavorites(result);
+        
+        if (saveResult.isSuccess) {
+          // Show success message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${result.foodName} tilføjet til favoritter!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          
+          // Ask if user wants to log now
+          final shouldLog = await _showLogNowDialog(result);
+          if (shouldLog == true) {
+            await _useFoodFavorite(result);
+          }
+          
+          _loadAllFavorites();
+        } else {
+          // Show error if save failed
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Kunne ikke gemme ${result.foodName} som favorit'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved gemning af favorit: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<bool?> _showLogNowDialog(FavoriteFoodModel favorite) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Favorit gemt!'),
+        content: Text('Vil du logge ${favorite.foodName} nu?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('Nej'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text('Ja, log nu'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _createNewActivityFavorite() async {
