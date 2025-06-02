@@ -654,15 +654,9 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> {
         totalCaloriesForServing: ((scannedFood.caloriesPer100g * portionInfo['grams']) / 100).round(),
       );
       
-      // Save to favorites
+      // Save to favorites only - no log prompt
       final result = await _foodService.addToFavorites(favoriteWithPortion);
       if (result.isSuccess) {
-        // Ask if user wants to log it now
-        final shouldLog = await _showLogNowDialog(favoriteWithPortion);
-        if (shouldLog == true) {
-          await _useFoodFavorite(favoriteWithPortion);
-        }
-        
         _loadFavorites();
         
         if (mounted) {
@@ -772,26 +766,6 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Future<bool?> _showLogNowDialog(FavoriteFoodModel favorite) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Spis nu?'),
-        content: Text('Vil du logge ${favorite.foodName} som spist nu?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Nej'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Ja, spis nu'),
-          ),
-        ],
       ),
     );
   }

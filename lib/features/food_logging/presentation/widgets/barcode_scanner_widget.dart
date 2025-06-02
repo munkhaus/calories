@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../infrastructure/barcode_food_service.dart';
@@ -23,24 +23,26 @@ class BarcodeScannerWidget extends StatefulWidget {
 }
 
 class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
-  QRViewController? _controller;
-  final GlobalKey _qrKey = GlobalKey(debugLabel: 'QR');
+  MobileScannerController? _controller;
   bool _isProcessing = false;
+  bool _hasFoundBarcode = false;
   String? _errorMessage;
   bool _flashOn = false;
 
   @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      _controller?.pauseCamera();
-    } else if (Platform.isIOS) {
-      _controller?.resumeCamera();
-    }
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.noDuplicates,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
   }
 
   @override
   void dispose() {
+    // Ensure scanner is stopped before disposal
+    _controller?.stop();
     _controller?.dispose();
     super.dispose();
   }
@@ -94,15 +96,41 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
             flex: 4,
             child: Stack(
               children: [
-                QRView(
-                  key: _qrKey,
-                  onQRViewCreated: _onQRViewCreated,
-                  overlay: QrScannerOverlayShape(
-                    borderColor: AppColors.primary,
-                    borderRadius: KSizes.radiusL,
-                    borderLength: 30,
-                    borderWidth: 10,
+                MobileScanner(
+                  controller: _controller,
+                  onDetect: (capture) {
+                    final List<Barcode> barcodes = capture.barcodes;
+                    for (final barcode in barcodes) {
+                      if (!_isProcessing && !_hasFoundBarcode && barcode.rawValue != null) {
+                        _processBarcode(barcode.rawValue!);
+                        break;
+                      }
+                    }
+                  },
+                ),
+                
+                // Scanner overlay with cutout
+                ClipPath(
+                  clipper: ScannerOverlayClipper(
                     cutOutSize: MediaQuery.of(context).size.width * 0.8,
+                  ),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                ),
+                
+                // Scanner border
+                Center(
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    height: MediaQuery.of(context).size.width * 0.8,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: AppColors.primary,
+                        width: 3,
+                      ),
+                      borderRadius: BorderRadius.circular(KSizes.radiusL),
+                    ),
                   ),
                 ),
                 
@@ -253,53 +281,64 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
     );
   }
 
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      _controller = controller;
-    });
-
-    controller.scannedDataStream.listen((scanData) {
-      if (!_isProcessing && scanData.code != null) {
-        _processBarcode(scanData.code!);
-      }
-    });
-  }
-
   void _toggleFlash() async {
     if (_controller != null) {
-      await _controller!.toggleFlash();
-      setState(() {
-        _flashOn = !_flashOn;
-      });
+      await _controller!.toggleTorch();
+      if (mounted) {
+        setState(() {
+          _flashOn = !_flashOn;
+        });
+      }
     }
   }
 
   Future<void> _processBarcode(String barcode) async {
-    if (_isProcessing) return;
+    if (_isProcessing || _hasFoundBarcode) return;
 
-    setState(() {
-      _isProcessing = true;
-      _errorMessage = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isProcessing = true;
+        _hasFoundBarcode = true; // Set this immediately to prevent multiple calls
+        _errorMessage = null;
+      });
+    }
 
     try {
+      // Stop the scanner immediately
+      await _controller?.stop();
+      
       final result = await BarcodeFoodService.fetchFoodFromBarcode(barcode);
       
       if (result.isSuccess) {
+        // Call the callback after stopping scanner
         widget.onFoodFound(result.success);
       } else {
-        setState(() {
-          _errorMessage = result.failure.message;
-        });
+        // Reset if there was an error so user can try again
+        if (mounted) {
+          setState(() {
+            _hasFoundBarcode = false;
+            _errorMessage = result.failure.message;
+          });
+          // Restart scanner for retry
+          await _controller?.start();
+        }
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Uventet fejl: $e';
-      });
+      // Reset on error so user can try again
+      if (mounted) {
+        setState(() {
+          _hasFoundBarcode = false;
+          _errorMessage = 'Uventet fejl: $e';
+        });
+        // Restart scanner for retry
+        await _controller?.start();
+      }
     } finally {
-      setState(() {
-        _isProcessing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -336,4 +375,33 @@ class _BarcodeScannerWidgetState extends State<BarcodeScannerWidget> {
       ),
     );
   }
+}
+
+/// Custom clipper to create a cutout in the scanner overlay
+class ScannerOverlayClipper extends CustomClipper<Path> {
+  final double cutOutSize;
+  
+  ScannerOverlayClipper({required this.cutOutSize});
+  
+  @override
+  Path getClip(Size size) {
+    final path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    
+    final cutOutRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: cutOutSize,
+      height: cutOutSize,
+    );
+    
+    path.addRRect(RRect.fromRectAndRadius(
+      cutOutRect, 
+      Radius.circular(20),
+    ));
+    
+    return path..fillType = PathFillType.evenOdd;
+  }
+  
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 } 

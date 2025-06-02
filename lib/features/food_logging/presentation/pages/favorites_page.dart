@@ -1100,19 +1100,13 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
         final saveResult = await _foodService.addToFavorites(result);
         
         if (saveResult.isSuccess) {
-          // Show success message
+          // Show success message only - no log prompt
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('${result.foodName} tilføjet til favoritter!'),
               backgroundColor: AppColors.success,
             ),
           );
-          
-          // Ask if user wants to log now
-          final shouldLog = await _showLogNowDialog(result);
-          if (shouldLog == true) {
-            await _useFoodFavorite(result);
-          }
           
           _loadAllFavorites();
         } else {
@@ -1133,26 +1127,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
         );
       }
     }
-  }
-
-  Future<bool?> _showLogNowDialog(FavoriteFoodModel favorite) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Favorit gemt!'),
-        content: Text('Vil du logge ${favorite.foodName} nu?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Nej'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Ja, log nu'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _createNewActivityFavorite() async {
