@@ -13,6 +13,8 @@ import '../../food_logging/infrastructure/favorite_food_service.dart';
 import '../../onboarding/presentation/widgets/onboarding_base_layout.dart';
 import 'activity_settings_page.dart';
 import 'goal_edit_page.dart';
+import 'profile_edit_page.dart';
+import 'physical_stats_edit_page.dart';
 
 /// Profile page showing user onboarding results and settings
 class ProfilePage extends ConsumerWidget {
@@ -119,7 +121,7 @@ class ProfilePage extends ConsumerWidget {
       title: 'Fysiske data',
       subtitle: 'Højde, vægt og kropssammensætning',
       icon: MdiIcons.scaleBalance,
-      onTap: () => _navigateToGoalEdit(context),
+      onTap: () => _navigateToPhysicalStatsEdit(context),
       children: [
         if (userProfile.heightCm > 0)
           _buildInfoRow('Højde', '${userProfile.heightCm.round()} cm', MdiIcons.human),
@@ -428,17 +430,12 @@ class ProfilePage extends ConsumerWidget {
   }
 
   void _editProfile(BuildContext context, WidgetRef ref) async {
-    // Navigate to onboarding flow to edit profile information (name, age, gender)
-    // This will start from the beginning but allows editing basic profile info
-    await ref.read(onboardingProvider.notifier).restartOnboardingFlow();
-    
-    if (context.mounted) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => const OnboardingPage(),
-        ),
-      );
-    }
+    // Navigate to dedicated profile edit page for name, age, and gender
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ProfileEditPage(),
+      ),
+    );
   }
 
   void _navigateToOnboarding(BuildContext context, WidgetRef ref) {
@@ -469,6 +466,14 @@ class ProfilePage extends ConsumerWidget {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const InfoPage(),
+      ),
+    );
+  }
+
+  void _navigateToPhysicalStatsEdit(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const PhysicalStatsEditPage(),
       ),
     );
   }
