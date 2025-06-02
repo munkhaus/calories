@@ -266,13 +266,8 @@ class TodaysActivitiesWidget extends StatelessWidget {
         return await _showDeleteConfirmDialog(context, activity) ?? false;
       },
       onDismissed: (direction) {
+        // Let the parent handle all UI feedback and refreshing
         onDeleteActivity(activity);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${activity.activityName} er slettet'),
-            backgroundColor: AppColors.error,
-          ),
-        );
       },
       child: GestureDetector(
         onLongPress: () => _showActivityOptionsMenu(context, activity),
@@ -480,16 +475,26 @@ class TodaysActivitiesWidget extends StatelessWidget {
                 title: Text('Slet aktivitet'),
                 subtitle: Text('Fjern aktivitet fra dagens log'),
                 onTap: () async {
-                  Navigator.pop(context);
-                  final shouldDelete = await _showDeleteConfirmDialog(context, activity);
-                  if (shouldDelete == true) {
-                    onDeleteActivity(activity);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${activity.activityName} er slettet'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
+                  try {
+                    // Close the action sheet first
+                    Navigator.pop(context);
+                    
+                    // Small delay to ensure the action sheet is fully closed
+                    await Future.delayed(const Duration(milliseconds: 100));
+                    
+                    // Show delete confirmation with a fresh context check
+                    if (!context.mounted) return;
+                    
+                    final shouldDelete = await _showDeleteConfirmDialog(context, activity);
+                    
+                    // Only delete if user confirmed
+                    if (shouldDelete == true) {
+                      // Let the parent handle all UI feedback and refreshing
+                      onDeleteActivity(activity);
+                    }
+                  } catch (e) {
+                    print('❌ Error in delete activity flow: $e');
+                    // Don't try to show SnackBar here to avoid context issues
                   }
                 },
               ),
@@ -634,17 +639,18 @@ class TodaysActivitiesWidget extends StatelessWidget {
   Future<bool?> _showDeleteConfirmDialog(BuildContext context, UserActivityLogModel activity) {
     return showDialog<bool>(
       context: context,
-      builder: (context) {
+      barrierDismissible: false, // Prevent dismissing by tapping outside
+      builder: (dialogContext) {
         return AlertDialog(
           title: Text('Slet ${activity.activityName}?'),
           content: Text('Er du sikker på, at du vil slette denne aktivitet?'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text('Nej'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
               child: Text('Ja'),
             ),
           ],

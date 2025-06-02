@@ -781,6 +781,25 @@ class _GoalEditPageState extends ConsumerState<GoalEditPage> {
     try {
       final notifier = ref.read(onboardingProvider.notifier);
       
+      // First, read current values from text controllers and update state
+      final targetWeightText = _targetWeightController.text.trim();
+      final weeklyGoalText = _weeklyGoalController.text.trim();
+      
+      // Update target weight if valid
+      final targetWeight = double.tryParse(targetWeightText);
+      if (targetWeight != null && targetWeight >= 40.0 && targetWeight <= 200.0) {
+        notifier.updateTargetWeight(targetWeight);
+      }
+      
+      // Update weekly goal if valid
+      final weeklyGoal = double.tryParse(weeklyGoalText);
+      if (weeklyGoal != null && weeklyGoal >= -1.5 && weeklyGoal <= 2.0) {
+        notifier.updateWeeklyGoal(weeklyGoal);
+      }
+      
+      // Small delay to ensure state updates are processed
+      await Future.delayed(const Duration(milliseconds: 100));
+      
       // Force recalculation of targets to ensure calories are updated
       await notifier.forceRecalculateTargets();
       
