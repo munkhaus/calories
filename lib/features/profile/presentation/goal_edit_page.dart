@@ -74,17 +74,6 @@ class _GoalEditPageState extends ConsumerState<GoalEditPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(KSizes.margin4x),
-                child: StandardPageHeader(
-                  title: 'Rediger mål',
-                  subtitle: 'Opdater dine vægtmål og ugentlige målsætninger',
-                  icon: MdiIcons.bullseyeArrow,
-                  iconColor: AppColors.success,
-                ),
-              ),
-              
               // Content
               Expanded(
                 child: SingleChildScrollView(
