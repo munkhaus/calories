@@ -10,6 +10,8 @@ import '../../food_logging/domain/user_food_log_model.dart';
 import '../../food_logging/presentation/pages/edit_meal_page.dart';
 import '../../food_logging/presentation/pages/categorize_food_page.dart';
 import '../../food_logging/presentation/pages/pending_food_selection_page.dart';
+import '../../food_logging/presentation/pages/food_search_page.dart';
+import '../../food_logging/presentation/pages/favorites_page.dart';
 import 'dart:io';
 
 /// Widget showing today's logged meals
@@ -152,7 +154,7 @@ class RecentMealsWidget extends ConsumerWidget {
                       const SizedBox(height: KSizes.margin1x),
                       Text(
                         meals.isEmpty 
-                            ? 'Ingen måltider endnu'
+                            ? 'Klik på et måltid for at redigere'
                             : '${meals.length} ${meals.length == 1 ? 'måltid' : 'måltider'} logget',
                         style: TextStyle(
                           fontSize: KSizes.fontSizeM,
@@ -162,23 +164,6 @@ class RecentMealsWidget extends ConsumerWidget {
                       ),
                     ],
                   ),
-                ),
-                
-                // Pending foods indicator
-                Consumer(
-                  builder: (context, ref, child) {
-                    final pendingState = ref.watch(pendingFoodProvider);
-                    final pendingCount = pendingState.pendingFoodsCount;
-                    
-                    if (pendingCount == 0) return const SizedBox.shrink();
-                    
-                    return _buildControlButton(
-                      icon: MdiIcons.clockOutline,
-                      onTap: () => _navigateToPendingFoods(context, ref),
-                      isPrimary: false,
-                      count: pendingCount,
-                    );
-                  },
                 ),
               ],
             ),
@@ -358,9 +343,6 @@ class RecentMealsWidget extends ConsumerWidget {
           ],
         ),
       ),
-      confirmDismiss: (direction) async {
-        return await _showDeleteConfirmDialog(context, meal) ?? false;
-      },
       onDismissed: (direction) {
         ref.read(foodLoggingProvider.notifier).deleteFood(meal.logEntryId);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -372,6 +354,7 @@ class RecentMealsWidget extends ConsumerWidget {
       },
       child: GestureDetector(
         onLongPress: () => _showMealOptionsMenu(context, ref, meal),
+        onTap: () => _showMealOptionsMenu(context, ref, meal),
         child: Container(
           margin: const EdgeInsets.only(bottom: KSizes.margin3x),
           padding: const EdgeInsets.all(KSizes.margin4x),
@@ -479,21 +462,6 @@ class RecentMealsWidget extends ConsumerWidget {
                   ],
                 ),
               ),
-              
-              // Options button
-              IconButton(
-                onPressed: () => _showMealOptionsMenu(context, ref, meal),
-                icon: Icon(
-                  MdiIcons.dotsVertical,
-                  color: AppColors.textTertiary,
-                  size: KSizes.iconS,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: KSizes.iconM,
-                  minHeight: KSizes.iconM,
-                ),
-              ),
             ],
           ),
         ),
@@ -576,28 +544,6 @@ class RecentMealsWidget extends ConsumerWidget {
     }
   }
 
-  Future<bool?> _showDeleteConfirmDialog(BuildContext context, UserFoodLogModel meal) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Slet ${meal.foodName}?'),
-          content: Text('Er du sikker på, at du vil slette dette måltid?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Nej'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text('Ja'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showMealOptionsMenu(BuildContext context, WidgetRef ref, UserFoodLogModel meal) {
     showModalBottomSheet(
       context: context,
@@ -637,46 +583,43 @@ class RecentMealsWidget extends ConsumerWidget {
                 subtitle: Text('Fjern måltid fra dagens log'),
                 onTap: () async {
                   Navigator.pop(context);
-                  final shouldDelete = await _showDeleteConfirmDialog(context, meal);
-                  if (shouldDelete == true) {
-                    try {
+                  try {
                     ref.read(foodLoggingProvider.notifier).deleteFood(meal.logEntryId);
-                      
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Row(
-                              children: [
-                                Icon(MdiIcons.check, color: Colors.white),
-                                SizedBox(width: KSizes.margin2x),
-                                Expanded(
-                                  child: Text('${meal.foodName} slettet!'),
-                                ),
-                              ],
-                            ),
-                            backgroundColor: AppColors.success,
-                            behavior: SnackBarBehavior.floating,
+                    
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(MdiIcons.check, color: Colors.white),
+                              SizedBox(width: KSizes.margin2x),
+                              Expanded(
+                                child: Text('${meal.foodName} slettet!'),
+                              ),
+                            ],
                           ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                            content: Row(
-                              children: [
-                                Icon(MdiIcons.alertCircle, color: Colors.white),
-                                SizedBox(width: KSizes.margin2x),
-                                Expanded(
-                                  child: Text('Fejl ved sletning af måltid'),
-                                ),
-                              ],
-                            ),
-                        backgroundColor: AppColors.error,
-                            behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                      }
+                          backgroundColor: AppColors.success,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              Icon(MdiIcons.alertCircle, color: Colors.white),
+                              SizedBox(width: KSizes.margin2x),
+                              Expanded(
+                                child: Text('Fejl ved sletning af måltid'),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: AppColors.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                     }
                   }
                 },
@@ -764,6 +707,22 @@ class RecentMealsWidget extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Fejl ved åbning af kategorisering: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
+  void _captureQuickFood(BuildContext context, WidgetRef ref) async {
+    try {
+      // Use existing capture logic from dashboard
+      // This would open camera and create pending food item
+      print('🍎 Quick food capture initiated');
+      // You would implement camera capture here
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fejl ved billede optagelse: $e'),
           backgroundColor: AppColors.error,
         ),
       );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -6,6 +7,10 @@ import '../../application/activity_notifier.dart';
 import '../../application/activity_state.dart';
 import '../../domain/user_activity_log_model.dart';
 import '../pages/edit_activity_page.dart';
+import '../pages/activity_details_page.dart';
+import '../pages/quick_activity_registration_page.dart';
+import '../pages/detailed_activity_registration_page.dart';
+import '../pages/activity_favorites_page.dart';
 import '../../../onboarding/domain/user_profile_model.dart';
 
 /// Widget displaying today's logged activities with enhanced design
@@ -159,7 +164,7 @@ class TodaysActivitiesWidget extends StatelessWidget {
                     ),
                     Text(
                       activities.isEmpty 
-                          ? 'Ingen aktiviteter endnu'
+                          ? 'Klik på en aktivitet for at redigere'
                           : '${activities.length} ${activities.length == 1 ? 'aktivitet' : 'aktiviteter'} logget',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
@@ -262,15 +267,13 @@ class TodaysActivitiesWidget extends StatelessWidget {
           ],
         ),
       ),
-      confirmDismiss: (direction) async {
-        return await _showDeleteConfirmDialog(context, activity) ?? false;
-      },
       onDismissed: (direction) {
         // Let the parent handle all UI feedback and refreshing
         onDeleteActivity(activity);
       },
       child: GestureDetector(
         onLongPress: () => _showActivityOptionsMenu(context, activity),
+        onTap: () => _showActivityOptionsMenu(context, activity),
         child: Container(
           margin: const EdgeInsets.only(bottom: KSizes.margin3x),
           padding: const EdgeInsets.all(KSizes.margin3x),
@@ -381,23 +384,6 @@ class TodaysActivitiesWidget extends StatelessWidget {
                   ),
                 ],
               ),
-              
-              const SizedBox(width: KSizes.margin2x),
-              
-              // Options button
-              IconButton(
-                onPressed: () => _showActivityOptionsMenu(context, activity),
-                icon: Icon(
-                  MdiIcons.dotsVertical,
-                  color: AppColors.textTertiary,
-                  size: KSizes.iconS,
-                ),
-                padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: KSizes.iconM,
-                  minHeight: KSizes.iconM,
-                ),
-              ),
             ],
           ),
         ),
@@ -474,28 +460,10 @@ class TodaysActivitiesWidget extends StatelessWidget {
                 leading: Icon(MdiIcons.delete, color: AppColors.error),
                 title: Text('Slet aktivitet'),
                 subtitle: Text('Fjern aktivitet fra dagens log'),
-                onTap: () async {
-                  try {
-                    // Close the action sheet first
-                    Navigator.pop(context);
-                    
-                    // Small delay to ensure the action sheet is fully closed
-                    await Future.delayed(const Duration(milliseconds: 100));
-                    
-                    // Show delete confirmation with a fresh context check
-                    if (!context.mounted) return;
-                    
-                    final shouldDelete = await _showDeleteConfirmDialog(context, activity);
-                    
-                    // Only delete if user confirmed
-                    if (shouldDelete == true) {
-                      // Let the parent handle all UI feedback and refreshing
-                      onDeleteActivity(activity);
-                    }
-                  } catch (e) {
-                    print('❌ Error in delete activity flow: $e');
-                    // Don't try to show SnackBar here to avoid context issues
-                  }
+                onTap: () {
+                  Navigator.pop(context);
+                  // Direct deletion without confirmation
+                  onDeleteActivity(activity);
                 },
               ),
               
@@ -633,29 +601,6 @@ class TodaysActivitiesWidget extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-
-  Future<bool?> _showDeleteConfirmDialog(BuildContext context, UserActivityLogModel activity) {
-    return showDialog<bool>(
-      context: context,
-      barrierDismissible: false, // Prevent dismissing by tapping outside
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: Text('Slet ${activity.activityName}?'),
-          content: Text('Er du sikker på, at du vil slette denne aktivitet?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text('Nej'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text('Ja'),
-            ),
-          ],
-        );
-      },
     );
   }
 
