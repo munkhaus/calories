@@ -113,19 +113,38 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
   }
 
   void _calculateTotalCalories() {
-    final calories100 = double.tryParse(_caloriesPer100gController.text);
-    final grams = double.tryParse(_portionGramsController.text);
+    // Only calculate for ingredients, not for meals
+    if (_getFoodType() == FoodType.ingredient) {
+      final calories100 = double.tryParse(_caloriesPer100gController.text);
+      final grams = double.tryParse(_portionGramsController.text);
 
-    if (calories100 != null && calories100 >= 0 && grams != null && grams >= 0) {
-      final totalCalories = (calories100 / 100.0) * grams;
-      if (_caloriesController.text != totalCalories.round().toString()){
-        _caloriesController.text = totalCalories.round().toString();
+      if (calories100 != null && calories100 >= 0 && grams != null && grams >= 0) {
+        final totalCalories = (calories100 / 100.0) * grams;
+        if (_caloriesController.text != totalCalories.round().toString()){
+          _caloriesController.text = totalCalories.round().toString();
+        }
+      } else {
+         if (_caloriesController.text != '0'){
+           _caloriesController.text = '0';
+         }
       }
-    } else {
-       if (_caloriesController.text != '0'){
-         _caloriesController.text = '0';
-       }
     }
+    // For meals, we don't calculate anything since they enter total calories directly
+  }
+
+  FoodType _getFoodType() {
+    // Use forced food type if provided
+    if (widget.forcedFoodType != null) {
+      return widget.forcedFoodType!;
+    }
+    
+    // If editing existing favorite, use its food type
+    if (_isEditing && widget.existingFavorite != null) {
+      return widget.existingFavorite!.foodType;
+    }
+    
+    // For new favorites, default to meal
+    return FoodType.meal;
   }
 
   @override
@@ -251,15 +270,23 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                 
                 SizedBox(height: KSizes.margin4x),
                 
-                // ALWAYS SHOWN: Calories per 100g
+                // ALWAYS SHOWN: Calories per 100g for ingredients, total calories for meals
                 _buildTextField(
                   controller: _caloriesPer100gController,
-                  label: 'Kalorier pr. 100 gram',
-                  hint: 'f.eks. 150',
+                  label: _getFoodType() == FoodType.meal 
+                      ? 'Total kalorier for retten'
+                      : 'Kalorier pr. 100 gram',
+                  hint: _getFoodType() == FoodType.meal 
+                      ? 'f.eks. 450' 
+                      : 'f.eks. 150',
                   icon: MdiIcons.fire,
                         keyboardType: TextInputType.number,
                         validator: (value) {
-                    if (value == null || value.isEmpty) return 'Indtast kalorier pr. 100g';
+                    if (value == null || value.isEmpty) {
+                      return _getFoodType() == FoodType.meal 
+                          ? 'Indtast total kalorier for retten'
+                          : 'Indtast kalorier pr. 100g';
+                    }
                     if (double.tryParse(value) == null) return 'Ugyldigt tal';
                     if (double.parse(value) < 0) return 'Kalorier kan ikke være negative';
                           return null;
@@ -267,36 +294,27 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
                       ),
                 SizedBox(height: KSizes.margin4x),
 
-                // ALWAYS SHOWN: Portion in grams
-                _buildTextField(
-                  controller: _portionGramsController,
-                  label: 'Portion (gram)',
-                  hint: 'f.eks. 150',
-                  icon: MdiIcons.weightGram,
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Indtast portion i gram';
-                    if (double.tryParse(value) == null) return 'Ugyldigt tal';
-                    if (double.parse(value) <= 0) return 'Portion skal være mere end 0';
-                    return null;
-                  },
-                ),
-                SizedBox(height: KSizes.margin4x),
+                // Only show portion fields for meals, not for ingredients
+                if (_getFoodType() == FoodType.meal) ...[
+                  _buildTextField(
+                    controller: _portionGramsController,
+                    label: 'Portionsstørrelse (gram)',
+                    hint: 'f.eks. 350 (vægten af hele retten)',
+                    icon: MdiIcons.weightGram,
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Indtast portionsstørrelse';
+                      }
+                      if (double.tryParse(value) == null) return 'Ugyldigt tal';
+                      if (double.parse(value) <= 0) return 'Portion skal være mere end 0';
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: KSizes.margin4x),
+                ],
                 
-                // ALWAYS SHOWN: Total Calories (Read-only)
-                _buildTextField(
-                  controller: _caloriesController,
-                  label: 'Total Kalorier (beregnet)',
-                  hint: 'Autoberegnet',
-                  icon: MdiIcons.calculatorVariantOutline,
-                  keyboardType: TextInputType.number,
-                  readOnly: true, // Always read-only
-                  validator: (value) { // Should not fail if logic is correct
-                    if (value == null || value.isEmpty) return 'Kalorier mangler';
-                    if (double.tryParse(value) == null) return 'Ugyldigt tal';
-                    return null;
-                  },
-                ),
+                // No calculated calories field for ingredients since no reference portion is set
                 
                 SizedBox(height: KSizes.margin4x),
                 
@@ -428,9 +446,20 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
     }
     setState(() => _isLoading = true);
 
-    final caloriesPer100g = double.tryParse(_caloriesPer100gController.text) ?? 0.0;
+    double caloriesPer100g;
+    double totalCaloriesForServing;
     final portionGrams = double.tryParse(_portionGramsController.text) ?? 100.0;
-    final totalCalculatedCalories = (caloriesPer100g / 100.0) * portionGrams;
+    final inputCalories = double.tryParse(_caloriesPer100gController.text) ?? 0.0;
+    
+    if (_getFoodType() == FoodType.meal) {
+      // For meals: input is total calories, calculate calories per 100g
+      totalCaloriesForServing = inputCalories;
+      caloriesPer100g = portionGrams > 0 ? (inputCalories / portionGrams) * 100.0 : 0.0;
+    } else {
+      // For ingredients: input is calories per 100g, calculate total calories
+      caloriesPer100g = inputCalories;
+      totalCaloriesForServing = (caloriesPer100g / 100.0) * portionGrams;
+    }
 
     // Ensure servingSizes is initialized, possibly from _currentAiFoodDetails if available
     List<FavoriteServingSize> servingSizes = [];
@@ -472,9 +501,10 @@ class _FoodFavoriteDetailPageState extends ConsumerState<FoodFavoriteDetailPage>
       id: _isEditing ? widget.existingFavorite!.id : DateTime.now().millisecondsSinceEpoch.toString(),
       foodName: _nameController.text.trim(),
       description: _notesController.text.trim(),
+      foodType: _getFoodType(), // Set the correct food type
       caloriesPer100g: caloriesPer100g.round(),
       defaultServingGrams: portionGrams,
-      totalCaloriesForServing: totalCalculatedCalories.round(),
+      totalCaloriesForServing: totalCaloriesForServing.round(),
             preferredMealType: _selectedMealType,
       servingSizes: servingSizes.toSet().toList(), // Use the populated and potentially modified servingSizes
       isAiGenerated: _currentAiFoodDetails != null,

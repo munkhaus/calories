@@ -15,10 +15,16 @@ import '../../presentation/pages/food_favorite_detail_page.dart';
 import '../../../activity/application/activity_notifier.dart'; // For logging activity
 import '../../../dashboard/application/date_aware_providers.dart'; // Added import
 import '../widgets/barcode_scanner_widget.dart'; // Added for barcode scanning
+import '../widgets/smart_portion_selection_dialog.dart'; // Added for portion selection
 
 /// Page for managing food and activity favorites
 class FavoritesPage extends ConsumerStatefulWidget {
-  const FavoritesPage({super.key});
+  final FoodType? initialFilter; // Add initial filter parameter
+  
+  const FavoritesPage({
+    super.key,
+    this.initialFilter,
+  });
 
   @override
   ConsumerState<FavoritesPage> createState() => _FavoritesPageState();
@@ -37,11 +43,21 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
   bool _isLoadingActivities = true;
   String? _foodError;
   String? _activityError;
+  
+  // Filter state for food favorites
+  FoodType? _selectedFoodFilter; // null means show all
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    
+    // Set tab count based on whether we have an initial filter
+    final int tabCount = widget.initialFilter != null ? 1 : 2;
+    _tabController = TabController(length: tabCount, vsync: this);
+    
+    // Set initial filter based on widget parameter
+    _selectedFoodFilter = widget.initialFilter;
+    
     _loadAllFavorites(); // Initial load
   }
 
@@ -98,12 +114,17 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
 
   @override
   Widget build(BuildContext context) {
+    final bool showOnlyFoodTab = widget.initialFilter != null;
+    final int tabCount = showOnlyFoodTab ? 1 : 2;
+    
     return DefaultTabController(
-      length: 2,
+      length: tabCount,
       child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-          title: const Text('Favoritter'),
+          title: Text(showOnlyFoodTab 
+              ? '${widget.initialFilter!.displayName} Favoritter'
+              : 'Favoritter'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
@@ -112,7 +133,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
           fontSize: KSizes.fontSizeXL,
           fontWeight: KSizes.fontWeightBold,
         ),
-        bottom: TabBar(
+        bottom: showOnlyFoodTab ? null : TabBar(
           controller: _tabController,
             indicatorColor: AppColors.primary,
           labelColor: AppColors.primary,
@@ -126,7 +147,7 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
         floatingActionButton: FloatingActionButton(
                 heroTag: "favorites_fab",
                 onPressed: () {
-                  if (_tabController.index == 0) {
+                  if (showOnlyFoodTab || _tabController.index == 0) {
                     _createNewFoodFavorite();
                   } else {
                     _createNewActivityFavorite();
@@ -134,27 +155,35 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                 },
               backgroundColor: AppColors.primary,
               child: Icon(MdiIcons.plus),
-                tooltip: _tabController.index == 0 ? 'Ny mad favorit' : 'Ny aktivitet favorit',
+                tooltip: (showOnlyFoodTab || _tabController.index == 0) ? 'Ny mad favorit' : 'Ny aktivitet favorit',
             ),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppDesign.backgroundGradient,
         ),
-          child: TabBarView(
+          child: showOnlyFoodTab 
+              ? // Show only food content when filtered
+                _isLoadingFood
+                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _foodError != null
+                        ? _buildErrorState(_foodError!, _loadAllFavorites)
+                        : _buildFoodFavoritesTab()
+              : // Show both tabs when not filtered
+                TabBarView(
                     controller: _tabController,
                     children: [
-              _isLoadingFood
-                  ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _foodError != null
-                      ? _buildErrorState(_foodError!, _loadAllFavorites)
-                      : _buildFoodFavoritesTab(),
-              _isLoadingActivities
-                  ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                  : _activityError != null
-                      ? _buildErrorState(_activityError!, _loadAllFavorites)
-                      : _buildActivityFavoritesTab(),
+                _isLoadingFood
+                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _foodError != null
+                        ? _buildErrorState(_foodError!, _loadAllFavorites)
+                        : _buildFoodFavoritesTab(),
+                _isLoadingActivities
+                    ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _activityError != null
+                        ? _buildErrorState(_activityError!, _loadAllFavorites)
+                        : _buildActivityFavoritesTab(),
                     ],
-          ),
+                ),
                   ),
       ),
     );
@@ -204,36 +233,204 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
       );
     }
 
-    // Separate favorites by food type
-    final meals = _foodFavorites.where((f) => f.foodType == FoodType.meal).toList();
-    final ingredients = _foodFavorites.where((f) => f.foodType == FoodType.ingredient).toList();
+    // Apply filtering
+    List<FavoriteFoodModel> filteredFavorites = _selectedFoodFilter == null 
+        ? _foodFavorites 
+        : _foodFavorites.where((f) => f.foodType == _selectedFoodFilter).toList();
+
+    // Separate filtered favorites by food type
+    final meals = filteredFavorites.where((f) => f.foodType == FoodType.meal).toList();
+    final ingredients = filteredFavorites.where((f) => f.foodType == FoodType.ingredient).toList();
 
     return RefreshIndicator(
       onRefresh: _loadAllFavorites,
-      child: ListView(
-        padding: const EdgeInsets.all(KSizes.margin4x),
+      child: Column(
         children: [
-          // Meals section
-          _buildFoodSection(
-            title: 'Retter 🍽️',
-            subtitle: 'Komplette måltider og retter',
-            count: meals.length,
-            favorites: meals,
-            color: AppColors.primary,
-          ),
+          // Filter segmented control - only show if no initial filter is set
+          if (widget.initialFilter == null) ...[
+            Container(
+              padding: EdgeInsets.all(KSizes.margin4x),
+              child: _buildFoodTypeFilter(),
+            ),
+          ],
           
-          if (meals.isNotEmpty && ingredients.isNotEmpty)
-            SizedBox(height: KSizes.margin4x),
-          
-          // Ingredients section
-          _buildFoodSection(
-            title: 'Fødevarer 🥕',
-            subtitle: 'Individuelle ingredienser og fødevarer',
-            count: ingredients.length,
-            favorites: ingredients,
-            color: AppColors.secondary,
+          // Favorites list
+          Expanded(
+            child: filteredFavorites.isEmpty 
+                ? _buildNoFilterResultsState()
+                : ListView(
+                    padding: EdgeInsets.symmetric(horizontal: KSizes.margin4x),
+                    children: [
+                      // Show sections based on what's available and filter
+                      if (_selectedFoodFilter == null || _selectedFoodFilter == FoodType.meal)
+                        _buildFoodSection(
+                          title: 'Retter 🍽️',
+                          subtitle: 'Komplette måltider og retter',
+                          count: meals.length,
+                          favorites: meals,
+                          color: AppColors.primary,
+                        ),
+                      
+                      if ((_selectedFoodFilter == null || _selectedFoodFilter == FoodType.ingredient) && 
+                          (meals.isNotEmpty && ingredients.isNotEmpty && _selectedFoodFilter == null))
+                        SizedBox(height: KSizes.margin4x),
+                      
+                      if (_selectedFoodFilter == null || _selectedFoodFilter == FoodType.ingredient)
+                        _buildFoodSection(
+                          title: 'Fødevarer 🥕',
+                          subtitle: 'Individuelle ingredienser og fødevarer',
+                          count: ingredients.length,
+                          favorites: ingredients,
+                          color: AppColors.secondary,
+                        ),
+                    ],
+                  ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFoodTypeFilter() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(KSizes.radiusL),
+        border: Border.all(color: AppColors.border.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          _buildFilterButton(
+            label: 'Alle',
+            isSelected: _selectedFoodFilter == null,
+            onTap: () => setState(() => _selectedFoodFilter = null),
+            emoji: '🍽️',
+          ),
+          _buildFilterButton(
+            label: 'Retter',
+            isSelected: _selectedFoodFilter == FoodType.meal,
+            onTap: () => setState(() => _selectedFoodFilter = FoodType.meal),
+            emoji: FoodType.meal.emoji,
+          ),
+          _buildFilterButton(
+            label: 'Fødevarer',
+            isSelected: _selectedFoodFilter == FoodType.ingredient,
+            onTap: () => setState(() => _selectedFoodFilter = FoodType.ingredient),
+            emoji: FoodType.ingredient.emoji,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterButton({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required String emoji,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            vertical: KSizes.margin3x,
+            horizontal: KSizes.margin2x,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(KSizes.radiusL),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                emoji,
+                style: TextStyle(fontSize: KSizes.fontSizeM),
+              ),
+              SizedBox(width: KSizes.margin1x),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: KSizes.fontSizeS,
+                    fontWeight: isSelected ? KSizes.fontWeightBold : KSizes.fontWeightMedium,
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoFilterResultsState() {
+    final filterName = _selectedFoodFilter?.displayName ?? 'Alle';
+    final isFromHomePage = widget.initialFilter != null;
+    
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(KSizes.margin6x),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(KSizes.margin6x),
+              decoration: BoxDecoration(
+                color: AppColors.textSecondary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Text(
+                _selectedFoodFilter?.emoji ?? '🔍',
+                style: TextStyle(fontSize: 64),
+              ),
+            ),
+            
+            SizedBox(height: KSizes.margin4x),
+            
+            Text(
+              isFromHomePage 
+                ? 'Ingen ${filterName.toLowerCase()} favoritter endnu'
+                : 'Ingen ${filterName.toLowerCase()} favoritter',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                fontWeight: KSizes.fontWeightBold,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            SizedBox(height: KSizes.margin2x),
+            
+            Text(
+              isFromHomePage
+                ? 'Tilføj ${filterName.toLowerCase()} favoritter for nemt at finde dem her'
+                : 'Prøv at vælge en anden kategori eller tilføj nye favoritter',
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            
+            if (isFromHomePage) ...[
+              SizedBox(height: KSizes.margin4x),
+              ElevatedButton.icon(
+                icon: Icon(MdiIcons.plus),
+                label: Text('Tilføj ${filterName}'),
+                onPressed: () => _createNewFoodFavorite(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: KSizes.margin6x, vertical: KSizes.margin3x)
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -407,7 +604,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
         side: BorderSide(color: AppColors.border.withOpacity(0.3)),
       ),
       child: InkWell(
-        onTap: () => _editFoodFavorite(favorite), // Tap card to edit
+        onTap: () => widget.initialFilter != null 
+            ? _handleFavoriteFromHomePage(favorite) // Different behavior for meals vs ingredients
+            : _editFoodFavorite(favorite), // Edit mode when from favorites tab
         borderRadius: BorderRadius.circular(KSizes.radiusL),
         child: Padding(
           padding: const EdgeInsets.all(KSizes.margin4x),
@@ -473,9 +672,9 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                     ),
                     SizedBox(height: KSizes.margin1x),
                     Text(
-                      favorite.foodType == FoodType.ingredient
-                          ? '${favorite.foodType.description} • ${favorite.defaultServingCalories} kcal'
-                          : '${favorite.mealTypeDisplayName} • ${favorite.defaultServingCalories} kcal',
+                      favorite.foodType == FoodType.meal
+                          ? '${favorite.mealTypeDisplayName} • ${favorite.defaultServingCalories} kcal'
+                          : '${favorite.foodType.description} • ${favorite.defaultServingCalories} kcal',
                       style: TextStyle(
                         fontSize: KSizes.fontSizeM,
                         color: AppColors.textSecondary,
@@ -484,45 +683,47 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
-                onSelected: (value) => _handleFoodFavoriteAction(value, favorite),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'use',
-                    child: Row(
-                      children: [
-                            Icon(MdiIcons.plusCircleOutline, color: AppColors.primary),
-                        SizedBox(width: KSizes.margin2x),
-                            const Text('Log til i dag'),
-                      ],
+              // Only show popup menu when NOT coming from home page
+              if (widget.initialFilter == null)
+                PopupMenuButton<String>(
+                  onSelected: (value) => _handleFoodFavoriteAction(value, favorite),
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'use',
+                      child: Row(
+                        children: [
+                              Icon(MdiIcons.plusCircleOutline, color: AppColors.primary),
+                          SizedBox(width: KSizes.margin2x),
+                              const Text('Log til i dag'),
+                        ],
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(MdiIcons.pencil, color: AppColors.secondary),
-                        SizedBox(width: KSizes.margin2x),
-                            const Text('Rediger'),
-                      ],
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(MdiIcons.pencil, color: AppColors.secondary),
+                          SizedBox(width: KSizes.margin2x),
+                              const Text('Rediger'),
+                        ],
+                      ),
                     ),
-                  ),
-                  PopupMenuItem(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Icon(MdiIcons.delete, color: AppColors.error),
-                        SizedBox(width: KSizes.margin2x),
-                            const Text('Slet'),
-                      ],
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(MdiIcons.delete, color: AppColors.error),
+                          SizedBox(width: KSizes.margin2x),
+                              const Text('Slet'),
+                        ],
+                      ),
                     ),
+                  ],
+                  child: Icon(
+                    MdiIcons.dotsVertical,
+                    color: AppColors.textSecondary,
                   ),
-                ],
-                child: Icon(
-                  MdiIcons.dotsVertical,
-                  color: AppColors.textSecondary,
                 ),
-              ),
             ],
           ),
           SizedBox(height: KSizes.margin3x),
@@ -1138,5 +1339,114 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
      if (result != null && result is FavoriteActivityModel || result == true) { 
       _loadAllFavorites();
     }
+  }
+
+  void _handleFavoriteFromHomePage(FavoriteFoodModel favorite) async {
+    if (favorite.foodType == FoodType.meal) {
+      // Retter: Log direkte med standard portionsstørrelse
+      _logFavoriteDirectly(favorite);
+    } else {
+      // Fødevarer: Vis portions popup
+      _selectPortionForFavorite(favorite);
+    }
+  }
+  
+  void _logFavoriteDirectly(FavoriteFoodModel favorite) async {
+    try {
+      final foodLog = favorite.toUserFoodLog();
+      await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
+      final updatedFavorite = favorite.withUpdatedUsage();
+      await _foodService.updateFavorite(updatedFavorite);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${favorite.foodName} er tilføjet som måltid!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        
+        // Navigate back to home page
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved tilføjelse af måltid: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  void _selectPortionForFavorite(FavoriteFoodModel favorite) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => SmartPortionSelectionDialog(
+        food: favorite,
+        onPortionSelected: (double grams, String unitName, String displayName) async {
+          try {
+            // Create food log with selected portion
+            final foodLog = UserFoodLogModel(
+              foodName: favorite.foodName,
+              quantity: grams / 100, // Convert to appropriate quantity
+              servingUnit: unitName,
+              calories: (favorite.caloriesPer100g * grams / 100).round(),
+              protein: favorite.proteinPer100g * grams / 100,
+              fat: favorite.fatPer100g * grams / 100,
+              carbs: favorite.carbsPer100g * grams / 100,
+              mealType: _getCurrentMealType(),
+              loggedAt: DateTime.now().toIso8601String(),
+              foodItemSourceType: FoodItemSourceType.custom,
+            );
+            
+            // Log the food
+            await ref.read(foodLoggingProvider.notifier).logFood(foodLog);
+            
+            // Update favorite usage count
+            final updatedFavorite = favorite.withUpdatedUsage();
+            await _foodService.updateFavorite(updatedFavorite);
+            
+            // Close dialog first
+            Navigator.of(context).pop(true);
+            
+          } catch (e) {
+            // Close dialog and show error
+            Navigator.of(context).pop(false);
+          }
+        },
+      ),
+    );
+    
+    // Handle result after dialog is closed
+    if (mounted) {
+      if (result == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${favorite.foodName} er tilføjet som måltid!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        // Navigate back to home page
+        Navigator.of(context).pop();
+      } else if (result == false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fejl ved tilføjelse af måltid'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
+  }
+  
+  MealType _getCurrentMealType() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 10) return MealType.morgenmad;
+    if (hour >= 10 && hour < 14) return MealType.frokost;
+    if (hour >= 14 && hour < 18) return MealType.snack;
+    return MealType.aftensmad;
   }
 } 

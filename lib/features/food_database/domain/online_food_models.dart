@@ -16,7 +16,7 @@ enum SearchMode {
 }
 
 // Enhanced food tag system
-enum FoodType {
+enum OnlineFoodType {
   fruit('Frugt', '🍎'),
   vegetable('Grøntsager', '🥕'),
   meat('Kød', '🥩'),
@@ -32,7 +32,7 @@ enum FoodType {
   processed('Forarbejdede fødevarer', '🥫'),
   dishes('Retter', '🍽️');
 
-  const FoodType(this.displayName, this.emoji);
+  const OnlineFoodType(this.displayName, this.emoji);
   final String displayName;
   final String emoji;
 }
@@ -114,7 +114,7 @@ List<T> _enumListFromStringList<T>(List<String> stringList, Map<Object?, T> enum
 @freezed
 class FoodTags with _$FoodTags {
   const factory FoodTags({
-    @JsonKey(fromJson: _foodTypesFromJsonLenient) @Default([]) List<FoodType> foodTypes,
+    @JsonKey(fromJson: _foodTypesFromJsonLenient) @Default([]) List<OnlineFoodType> foodTypes,
     @JsonKey(fromJson: _cuisineStylesFromJsonLenient) @Default([]) List<CuisineStyle> cuisineStyles,
     @Default([]) List<DietaryTag> dietaryTags,
     @JsonKey(fromJson: _preparationTypesFromJsonLenient) @Default([]) List<PreparationType> preparationTypes,
@@ -125,18 +125,18 @@ class FoodTags with _$FoodTags {
 }
 
 // Custom lenient fromJson for foodTypes
-List<FoodType> _foodTypesFromJsonLenient(List<dynamic> jsonList) {
+List<OnlineFoodType> _foodTypesFromJsonLenient(List<dynamic> jsonList) {
   if (jsonList.isEmpty) return [];
   return jsonList
       .map((e) {
         final val = e as String?;
         if (val == null || val.trim().isEmpty) return null;
 
-        FoodType? type = $enumDecodeNullable(_$FoodTypeEnumMap, val);
-        type ??= $enumDecodeNullable(_$FoodTypeEnumMap, val.toLowerCase());
+        OnlineFoodType? type = $enumDecodeNullable(_$OnlineFoodTypeEnumMap, val);
+        type ??= $enumDecodeNullable(_$OnlineFoodTypeEnumMap, val.toLowerCase());
 
         if (type == null) {
-          for (final enumValue in FoodType.values) {
+          for (final enumValue in OnlineFoodType.values) {
             if (enumValue.displayName.toLowerCase() == val.toLowerCase()) {
               type = enumValue;
               break;
@@ -145,13 +145,13 @@ List<FoodType> _foodTypesFromJsonLenient(List<dynamic> jsonList) {
         }
             
         if (type == null) {
-          print('⚠️ _foodTypesFromJsonLenient: Could not parse FoodType value: "$val", defaulting to processed.');
-          type = FoodType.processed; 
+          print('⚠️ _foodTypesFromJsonLenient: Could not parse OnlineFoodType value: "$val", defaulting to processed.');
+          type = OnlineFoodType.processed; 
         }
         return type;
       })
       .where((element) => element != null)
-      .cast<FoodType>()
+      .cast<OnlineFoodType>()
       .toList();
 }
 
@@ -493,10 +493,10 @@ class FoodImageHelper {
     if (name.contains('brød') || name.contains('korn')) return '🍞';
     
     // Fallback
-    return '🍽️';
+    return '��️';
   }
   
-  static FoodType getFoodType(String foodName) {
+  static OnlineFoodType getFoodType(String foodName) {
     final name = foodName.toLowerCase();
     
     // Frugt
@@ -504,65 +504,65 @@ class FoodImageHelper {
         name.contains('jordbær') || name.contains('blåbær') || name.contains('pære') ||
         name.contains('mango') || name.contains('ananas') || name.contains('citron') ||
         name.contains('frugt')) {
-      return FoodType.fruit;
+      return OnlineFoodType.fruit;
     }
     
     // Grøntsager
     if (name.contains('tomat') || name.contains('gulerod') || name.contains('broccoli') ||
         name.contains('salat') || name.contains('spinat') || name.contains('løg') ||
         name.contains('kartoffel') || name.contains('grønt')) {
-      return FoodType.vegetable;
+      return OnlineFoodType.vegetable;
     }
     
     // Kød
     if (name.contains('kylling') || name.contains('oksekød') || name.contains('svinekød') ||
         name.contains('lam') || name.contains('kød')) {
-      return FoodType.meat;
+      return OnlineFoodType.meat;
     }
     
     // Fisk
     if (name.contains('laks') || name.contains('tuna') || name.contains('torsk') ||
         name.contains('rejer') || name.contains('fisk')) {
-      return FoodType.fish;
+      return OnlineFoodType.fish;
     }
     
     // Mejeriprodukter
     if (name.contains('mælk') || name.contains('ost') || name.contains('yoghurt') ||
         name.contains('smør') || name.contains('fløde')) {
-      return FoodType.dairy;
+      return OnlineFoodType.dairy;
     }
     
     // Korn og brød
     if (name.contains('brød') || name.contains('pasta') || name.contains('ris') ||
         name.contains('havre') || name.contains('müsli') || name.contains('quinoa')) {
-      return FoodType.grain;
+      return OnlineFoodType.grain;
     }
     
     // Nødder
     if (name.contains('mandel') || name.contains('valnød') || name.contains('hasselnød') ||
         name.contains('nød')) {
-      return FoodType.nuts;
+      return OnlineFoodType.nuts;
     }
     
     // Drikkevarer
     if (name.contains('kaffe') || name.contains('te') || name.contains('juice') ||
         name.contains('øl') || name.contains('vin') || name.contains('vand') ||
         name.contains('sodavand')) {
-      return FoodType.beverages;
+      return OnlineFoodType.beverages;
     }
     
     // Søde sager
     if (name.contains('chokolade') || name.contains('kage') || name.contains('cookie') ||
         name.contains('is') || name.contains('slik')) {
-      return FoodType.sweets;
+      return OnlineFoodType.sweets;
     }
     
     // Default til retter hvis det lyder som en komplet ret
     if (name.contains('ret') || name.contains('måltid') || name.contains('pizza') ||
         name.contains('burger') || name.contains('sandwich')) {
-      return FoodType.dishes;
+      return OnlineFoodType.dishes;
     }
     
-    return FoodType.processed; // Default
+    return OnlineFoodType.processed; // Default
   }
 } 

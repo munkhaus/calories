@@ -30,6 +30,7 @@ import '../../features/food_logging/presentation/pages/favorites_page.dart';
 import '../../features/food_database/presentation/widgets/food_edit_dialog.dart';
 import '../../features/food_database/application/food_database_cubit.dart';
 import '../../features/food_logging/domain/user_food_log_model.dart';
+import '../../features/food_logging/domain/favorite_food_model.dart';
 
 /// Main app navigation with bottom navigation bar
 class AppNavigation extends ConsumerStatefulWidget {
@@ -703,26 +704,41 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Favorites option - FIRST
+            // Ret (Meals)
             _buildSubmenuOption(
               context: context,
-              icon: MdiIcons.star,
-              title: 'Fra Favoritter',
-              subtitle: 'Vælg fra gemte mad-favoritter',
+              icon: MdiIcons.silverwareForkKnife,
+              title: 'Ret',
+              subtitle: 'Komplekse retter og måltider',
               color: AppColors.primary,
               onTap: () {
                 Navigator.of(context).pop();
-                _navigateToFoodFavorites(context);
+                _navigateToFoodFavoritesWithFilter(context, FoodType.meal);
               },
             ),
             
             SizedBox(height: KSizes.margin3x),
             
-            // Detailed registration - SECOND
+            // Fødevare (Ingredients)
+            _buildSubmenuOption(
+              context: context,
+              icon: MdiIcons.carrot,
+              title: 'Fødevare',
+              subtitle: 'Enkle fødevarer og ingredienser',
+              color: AppColors.secondary,
+              onTap: () {
+                Navigator.of(context).pop();
+                _navigateToFoodFavoritesWithFilter(context, FoodType.ingredient);
+              },
+            ),
+            
+            SizedBox(height: KSizes.margin3x),
+            
+            // Detalje (Detailed registration)
             _buildSubmenuOption(
               context: context,
               icon: MdiIcons.formTextbox,
-              title: 'Detaljeret Registrering',
+              title: 'Detalje',
               subtitle: 'Søg og log mad med alle detaljer',
               color: AppColors.info,
               onTap: () {
@@ -907,6 +923,19 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
       ),
     ).then((_) {
       // Refresh providers when returning from photo session
+      _refreshProviders();
+    });
+  }
+
+  void _navigateToFoodFavoritesWithFilter(BuildContext context, FoodType foodType) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FavoritesPage(
+          initialFilter: foodType,
+        ),
+      ),
+    ).then((_) {
+      // Refresh providers when returning from filtered favorites
       _refreshProviders();
     });
   }

@@ -33,7 +33,7 @@ UNDGÅ: Sammensatte retter som "kylling med ris", "tomatsalat"
     }
 
     // Generate lists of valid enum values dynamically
-    final validFoodTypes = FoodType.values.map((e) => e.name).toList();
+    final validOnlineFoodTypes = OnlineFoodType.values.map((e) => e.name).toList();
     final validCuisineStyles = CuisineStyle.values.map((e) => e.name).toList();
     final validPreparationTypes = PreparationType.values.map((e) => e.name).toList();
 
@@ -49,7 +49,7 @@ UNDGÅ: Sammensatte retter som "kylling med ris", "tomatsalat"
 - `servingSizes[].weight` SKAL være i gram.
 - Brug KUN følgende gyldige værdier for enum felter:
   - "searchMode": ${SearchMode.values.map((e) => '"${e.name}"').join(', ')} (Fx. "dishes")  <- DETTE ER EN LISTE OVER GYLDIGE INPUT TIL SYSTEMET. I DET RETURNEREDE JSON FOR HVER FØDEVARE, SKAL "searchMode" ALTID VÆRE ENTEN "dishes" ELLER "ingredients".
-  - "foodTypes": ${FoodType.values.map((e) => '"${e.name}"').join(', ')} (Fx. "fruit", "dishes")
+  - "foodTypes": ${OnlineFoodType.values.map((e) => '"${e.name}"').join(', ')} (Fx. "fruit", "dishes")
   - "cuisineStyles": ${CuisineStyle.values.map((e) => '"${e.name}"').join(', ')} (Fx. "danish", "italian")
   - "preparationTypes": ${PreparationType.values.map((e) => '"${e.name}"').join(', ')} (Fx. "raw", "cooked")
   - "mealTags" (Array of strings): ["Morgenmad", "Frokost", "Aftensmad", "Snack", "Dessert", "Mellemmåltid", "Drikkevarer", "Ukendt", "Ingen"] (Fx. "Morgenmad", "Frokost")
@@ -64,11 +64,11 @@ Returner en JSON liste med max 8 fødevarer/retter med KOMPLETTE detaljer. Hver 
       "description": "Detaljeret beskrivelse der forklarer hvad det er",
       "imageUrl": "",
       "provider": "llm_gemini",
-      "type": "dish", // Simplified placeholder. SKAL være en af: ${FoodType.values.map((e) => '"${e.name}"').join(', ')}
+      "type": "dish", // Simplified placeholder. SKAL være en af: ${OnlineFoodType.values.map((e) => '"${e.name}"').join(', ')}
       "searchMode": "dishes", // Simplified placeholder. SKAL være enten "dishes" eller "ingredients".
       "mealTags": ["Frokost"], // Example. SKAL være en liste af strenge fra de gyldige mealTags ovenfor.
       "tags": {
-        "foodTypes": ["fruit"], // Example. SKAL være en liste af strenge fra: ${FoodType.values.map((e) => '"${e.name}"').join(', ')}
+        "foodTypes": ["fruit"], // Example. SKAL være en liste af strenge fra: ${OnlineFoodType.values.map((e) => '"${e.name}"').join(', ')}
         "cuisineStyles": ["danish"], // Example. SKAL være en liste af strenge fra: ${CuisineStyle.values.map((e) => '"${e.name}"').join(', ')}
         "dietaryTags": [/* Fx. "Vegetarisk", "Glutenfri" */],
         "preparationTypes": ["raw"], // Example. SKAL være en liste af strenge fra: ${PreparationType.values.map((e) => '"${e.name}"').join(', ')}

@@ -22,7 +22,7 @@ FoodTags _$FoodTagsFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$FoodTags {
   @JsonKey(fromJson: _foodTypesFromJsonLenient)
-  List<FoodType> get foodTypes => throw _privateConstructorUsedError;
+  List<OnlineFoodType> get foodTypes => throw _privateConstructorUsedError;
   @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
   List<CuisineStyle> get cuisineStyles => throw _privateConstructorUsedError;
   List<DietaryTag> get dietaryTags => throw _privateConstructorUsedError;
@@ -47,7 +47,8 @@ abstract class $FoodTagsCopyWith<$Res> {
       _$FoodTagsCopyWithImpl<$Res, FoodTags>;
   @useResult
   $Res call({
-    @JsonKey(fromJson: _foodTypesFromJsonLenient) List<FoodType> foodTypes,
+    @JsonKey(fromJson: _foodTypesFromJsonLenient)
+    List<OnlineFoodType> foodTypes,
     @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     List<CuisineStyle> cuisineStyles,
     List<DietaryTag> dietaryTags,
@@ -83,7 +84,7 @@ class _$FoodTagsCopyWithImpl<$Res, $Val extends FoodTags>
             foodTypes: null == foodTypes
                 ? _value.foodTypes
                 : foodTypes // ignore: cast_nullable_to_non_nullable
-                      as List<FoodType>,
+                      as List<OnlineFoodType>,
             cuisineStyles: null == cuisineStyles
                 ? _value.cuisineStyles
                 : cuisineStyles // ignore: cast_nullable_to_non_nullable
@@ -116,7 +117,8 @@ abstract class _$$FoodTagsImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    @JsonKey(fromJson: _foodTypesFromJsonLenient) List<FoodType> foodTypes,
+    @JsonKey(fromJson: _foodTypesFromJsonLenient)
+    List<OnlineFoodType> foodTypes,
     @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     List<CuisineStyle> cuisineStyles,
     List<DietaryTag> dietaryTags,
@@ -151,7 +153,7 @@ class __$$FoodTagsImplCopyWithImpl<$Res>
         foodTypes: null == foodTypes
             ? _value._foodTypes
             : foodTypes // ignore: cast_nullable_to_non_nullable
-                  as List<FoodType>,
+                  as List<OnlineFoodType>,
         cuisineStyles: null == cuisineStyles
             ? _value._cuisineStyles
             : cuisineStyles // ignore: cast_nullable_to_non_nullable
@@ -178,7 +180,7 @@ class __$$FoodTagsImplCopyWithImpl<$Res>
 class _$FoodTagsImpl implements _FoodTags {
   const _$FoodTagsImpl({
     @JsonKey(fromJson: _foodTypesFromJsonLenient)
-    final List<FoodType> foodTypes = const [],
+    final List<OnlineFoodType> foodTypes = const [],
     @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     final List<CuisineStyle> cuisineStyles = const [],
     final List<DietaryTag> dietaryTags = const [],
@@ -194,10 +196,10 @@ class _$FoodTagsImpl implements _FoodTags {
   factory _$FoodTagsImpl.fromJson(Map<String, dynamic> json) =>
       _$$FoodTagsImplFromJson(json);
 
-  final List<FoodType> _foodTypes;
+  final List<OnlineFoodType> _foodTypes;
   @override
   @JsonKey(fromJson: _foodTypesFromJsonLenient)
-  List<FoodType> get foodTypes {
+  List<OnlineFoodType> get foodTypes {
     if (_foodTypes is EqualUnmodifiableListView) return _foodTypes;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_foodTypes);
@@ -300,7 +302,7 @@ class _$FoodTagsImpl implements _FoodTags {
 abstract class _FoodTags implements FoodTags {
   const factory _FoodTags({
     @JsonKey(fromJson: _foodTypesFromJsonLenient)
-    final List<FoodType> foodTypes,
+    final List<OnlineFoodType> foodTypes,
     @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
     final List<CuisineStyle> cuisineStyles,
     final List<DietaryTag> dietaryTags,
@@ -314,7 +316,7 @@ abstract class _FoodTags implements FoodTags {
 
   @override
   @JsonKey(fromJson: _foodTypesFromJsonLenient)
-  List<FoodType> get foodTypes;
+  List<OnlineFoodType> get foodTypes;
   @override
   @JsonKey(fromJson: _cuisineStylesFromJsonLenient)
   List<CuisineStyle> get cuisineStyles;

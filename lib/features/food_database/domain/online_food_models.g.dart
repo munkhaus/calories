@@ -29,21 +29,22 @@ _$FoodTagsImpl _$$FoodTagsImplFromJson(Map<String, dynamic> json) =>
           const [],
     );
 
-Map<String, dynamic> _$$FoodTagsImplToJson(
-  _$FoodTagsImpl instance,
-) => <String, dynamic>{
-  'foodTypes': instance.foodTypes.map((e) => _$FoodTypeEnumMap[e]!).toList(),
-  'cuisineStyles': instance.cuisineStyles
-      .map((e) => _$CuisineStyleEnumMap[e]!)
-      .toList(),
-  'dietaryTags': instance.dietaryTags
-      .map((e) => _$DietaryTagEnumMap[e]!)
-      .toList(),
-  'preparationTypes': instance.preparationTypes
-      .map((e) => _$PreparationTypeEnumMap[e]!)
-      .toList(),
-  'customTags': instance.customTags,
-};
+Map<String, dynamic> _$$FoodTagsImplToJson(_$FoodTagsImpl instance) =>
+    <String, dynamic>{
+      'foodTypes': instance.foodTypes
+          .map((e) => _$OnlineFoodTypeEnumMap[e]!)
+          .toList(),
+      'cuisineStyles': instance.cuisineStyles
+          .map((e) => _$CuisineStyleEnumMap[e]!)
+          .toList(),
+      'dietaryTags': instance.dietaryTags
+          .map((e) => _$DietaryTagEnumMap[e]!)
+          .toList(),
+      'preparationTypes': instance.preparationTypes
+          .map((e) => _$PreparationTypeEnumMap[e]!)
+          .toList(),
+      'customTags': instance.customTags,
+    };
 
 const _$DietaryTagEnumMap = {
   DietaryTag.vegetarian: 'vegetarian',
@@ -58,21 +59,21 @@ const _$DietaryTagEnumMap = {
   DietaryTag.sugarFree: 'sugarFree',
 };
 
-const _$FoodTypeEnumMap = {
-  FoodType.fruit: 'fruit',
-  FoodType.vegetable: 'vegetable',
-  FoodType.meat: 'meat',
-  FoodType.fish: 'fish',
-  FoodType.dairy: 'dairy',
-  FoodType.grain: 'grain',
-  FoodType.nuts: 'nuts',
-  FoodType.legumes: 'legumes',
-  FoodType.herbs: 'herbs',
-  FoodType.beverages: 'beverages',
-  FoodType.sweets: 'sweets',
-  FoodType.oils: 'oils',
-  FoodType.processed: 'processed',
-  FoodType.dishes: 'dishes',
+const _$OnlineFoodTypeEnumMap = {
+  OnlineFoodType.fruit: 'fruit',
+  OnlineFoodType.vegetable: 'vegetable',
+  OnlineFoodType.meat: 'meat',
+  OnlineFoodType.fish: 'fish',
+  OnlineFoodType.dairy: 'dairy',
+  OnlineFoodType.grain: 'grain',
+  OnlineFoodType.nuts: 'nuts',
+  OnlineFoodType.legumes: 'legumes',
+  OnlineFoodType.herbs: 'herbs',
+  OnlineFoodType.beverages: 'beverages',
+  OnlineFoodType.sweets: 'sweets',
+  OnlineFoodType.oils: 'oils',
+  OnlineFoodType.processed: 'processed',
+  OnlineFoodType.dishes: 'dishes',
 };
 
 const _$CuisineStyleEnumMap = {
