@@ -131,7 +131,8 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
       length: tabCount,
       child: Scaffold(
         backgroundColor: AppColors.background,
-        floatingActionButton: FloatingActionButton(
+        // Hide floating action button when opened from home page (for selection)
+        floatingActionButton: showOnlyFoodTab ? null : FloatingActionButton(
           heroTag: "favorites_fab",
           onPressed: () {
             if (showOnlyFoodTab || _tabController.index == 0) {
@@ -154,15 +155,47 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                 // Header section
                 Padding(
                   padding: const EdgeInsets.all(KSizes.margin4x),
-                  child: StandardPageHeader(
-                    title: showOnlyFoodTab 
-                        ? '${widget.initialFilter!.displayName} Favoritter'
-                        : 'Favoritter',
-                    subtitle: showOnlyFoodTab 
-                        ? 'Dine gemte ${widget.initialFilter!.displayName.toLowerCase()}'
-                        : 'Administrer dine gemte mad og aktiviteter',
-                    icon: MdiIcons.heart,
-                    iconColor: AppColors.primary,
+                  child: Row(
+                    children: [
+                      // Back button when opened from home page
+                      if (showOnlyFoodTab) ...[
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(KSizes.radiusL),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            icon: Icon(
+                              MdiIcons.arrowLeft,
+                              color: AppColors.textPrimary,
+                              size: KSizes.iconM,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: KSizes.margin4x),
+                      ],
+                      // Header content
+                      Expanded(
+                        child: StandardPageHeader(
+                          title: showOnlyFoodTab 
+                              ? 'Vælg ${widget.initialFilter!.displayName}'
+                              : 'Favoritter',
+                          subtitle: showOnlyFoodTab 
+                              ? 'Tryk på en favorit for at registrere den'
+                              : 'Administrer dine gemte mad og aktiviteter',
+                          icon: showOnlyFoodTab ? MdiIcons.foodApple : MdiIcons.heart,
+                          iconColor: AppColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -337,13 +370,22 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
 
   Widget _buildFoodFavoritesTab() {
     if (_foodFavorites.isEmpty) {
-      return _buildEmptyState(
-        icon: MdiIcons.silverwareForkKnife,
-        title: 'Ingen mad-favoritter endnu',
-        subtitle: 'Tilføj favoritter ved at markere måltider som favoritter når du kategoriserer dem, eller opret dem manuelt.',
-        onAdd: _createNewFoodFavorite,
-        addLabel: 'Opret Mad Favorit'
-      );
+      // Different empty state for selection mode vs management mode
+      if (widget.initialFilter != null) {
+        return _buildSelectionEmptyState(
+          icon: MdiIcons.silverwareForkKnife,
+          title: 'Ingen ${widget.initialFilter!.displayName.toLowerCase()} favoritter endnu',
+          subtitle: 'Du skal først tilføje ${widget.initialFilter!.displayName.toLowerCase()} favoritter før du kan vælge dem her.',
+        );
+      } else {
+        return _buildEmptyState(
+          icon: MdiIcons.silverwareForkKnife,
+          title: 'Ingen mad-favoritter endnu',
+          subtitle: 'Tilføj favoritter ved at markere måltider som favoritter når du kategoriserer dem, eller opret dem manuelt.',
+          onAdd: _createNewFoodFavorite,
+          addLabel: 'Opret Mad Favorit'
+        );
+      }
     }
 
     // Apply filtering
@@ -528,20 +570,6 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
               ),
               textAlign: TextAlign.center,
             ),
-            
-            if (isFromHomePage) ...[
-              SizedBox(height: KSizes.margin4x),
-              ElevatedButton.icon(
-                icon: Icon(MdiIcons.plus),
-                label: Text('Tilføj ${filterName}'),
-                onPressed: () => _createNewFoodFavorite(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(horizontal: KSizes.margin6x, vertical: KSizes.margin3x)
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -697,6 +725,48 @@ class _FavoritesPageState extends ConsumerState<FavoritesPage> with SingleTicker
                 padding: EdgeInsets.symmetric(horizontal: KSizes.margin6x, vertical: KSizes.margin3x)
               ),
             )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectionEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(KSizes.margin6x),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 64,
+              color: AppColors.textTertiary,
+            ),
+            SizedBox(height: KSizes.margin4x),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: KSizes.fontSizeL,
+                color: AppColors.textSecondary,
+                fontWeight: KSizes.fontWeightBold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: KSizes.margin2x),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: KSizes.fontSizeM,
+                color: AppColors.textTertiary,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
