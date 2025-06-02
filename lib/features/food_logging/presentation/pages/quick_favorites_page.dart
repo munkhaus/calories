@@ -4,14 +4,15 @@ import 'package:material_design_icons_flutter/material_design_icons_flutter.dart
 import '../../../../core/constants/k_sizes.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../domain/favorite_food_model.dart';
-import '../../infrastructure/favorite_food_service.dart';
-import '../../../dashboard/application/date_aware_providers.dart';
-import '../../application/food_logging_notifier.dart';
-import '../../application/pending_food_cubit.dart';
-import './food_favorite_detail_page.dart';
 import '../../domain/user_food_log_model.dart';
-import './food_search_page.dart';
+import '../../application/food_logging_notifier.dart';
+import '../../infrastructure/favorite_food_service.dart';
+import '../widgets/smart_portion_selection_dialog.dart';
+import 'food_favorite_detail_page.dart';
 import '../widgets/barcode_scanner_widget.dart';
+import '../../application/pending_food_cubit.dart';
+import '../widgets/progressive_portion_selection_dialog.dart';
+import '../widgets/lightning_portion_dialog.dart';
 
 /// Page for quick selection and management of food favorites with sections
 class QuickFavoritesPage extends ConsumerStatefulWidget {
@@ -846,116 +847,55 @@ class _QuickFavoritesPageState extends ConsumerState<QuickFavoritesPage> {
     }
   }
 
-  /// Show dialog for selecting gram amount for ingredients
+  /// Show dialog for selecting portion amount using smart framework
+  /// Uses lightning mode for simple foods, progressive for complex ones
   Future<Map<String, dynamic>?> _showGramSelectionDialog(FavoriteFoodModel favorite) {
-    final gramController = TextEditingController(text: '100');
+    // Determine if this food should use lightning mode (faster for common foods)
+    final shouldUseLightning = _shouldUseLightningMode(favorite);
     
     return showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusL),
-        ),
-        title: Row(
-          children: [
-            Icon(MdiIcons.scaleBalance, color: AppColors.secondary),
-            SizedBox(width: KSizes.margin2x),
-            Expanded(
-              child: Text(
-                'Hvor meget ${favorite.foodName}?',
-                style: TextStyle(fontSize: KSizes.fontSizeL),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Angiv antal gram du vil spise:',
-              style: TextStyle(
-                fontSize: KSizes.fontSizeM,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            SizedBox(height: KSizes.margin4x),
-            
-            // Gram input
-            TextField(
-              controller: gramController,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Gram',
-                suffixText: 'g',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                helperText: '${favorite.caloriesPer100g} kcal per 100g',
-              ),
-              onChanged: (value) {
-                // Update calories preview in real time if needed
+      builder: (context) => shouldUseLightning 
+          ? LightningPortionDialog(
+              food: favorite,
+              onPortionSelected: (grams, unitName, displayName) {
+                Navigator.of(context).pop({
+                  'grams': grams,
+                  'unitName': unitName,
+                  'displayName': displayName,
+                });
+              },
+            )
+          : ProgressivePortionSelectionDialog(
+              food: favorite,
+              enableFastMode: true,
+              onPortionSelected: (grams, unitName, displayName) {
+                Navigator.of(context).pop({
+                  'grams': grams,
+                  'unitName': unitName,
+                  'displayName': displayName,
+                });
               },
             ),
-            
-            SizedBox(height: KSizes.margin4x),
-            
-            // Calories preview
-            ValueListenableBuilder<TextEditingValue>(
-              valueListenable: gramController,
-              builder: (context, value, child) {
-                final grams = double.tryParse(value.text) ?? 0.0;
-                final calories = (favorite.caloriesPer100g * grams / 100).round();
-                
-                return Container(
-                  padding: EdgeInsets.all(KSizes.margin3x),
-                  decoration: BoxDecoration(
-                    color: AppColors.info.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(KSizes.radiusM),
-                    border: Border.all(
-                      color: AppColors.info.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(MdiIcons.calculator, color: AppColors.info, size: KSizes.iconS),
-                      SizedBox(width: KSizes.margin2x),
-                      Text(
-                        '${grams.round()}g = $calories kcal',
-                        style: TextStyle(
-                          fontSize: KSizes.fontSizeM,
-                          fontWeight: KSizes.fontWeightMedium,
-                          color: AppColors.info,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuller'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final grams = double.tryParse(gramController.text) ?? 100.0;
-              Navigator.of(context).pop({
-                'grams': grams,
-              });
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondary,
-            ),
-            child: Text('Spis nu'),
-          ),
-        ],
-      ),
     );
+  }
+
+  /// Determine if a food should use lightning mode (faster selection)
+  bool _shouldUseLightningMode(FavoriteFoodModel food) {
+    final foodName = food.foodName.toLowerCase();
+    
+    // Common foods that benefit from lightning mode
+    final lightningFoods = [
+      'æble', 'banan', 'orange', 'pære',
+      'brød', 'toast', 'rugbrød',
+      'ris', 'pasta', 'kartoffel',
+      'kylling', 'oksekød', 'fisk',
+      'mælk', 'yoghurt', 'ost',
+      'æg', 'smør', 'olie',
+      'nødder', 'mandler',
+    ];
+    
+    return lightningFoods.any((food) => foodName.contains(food));
   }
 
   void _handleFavoriteAction(String value, FavoriteFoodModel favorite) {

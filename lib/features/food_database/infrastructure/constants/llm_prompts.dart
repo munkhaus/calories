@@ -1,5 +1,6 @@
 import '../../domain/online_food_models.dart';
 import '../../../food_logging/domain/favorite_food_model.dart' as fav_model;
+import '../../domain/portion_framework.dart';
 
 /// Centralized LLM prompts for food-related searches
 /// This ensures security by restricting responses to food items only
@@ -73,23 +74,87 @@ Returner en JSON liste med max 8 fødevarer/retter med KOMPLETTE detaljer. Hver 
         "preparationTypes": ["raw"], // Example. SKAL være en liste af strenge fra: ${PreparationType.values.map((e) => '"${e.name}"').join(', ')}
         "customTags": [/* Brugerdefinerede tags, fx. "Favorit", "Hurtig" */]
       },
-      "nutrition": {\n        \"calories\": VIGTIGT_RETURNER_ALTID_KALORIER_PER_100_GRAM_SOM_TAL_HER,\n        \"protein\": protein_gram_per_100g,\n        \"carbs\": kulhydrater_gram_per_100g,\n        \"fat\": fedt_gram_per_100g,\n        \"fiber\": fiber_gram_per_100g_valgfri,\n        \"sugar\": sukker_gram_per_100g_valgfri\n      },\n      \"servingSizes\": [\n        {\n          \"name\": \"100g\",\n          \"weight\": 100,\n          \"isDefault\": true\n        },\n        {\n          \"name\": \"EKSEMPEL: 1 æble (medium)\",\n          \"weight\": EKSEMPEL_VEJLEDENDE_VAEGT_I_GRAM_FOR_NAEVNTE_PORTION,\n          \"isDefault\": false\n        },\n        {\n          \"name\": \"EKSEMPEL: 1 skive rugbrød\",\n          \"weight\": EKSEMPEL_VEJLEDENDE_VAEGT_I_GRAM_FOR_NAEVNTE_PORTION,\n          \"isDefault\": false\n        }\n      ]\n    }\n  ]\n}\n\nVigtige retningslinjer:\n- ID skal være unikt (f.eks. query + navn, brug underscore for mellemrum).\n- \"type\" SKAL være \"dish\" for en komplet ret/opskrift, ELLER \"ingredient\" for en enkelt fødevare/ingrediens (altid lowercase).
-- \"searchMode\" SKAL være \"dishes\" eller \"ingredients\" (altid lowercase). INGEN ANDRE VÆRDIER.
-- Alle enum-baserede tag værdier (foodTypes, cuisineStyles, preparationTypes) SKAL være i lowercase og SKAL være en af de specificerede gyldige værdier.
-- Gyldige \"foodTypes\" (lowercase): ${validFoodTypes.join(', ')}.
-- Gyldige \"cuisineStyles\" (lowercase): ${validCuisineStyles.join(', ')}.
-- Gyldige \"preparationTypes\" (lowercase): ${validPreparationTypes.join(', ')}.
-- Brug tom liste [] hvis en kategori ikke passer (f.eks. cuisineStyle for en gulerod).
-- \"nutrition.calories\" SKAL ALTID være kalorier per 100 gram. Alle andre næringsstoffer (protein, kulhydrat, fedt) også per 100 gram.
-- Alle tal SKAL være numeriske (ikke strenge). Brug 0.0 for ukendt fiber/sugar.
-- \"servingSizes\" SKAL indeholde mindst én default 100g portion. Derudover, inkluder 1-3 YDERLIGERE almindelige, beskrivende portioner (f.eks. \"1 stk\", \"1 glas\", \"1 håndfuld\") med deres anslåede vægt i gram. Angiv \"name\" som en brugervenlig beskrivelse af portionen og \"weight\" som dens vægt i gram.
+      "nutrition": {
+        "calories": antal_kalorier_per_100g,
+        "protein": protein_gram_per_100g,
+        "carbs": kulhydrater_gram_per_100g,
+        "fat": fedt_gram_per_100g,
+        "fiber": fiber_gram_per_100g,
+        "sugar": sukker_gram_per_100g
+      },
+      
+      // SMART PORTIONSSTØRRELSER - Vælg RELEVANTE portioner baseret på fødevaretypen:
+      // For ÆG: "stk" (60g), "skive" (for æg ikke relevant), "gram"
+      // For BRØD: "skive" (25-30g), "stk" (hel skive/bun), "gram"  
+      // For FRUGT: "stk" (150g æble/pære), "håndfuld" (30g bær), "kop" (200g), "gram"
+      // For GRØNTSAGER: "stk" (150g), "kop" (200g), "håndfuld" (30g), "gram"
+      // For DRIKKEVARER: "glas" (200ml), "kop" (200ml), "flaske" (330ml), "ml", "dl"
+      // For MÆLK: "glas" (200ml), "kop" (200ml), "ml", "dl"
+      // For OST: "skive" (15g), "stk" (20g terning), "gram"
+      // For KØD/FISK: "stk" (portion), "portion" (150g), "gram"
+      // For PASTA/RIS: "portion" (150g), "kop" (200g), "gram"
+      // For NØDDER: "håndfuld" (30g), "ske" (15g), "gram"
+      // For OLIE/SAUCE: "ske" (15g), "ml", "gram"
+      // For PIZZA: "skive" (120g), "stk" (hel pizza), "gram"
+      // For SUPPE: "portion" (200ml), "kop" (200ml), "dl", "ml"
+      // For SLIK/CHOKOLADE: "stk", "håndfuld" (30g), "gram"
+      // For KAFFE: "kop" (200ml), "ml"
+      // For ALKOHOL: "glas" (200ml), "flaske" (330ml), "dåse" (330ml), "ml"
+      
+      "servingSizes": [
+        {
+          "name": "100 gram", 
+          "weight": 100.0,
+          "isDefault": true
+        },
+        // Tilføj 2-4 YDERLIGERE relevante portioner baseret på fødevaretypen:
+        // Eksempel for æg:
+        {
+          "name": "1 stykke",
+          "weight": 60.0,
+          "isDefault": false
+        },
+        {
+          "name": "2 stykker", 
+          "weight": 120.0,
+          "isDefault": false
+        }
+        // Eksempel for brød:
+        {
+          "name": "1 skive",
+          "weight": 25.0,
+          "isDefault": false  
+        },
+        {
+          "name": "2 skiver",
+          "weight": 50.0,
+          "isDefault": false
+        }
+        // Eksempel for drikkevarer:
+        {
+          "name": "1 glas",
+          "weight": 200.0,
+          "isDefault": false
+        },
+        {
+          "name": "1 flaske", 
+          "weight": 330.0,
+          "isDefault": false
+        }
+      ]
+    }
+  ]
+}
+
+- \"servingSizes\" SKAL altid starte med 100g som standard. Tilføj derefter 2-4 YDERLIGERE relevante portioner baseret på fødevaretypen som beskrevet ovenfor.
+- Alle vægte skal være realistiske for den specifikke fødevaretype
 - Alle navne/beskrivelser på dansk.
 - RETURNER KUN VALID JSON. Ingen tekst før/efter.\n''';
   }
 
   // Updated food details prompt
   static String getFoodDetailsPrompt(String foodName) {
-    return '''\n$systemPrompt\n\nMadprodukt: \"$foodName\"\n\nHvis dette IKKE er et madprodukt, svar kun med: {\"error\": \"Ikke mad-relateret\"}\n\nHvis det ER et madprodukt, returner detaljeret information i JSON format:\n{\n  \"basicInfo\": {\n    \"id\": \"unik_id_for_produktet\",\n    \"name\": \"Præcist dansk navn\",\n    \"description\": \"Detaljeret beskrivelse på dansk der tydeliggør om det er en ret eller ingrediens\",\n    \"type\": \"dish|ingredient\",\n    \"categoryTags\": [\"Frugt\", \"Grøntsager\", \"Kød\", \"Fisk\", \"Mejeriprodukter\", \"Brød\", \"Pasta\", \"Ris\", \"Kartofler\", \"Nødder\", \"Bælgfrugter\", \"Olie\", \"Krydderier\", \"Søde sager\", \"Drikkevarer\"]\n  },\n  \"nutrition\": {\n    \"calories\": kalorier_per_100g_som_tal,\n    \"protein\": protein_gram_per_100g,\n    \"carbs\": kulhydrater_gram_per_100g,\n    \"fat\": fedt_gram_per_100g,\n    \"fiber\": fiber_gram_per_100g,\n    \"sugar\": sukker_gram_per_100g\n  },\n  \"servingSizes\": [\n    {\n      \"name\": \"Standard portion\",\n      \"weight\": vægt_i_gram,\n      \"isDefault\": true\n    },\n    {\n      \"name\": \"Lille portion\",\n      \"weight\": mindre_vægt_i_gram,\n      \"isDefault\": false\n    },\n    {\n      \"name\": \"Stor portion\",\n      \"weight\": større_vægt_i_gram,\n      \"isDefault\": false\n    },\n    {\n      \"name\": \"Per stk\",\n      \"weight\": vægt_per_styk_hvis_relevant,\n      \"isDefault\": false\n    }\n  ]\n}\n\nVigtige retningslinjer:\n- \"type\" skal være \"dish\" for retter eller \"ingredient\" for enkelte fødevarer\n- \"categoryTags\" skal indeholde 1-3 relevante kategorier der beskriver madtypen\n- Alle tal skal være numeriske værdier (ikke strenge)\n- Alle navne skal være på dansk\n- Portionsstørrelser skal være realistiske og varierede\n- Inkluder mindst 3-4 forskellige portionsstørrelser\n- Kun valid JSON format\n''';
+    return '''\n$systemPrompt\n\nMadprodukt: \"$foodName\"\n\nHvis dette IKKE er et madprodukt, svar kun med: {\"error\": \"Ikke mad-relateret\"}\n\nHvis det ER et madprodukt, returner detaljeret information i JSON format:\n{\n  \"basicInfo\": {\n    \"id\": \"unik_id_for_produktet\",\n    \"name\": \"Præcist dansk navn\",\n    \"description\": \"Detaljeret beskrivelse på dansk der tydeliggør om det er en ret eller ingrediens\",\n    \"type\": \"dish|ingredient\",\n    \"categoryTags\": [\"Frugt\", \"Grøntsager\", \"Kød\", \"Fisk\", \"Mejeriprodukter\", \"Brød\", \"Pasta\", \"Ris\", \"Kartofler\", \"Nødder\", \"Bælgfrugter\", \"Olie\", \"Krydderier\", \"Søde sager\", \"Drikkevarer\"]\n  },\n  \"nutrition\": {\n    \"calories\": kalorier_per_100g_som_tal,\n    \"protein\": protein_gram_per_100g,\n    \"carbs\": kulhydrater_gram_per_100g,\n    \"fat\": fedt_gram_per_100g,\n    \"fiber\": fiber_gram_per_100g,\n    \"sugar\": sukker_gram_per_100g\n  },\n  \"servingSizes\": [\n    {\n      \"name\": \"100 gram\",\n      \"weight\": 100.0,\n      \"isDefault\": true\n    },\n    // Tilføj 3-5 YDERLIGERE relevante portioner baseret på fødevaretypen (se guidelines ovenfor)\n  ]\n}\n\nVigtige retningslinjer:\n- \"type\" skal være \"dish\" for retter eller \"ingredient\" for enkelte fødevarer\n- \"categoryTags\" skal indeholde 1-3 relevante kategorier der beskriver madtypen\n- Alle tal skal være numeriske værdier (ikke strenge)\n- Alle navne skal være på dansk\n- Portionsstørrelser skal være realistiske og relevante for den specifikke fødevaretype\n- Brug smart portionsstørrelser som beskrevet i search prompt\n- Kun valid JSON format\n''';
   }
 
   // Input validation - check if query is food-related
