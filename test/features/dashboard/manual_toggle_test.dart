@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calories/features/onboarding/application/onboarding_notifier.dart';
 import 'package:calories/features/onboarding/domain/user_profile_model.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// Manual test - run this and check console output to verify provider reactivity
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   test('🔧 Manual Provider Reactivity Test', () async {
     print('\n🔧 MANUAL TEST: Verifying onboarding provider reactivity');
     

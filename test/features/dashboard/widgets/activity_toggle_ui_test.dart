@@ -7,8 +7,12 @@ import 'package:calories/features/onboarding/application/onboarding_notifier.dar
 import 'package:calories/features/onboarding/domain/user_profile_model.dart';
 import 'package:calories/core/theme/app_theme.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// Comprehensive UI test to identify toggle problems
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   group('Activity Toggle UI Tests - Problem Identification', () {
     late ProviderContainer container;
     late OnboardingNotifier onboardingNotifier;

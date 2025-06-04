@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calories/features/onboarding/application/onboarding_notifier.dart';
 import 'package:calories/features/onboarding/domain/user_profile_model.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// Test suite to verify that activity level toggles properly affect calorie calculations
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   group('Activity Level Toggle Impact on Calories', () {
     late ProviderContainer container;
     late OnboardingNotifier onboardingNotifier;

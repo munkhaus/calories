@@ -10,6 +10,7 @@ import 'package:calories/features/food_logging/domain/favorite_food_model.dart';
 import 'package:calories/features/food_logging/domain/user_food_log_model.dart'; // For MealType
 import 'package:calories/core/theme/app_theme.dart';
 import 'package:calories/core/constants/k_sizes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Simple mock implementation for testing
 class TestLLMFoodService extends LLMFoodService {
@@ -58,9 +59,12 @@ class TestLLMFoodService extends LLMFoodService {
   Future<Result<online_models.OnlineFoodDetails, online_models.OnlineFoodError>> getFoodDetails(String id) async {
     return Failure(online_models.OnlineFoodError.unknown);
   }
+
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   group('FoodFavoriteDetailPage AI Search UI Tests', () {
     late TestLLMFoodService testLLMService;
     late FavoriteFoodModel? testFavorite;

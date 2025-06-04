@@ -5,8 +5,12 @@ import 'package:calories/features/dashboard/widgets/calorie_overview_widget.dart
 import 'package:calories/features/onboarding/application/onboarding_notifier.dart';
 import 'package:calories/features/onboarding/domain/user_profile_model.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// Test to verify CalorieOverviewWidget rebuilds when activity toggles change
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   group('CalorieOverviewWidget UI Reactivity Test', () {
     late ProviderContainer container;
     late OnboardingNotifier onboardingNotifier;

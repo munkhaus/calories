@@ -8,8 +8,12 @@ import 'package:calories/features/onboarding/application/onboarding_notifier.dar
 import 'package:calories/features/onboarding/domain/user_profile_model.dart';
 import 'package:calories/core/theme/app_theme.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// CRITICAL Integration test: Full dashboard UI reactivity
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   group('🚨 CRITICAL Dashboard Toggle UI Integration Tests', () {
     late ProviderContainer container;
     late OnboardingNotifier onboardingNotifier;

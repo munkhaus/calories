@@ -124,7 +124,7 @@ class UserProfileModel with _$UserProfileModel {
         (now.month == dateOfBirth!.month && now.day < dateOfBirth!.day)) {
       age--;
     }
-    return age;
+    return age < 0 ? 0 : age; // Ensure age is not negative
   }
 
   /// Calculate BMI
@@ -146,7 +146,8 @@ class UserProfileModel with _$UserProfileModel {
 
   /// Calculate BMR (Basal Metabolic Rate) using Mifflin-St Jeor equation
   double get bmr {
-    if (!isCompleteForCalculations) return 0.0;
+    // BMR requires age, gender, weight, and height. Age must be positive.
+    if (dateOfBirth == null || gender == null || heightCm <= 0 || currentWeightKg <= 0 || age <= 0) return 0.0;
     
     // Calculate BMR using Mifflin-St Jeor equation
     double bmr;
@@ -261,19 +262,15 @@ class UserProfileModel with _$UserProfileModel {
 
   /// Check if profile is complete enough for calculations
   bool get isCompleteForCalculations {
-    final basicFieldsComplete = dateOfBirth != null &&
+    // Basic fields needed for BMR and target calories calculation.
+    // Activity level presence is handled by TDEE getter's own logic.
+    return dateOfBirth != null &&
         gender != null &&
         heightCm > 0 &&
         currentWeightKg > 0 &&
-        goalType != null;
-    
-    if (!basicFieldsComplete) return false;
-    
-    // Need either new or legacy activity system
-    final hasNewActivitySystem = workActivityLevel != null && leisureActivityLevel != null;
-    final hasLegacyActivitySystem = activityLevel != null;
-    
-    return hasNewActivitySystem || hasLegacyActivitySystem;
+        goalType != null &&
+        targetWeightKg > 0 && // Added as it's used in target calcs often indirectly via goal
+        isOnboardingCompleted; // Ensures user has gone through the flow
   }
 
   /// Get display name or fallback

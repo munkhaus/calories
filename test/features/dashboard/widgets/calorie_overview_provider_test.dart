@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:calories/features/onboarding/application/onboarding_notifier.dart';
 import 'package:calories/features/onboarding/domain/user_profile_model.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// Unit test to identify provider reactivity issues
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized(); // Though maybe not strictly needed for all unit tests, safe to add
+  SharedPreferences.setMockInitialValues({});
   group('CalorieOverviewWidget Provider Reactivity Tests', () {
     late ProviderContainer container;
     late OnboardingNotifier onboardingNotifier;
