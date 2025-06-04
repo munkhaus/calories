@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Flows - Flutter Calories Wiki</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+                <li><a href="architecture.html">🏗️ Arkitektur</a></li>
+                <li><a href="features.html">✨ Features</a></li>
+                <li><a href="setup.html">⚙️ Opsætning</a></li>
+                <li><a href="api.html">🔌 API Reference</a></li>
+                <li><a href="user-flows.html" class="active">🔄 User Flows</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="page-header">
+                <h1>🔄 User Flows</h1>
+                <p class="page-subtitle">Komplet oversigt over brugerrejser i Flutter Calories app</p>
+            </header>
+
+            <!-- Flow Overview -->
+            <section class="content-section">
+                <h2>📋 Flow Oversigt</h2>
+                <p>Denne side dokumenterer alle hovedbrugerflows i appen, baseret på den faktiske implementering. Hver flow er opdelt i trin med konkrete skærmnavne og handlinger.</p>
+                
+                <div class="flow-nav-grid">
+                    <a href="#onboarding-flow" class="flow-nav-card">
+                        <div class="flow-icon">👋</div>
+                        <h3>Onboarding</h3>
+                        <p>Førstegangsopsætning og bruger profil</p>
+                    </a>
+                    
+                    <a href="#food-logging-flow" class="flow-nav-card">
+                        <div class="flow-icon">🍎</div>
+                        <h3>Mad Logging</h3>
+                        <p>Registrering af måltider og snacks</p>
+                    </a>
+                    
+                    <a href="#photo-analysis-flow" class="flow-nav-card">
+                        <div class="flow-icon">📸</div>
+                        <h3>Foto Analyse</h3>
+                        <p>AI-assisteret mad registrering</p>
+                    </a>
+                    
+                    <a href="#activity-flow" class="flow-nav-card">
+                        <div class="flow-icon">🏃‍♂️</div>
+                        <h3>Aktivitet Tracking</h3>
+                        <p>Motion og træning registrering</p>
+                    </a>
+                    
+                    <a href="#favorites-flow" class="flow-nav-card">
+                        <div class="flow-icon">⭐</div>
+                        <h3>Favoritter</h3>
+                        <p>Hurtig adgang til ofte brugte items</p>
+                    </a>
+                    
+                    <a href="#daily-usage-flow" class="flow-nav-card">
+                        <div class="flow-icon">📊</div>
+                        <h3>Daglig Brug</h3>
+                        <p>Dashboard og progress tracking</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Onboarding Flow -->
+            <section class="content-section" id="onboarding-flow">
+                <h2>👋 Onboarding Flow</h2>
+                <p>Første brugeroplevelse når appen installeres og startes.</p>
+                
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Splash Screen</h3>
+                            <p><strong>Fil:</strong> <code>splash_page.dart</code></p>
+                            <ul>
+                                <li>Logo animation</li>
+                                <li>Feature showcase</li>
+                                <li>Check existing user data</li>
+                            </ul>
+                            <div class="step-decision">
+                                <span class="decision-label">Hvis eksisterende bruger:</span>
+                                <span class="decision-arrow">→ Dashboard</span>
+                            </div>
+                            <div class="step-decision">
+                                <span class="decision-label">Hvis ny bruger:</span>
+                                <span class="decision-arrow">→ Onboarding</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Personal Info Step</h3>
+                            <p><strong>Fil:</strong> <code>personal_info_step_widget.dart</code></p>
+                            <ul>
+                                <li>Navn input</li>
+                                <li>Fødselsdag picker</li>
+                                <li>Køn selektion</li>
+                            </ul>
+                            <div class="validation-rules">
+                                <strong>Validering:</strong> Alle felter påkrævet før fortsættelse
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Physical Info Step</h3>
+                            <p><strong>Fil:</strong> <code>physical_info_step_widget.dart</code></p>
+                            <ul>
+                                <li>Højde input (cm)</li>
+                                <li>Nuværende vægt (kg)</li>
+                                <li>Målvægt (kg)</li>
+                            </ul>
+                            <div class="auto-calculation">
+                                <strong>Auto-beregning:</strong> BMI beregnes automatisk
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Work Activity Step</h3>
+                            <p><strong>Fil:</strong> <code>work_activity_step_widget.dart</code></p>
+                            <ul>
+                                <li>Stillesiddende</li>
+                                <li>Let aktivt</li>
+                                <li>Moderat aktivt</li>
+                                <li>Meget aktivt</li>
+                            </ul>
+                            <div class="bmr-info">
+                                <strong>Påvirker:</strong> BMR multiplicator for dagligt kaloriebehov
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>Leisure Activity Step</h3>
+                            <p><strong>Fil:</strong> <code>leisure_activity_step_widget.dart</code></p>
+                            <ul>
+                                <li>Træning frekvens</li>
+                                <li>Aktivitet type preference</li>
+                                <li>Aktivitet tracking preference</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">6</div>
+                        <div class="step-content">
+                            <h3>Goals Step</h3>
+                            <p><strong>Fil:</strong> <code>goals_step_widget.dart</code></p>
+                            <ul>
+                                <li>Vægttab</li>
+                                <li>Vægtøgning</li>
+                                <li>Muskelopbygning</li>
+                                <li>Vedligeholdelse</li>
+                            </ul>
+                            <div class="macro-calculation">
+                                <strong>Beregner:</strong> Protein, kulhydrat og fedt fordeling
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">7</div>
+                        <div class="step-content">
+                            <h3>Calorie Education</h3>
+                            <p><strong>Fil:</strong> <code>calorie_education_step_widget.dart</code></p>
+                            <ul>
+                                <li>BMR/TDEE forklaring</li>
+                                <li>Makronæringsstof education</li>
+                                <li>Kalorie deficit/surplus</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">8</div>
+                        <div class="step-content">
+                            <h3>Summary & Completion</h3>
+                            <p><strong>Fil:</strong> <code>summary_step_widget.dart</code></p>
+                            <ul>
+                                <li>Beregnet dagligt kaloriemål</li>
+                                <li>Makro fordeling</li>
+                                <li>BMR og TDEE værdier</li>
+                                <li>Gem profil og naviger til app</li>
+                            </ul>
+                            <div class="completion-action">
+                                <strong>Afslut:</strong> → Dashboard med personlige mål sat op
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Food Logging Flow -->
+            <section class="content-section" id="food-logging-flow">
+                <h2>🍎 Food Logging Flow</h2>
+                <p>Hovedflowet for registrering af mad og måltider.</p>
+                
+                <div class="flow-variants">
+                    <h3>Flow Varianter</h3>
+                    <div class="variant-grid">
+                        <div class="variant-card">
+                            <h4>🔍 Search Flow</h4>
+                            <p>Søg i database og vælg eksisterende mad</p>
+                        </div>
+                        <div class="variant-card">
+                            <h4>📸 Photo Flow</h4>
+                            <p>Tag billede og få AI analyse</p>
+                        </div>
+                        <div class="variant-card">
+                            <h4>⭐ Favorites Flow</h4>
+                            <p>Hurtig registrering fra favoritter</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Dashboard Entry Points</h3>
+                            <p><strong>Fil:</strong> <code>dashboard_page.dart</code></p>
+                            <ul>
+                                <li><strong>FAB:</strong> Hurtig registrering options</li>
+                                <li><strong>Recent Meals Widget:</strong> "Tilføj måltid" knap</li>
+                                <li><strong>Navigation:</strong> Favoritter tab</li>
+                            </ul>
+                            <div class="entry-paths">
+                                <div class="path">
+                                    <span class="path-label">Hurtig foto:</span>
+                                    <span class="path-arrow">→ QuickPhotoSessionPage</span>
+                                </div>
+                                <div class="path">
+                                    <span class="path-label">Detaljeret mad:</span>
+                                    <span class="path-arrow">→ FoodSearchPage</span>
+                                </div>
+                                <div class="path">
+                                    <span class="path-label">Favoritter:</span>
+                                    <span class="path-arrow">→ FavoritesPage</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2A</div>
+                        <div class="step-content">
+                            <h3>Food Search Flow</h3>
+                            <p><strong>Fil:</strong> <code>food_search_page.dart</code></p>
+                            <ul>
+                                <li>Search input field</li>
+                                <li>Filter options (ingredienser/retter)</li>
+                                <li>LLM-powered search via <code>LLMFoodService</code></li>
+                                <li>Results display med nutrition preview</li>
+                            </ul>
+                            <div class="service-integration">
+                                <strong>Service:</strong> <code>FoodSearchCubit</code> → <code>LLMFoodService</code>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3A</div>
+                        <div class="step-content">
+                            <h3>Food Details & Portion</h3>
+                            <p><strong>Fil:</strong> <code>food_favorite_detail_page.dart</code></p>
+                            <ul>
+                                <li>Nutrition information display</li>
+                                <li>Portion size selector</li>
+                                <li>Serving size options</li>
+                                <li>Meal type selector</li>
+                            </ul>
+                            <div class="calculation">
+                                <strong>Live beregning:</strong> Kalorier opdateres baseret på portion
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2B</div>
+                        <div class="step-content">
+                            <h3>Quick Photo Session</h3>
+                            <p><strong>Fil:</strong> <code>quick_photo_session_page.dart</code></p>
+                            <ul>
+                                <li>Auto-open camera på page load</li>
+                                <li>Multiple billeder support</li>
+                                <li>Image preview med thumbnails</li>
+                                <li>Option at tilføje flere billeder</li>
+                            </ul>
+                            <div class="photo-options">
+                                <strong>Actions:</strong> Tag billede | Vælg fra galleri | Kategoriser nu
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3B</div>
+                        <div class="step-content">
+                            <h3>AI Analysis & Categorization</h3>
+                            <p><strong>Fil:</strong> <code>categorize_food_page.dart</code></p>
+                            <ul>
+                                <li>Automatisk AI analyse via <code>GeminiService</code></li>
+                                <li>Food name og calorie suggestion</li>
+                                <li>Manual override options</li>
+                                <li>Meal type auto-detection baseret på tid</li>
+                            </ul>
+                            <div class="ai-integration">
+                                <strong>AI Service:</strong> Multi/single image analyse → structured data
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Final Logging</h3>
+                            <p><strong>Service:</strong> <code>FoodLoggingNotifier</code></p>
+                            <ul>
+                                <li>Create <code>UserFoodLogModel</code></li>
+                                <li>Save til local database</li>
+                                <li>Update dashboard providers</li>
+                                <li>Optional: Save som favorite</li>
+                            </ul>
+                            <div class="completion">
+                                <strong>Result:</strong> → Dashboard med opdateret kalorie count
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Photo Analysis Flow -->
+            <section class="content-section" id="photo-analysis-flow">
+                <h2>📸 Foto Analyse Flow</h2>
+                <p>Detaljeret flow for AI-assisteret mad registrering via billeder.</p>
+                
+                <div class="cost-warning">
+                    <div class="warning-icon">⚠️</div>
+                    <div class="warning-content">
+                        <h4>LLM Cost Alert</h4>
+                        <p>Denne flow bruger <code>GeminiService</code> som koster $0.38-0.90 per billede. Se <a href="llm-elimination.html">LLM Elimination Plan</a> for gratis alternativer.</p>
+                    </div>
+                </div>
+
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Image Capture</h3>
+                            <p><strong>Service:</strong> <code>CameraService</code></p>
+                            <ul>
+                                <li><strong>Camera:</strong> ImagePicker med quality optimization</li>
+                                <li><strong>Gallery:</strong> Existing image selection</li>
+                                <li><strong>Storage:</strong> Save til app documents/food_images/</li>
+                                <li><strong>Multi-image:</strong> Support op til 5 billeder per måltid</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Pending Food Creation</h3>
+                            <p><strong>Service:</strong> <code>PendingFoodService</code></p>
+                            <ul>
+                                <li>Create <code>PendingFoodModel</code> med image paths</li>
+                                <li>Background AI analysis start</li>
+                                <li>Add til pending foods list</li>
+                                <li>User notification om pending analysis</li>
+                            </ul>
+                            <div class="background-process">
+                                <strong>Background:</strong> AI analyse kører asynkront
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>AI Analysis Process</h3>
+                            <p><strong>Service:</strong> <code>GeminiService</code></p>
+                            <ul>
+                                <li><strong>Single image:</strong> <code>analyzeFoodImage()</code></li>
+                                <li><strong>Multiple images:</strong> <code>analyzeMultipleFoodImages()</code></li>
+                                <li><strong>Output:</strong> <code>FoodAnalysisResult</code> med struktureret data</li>
+                                <li><strong>Error handling:</strong> Fallback til manual entry</li>
+                            </ul>
+                            <div class="ai-output">
+                                <strong>AI Output:</strong> foodName, calories, protein, carbs, fat, confidence
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>User Review & Edit</h3>
+                            <p><strong>Page:</strong> <code>CategorizeFoodPage</code></p>
+                            <ul>
+                                <li>Display AI suggestions</li>
+                                <li>Allow manual edits til alle felter</li>
+                                <li>Meal type auto-detection</li>
+                                <li>Re-analyze button hvis nødvendigt</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>Final Confirmation</h3>
+                            <ul>
+                                <li>Convert til <code>UserFoodLogModel</code></li>
+                                <li>Log via <code>FoodLoggingNotifier</code></li>
+                                <li>Clean up pending food</li>
+                                <li>Option: Save som favorite</li>
+                            </ul>
+                            <div class="completion">
+                                <strong>Result:</strong> → Dashboard med logged meal
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activity Flow -->
+            <section class="content-section" id="activity-flow">
+                <h2>🏃‍♂️ Aktivitet Tracking Flow</h2>
+                <p>Flow for registrering af motion og fysiske aktiviteter.</p>
+                
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Activity Entry Points</h3>
+                            <p><strong>Sources:</strong> Dashboard FAB | Activity Favorites | Quick Registration</p>
+                            <ul>
+                                <li><strong>Quick Activity:</strong> → <code>QuickActivityRegistrationPage</code></li>
+                                <li><strong>Detailed Activity:</strong> → <code>DetailedActivityRegistrationPage</code></li>
+                                <li><strong>Favorites:</strong> → <code>ActivityFavoritesPage</code></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Activity Registration</h3>
+                            <p><strong>Models:</strong> <code>UserActivityLogModel</code></p>
+                            <ul>
+                                <li><strong>Activity type:</strong> Running, cycling, gym, walking, etc.</li>
+                                <li><strong>Duration:</strong> Timer eller manual input</li>
+                                <li><strong>Intensity:</strong> Low, medium, high</li>
+                                <li><strong>Notes:</strong> Optional beskrivelse</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Calorie Calculation</h3>
+                            <p><strong>Service:</strong> <code>ActivityNotifier</code></p>
+                            <ul>
+                                <li>MET values for different activities</li>
+                                <li>User weight fra profile</li>
+                                <li>Duration and intensity modifiers</li>
+                                <li>Auto-calculate burned calories</li>
+                            </ul>
+                            <div class="formula">
+                                <strong>Formula:</strong> Calories = METs × weight(kg) × duration(h)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Activity Logging</h3>
+                            <ul>
+                                <li>Save til database</li>
+                                <li>Update dashboard providers</li>
+                                <li>Refresh calorie balance</li>
+                                <li>Optional: Save som favorite</li>
+                            </ul>
+                            <div class="dashboard-update">
+                                <strong>Updates:</strong> Today's Activities Widget + Calorie Overview
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Favorites Flow -->
+            <section class="content-section" id="favorites-flow">
+                <h2>⭐ Favoritter Flow</h2>
+                <p>Hurtig adgang og management af ofte brugte items.</p>
+                
+                <div class="favorites-types">
+                    <h3>Favorite Types</h3>
+                    <div class="type-grid">
+                        <div class="type-card">
+                            <h4>🍎 Food Favorites</h4>
+                            <p>Ofte spiste måltider og snacks</p>
+                        </div>
+                        <div class="type-card">
+                            <h4>🏃‍♂️ Activity Favorites</h4>
+                            <p>Rutine aktiviteter og træning</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Favorites Access</h3>
+                            <p><strong>Navigation:</strong> Bottom tab | Dashboard widgets</p>
+                            <ul>
+                                <li><strong>Food Favorites:</strong> <code>FoodFavoritesPage</code></li>
+                                <li><strong>Activity Favorites:</strong> <code>ActivityFavoritesPage</code></li>
+                                <li><strong>Quick Access:</strong> Dashboard suggestions</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Favorite Selection</h3>
+                            <ul>
+                                <li>Browse categorized favorites</li>
+                                <li>Usage count display</li>
+                                <li>Last used information</li>
+                                <li>One-tap registration</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Quick Registration</h3>
+                            <ul>
+                                <li><strong>Food:</strong> Default portion → instant log</li>
+                                <li><strong>Activity:</strong> Default duration → instant log</li>
+                                <li>Update usage statistics</li>
+                                <li>Increment usage counter</li>
+                            </ul>
+                            <div class="instant-feedback">
+                                <strong>UX:</strong> Success snackbar → Auto navigate back
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Favorite Management</h3>
+                            <ul>
+                                <li><strong>Add:</strong> From any logging flow "Save as favorite"</li>
+                                <li><strong>Edit:</strong> Update portions/durations</li>
+                                <li><strong>Delete:</strong> Remove unused favorites</li>
+                                <li><strong>Reorder:</strong> Most used automatically prioritized</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Daily Usage Flow -->
+            <section class="content-section" id="daily-usage-flow">
+                <h2>📊 Daglig Brug Flow</h2>
+                <p>Typisk daglig bruger interaktion med appen.</p>
+                
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>App Launch</h3>
+                            <p><strong>Page:</strong> <code>DashboardPage</code></p>
+                            <ul>
+                                <li>Load user profile og daily goals</li>
+                                <li>Calculate current calorie balance</li>
+                                <li>Show today's logged meals & activities</li>
+                                <li>Display progress towards goals</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Daily Settings Check</h3>
+                            <p><strong>Widget:</strong> <code>DailySettingsWidget</code></p>
+                            <ul>
+                                <li>Weight tracking reminder</li>
+                                <li>Goal adjustments</li>
+                                <li>Activity level updates</li>
+                                <li>Only shown for current day</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Meal Logging Throughout Day</h3>
+                            <ul>
+                                <li><strong>Morgenmad:</strong> 6-10 AM (auto meal type)</li>
+                                <li><strong>Frokost:</strong> 10-14 PM</li>
+                                <li><strong>Aftensmad:</strong> 14-18 PM</li>
+                                <li><strong>Snacks:</strong> Any time outside meals</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Progress Monitoring</h3>
+                            <p><strong>Widget:</strong> <code>CalorieOverviewWidget</code></p>
+                            <ul>
+                                <li>Real-time calorie balance</li>
+                                <li>Remaining calories til goal</li>
+                                <li>Macro distribution progress</li>
+                                <li>Visual progress indicators</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="flow-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>Date Navigation</h3>
+                            <p><strong>Widget:</strong> <code>DateNavigationWidget</code></p>
+                            <ul>
+                                <li>Previous/next day navigation</li>
+                                <li>Date picker for specific dates</li>
+                                <li>Historical data viewing</li>
+                                <li>Progress comparison</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Flow Optimization Notes -->
+            <section class="content-section">
+                <h2>🎯 Flow Optimizations</h2>
+                
+                <div class="optimization-grid">
+                    <div class="optimization-card">
+                        <h3>🚀 Performance</h3>
+                        <ul>
+                            <li>Lazy loading af images</li>
+                            <li>Background AI analysis</li>
+                            <li>Cached favorite data</li>
+                            <li>Efficient state management</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>💰 Cost Reduction</h3>
+                        <ul>
+                            <li>LLM usage minimization</li>
+                            <li>Batch AI requests</li>
+                            <li>Local fallbacks</li>
+                            <li>Free API alternatives</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>👤 User Experience</h3>
+                        <ul>
+                            <li>One-tap favorites</li>
+                            <li>Smart defaults</li>
+                            <li>Contextual suggestions</li>
+                            <li>Progressive disclosure</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="optimization-card">
+                        <h3>📱 Technical</h3>
+                        <ul>
+                            <li>Clean architecture</li>
+                            <li>Result type error handling</li>
+                            <li>Provider-based state</li>
+                            <li>Modular components</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Flow Metrics -->
+            <section class="content-section">
+                <h2>📈 Flow Metrics & KPIs</h2>
+                
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>🍎 Food Logging</h3>
+                        <div class="metric">
+                            <span class="metric-label">Target completion time:</span>
+                            <span class="metric-value">< 30 sekunder</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Success rate:</span>
+                            <span class="metric-value">> 95%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Favorite usage:</span>
+                            <span class="metric-value">> 60%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>📸 Photo Analysis</h3>
+                        <div class="metric">
+                            <span class="metric-label">AI accuracy:</span>
+                            <span class="metric-value">> 80%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Analysis time:</span>
+                            <span class="metric-value">< 3 sekunder</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Cost per image:</span>
+                            <span class="metric-value">$0.38-0.90</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>🏃‍♂️ Activity Logging</h3>
+                        <div class="metric">
+                            <span class="metric-label">Quick registration:</span>
+                            <span class="metric-value">< 15 sekunder</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Calorie accuracy:</span>
+                            <span class="metric-value">±10%</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>📊 Daily Usage</h3>
+                        <div class="metric">
+                            <span class="metric-label">Dashboard load time:</span>
+                            <span class="metric-value">< 1 sekund</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Data sync:</span>
+                            <span class="metric-value">Real-time</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html> 

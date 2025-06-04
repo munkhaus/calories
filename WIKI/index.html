@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flutter Calories App - Dokumentation</title>
+    <title>Flutter Calories Wiki</title>
     <link rel="stylesheet" href="assets/css/wiki-style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
@@ -17,245 +17,261 @@
             </div>
             <ul class="sidebar-nav">
                 <li><a href="index.html" class="active">🏠 Oversigt</a></li>
-                
-                <li class="section">Arkitektur</li>
-                <li><a href="architecture.html">📋 Overordnet</a></li>
-                <li><a href="state-management.html">🔄 State Management</a></li>
-                
-                <li class="section">Implementerede Features</li>
-                <li><a href="onboarding.html">👤 Onboarding</a></li>
-                
-                <li class="section">Udvikling</li>
-                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
-                
-                <li class="section">Planlagte Features</li>
-                <li><span class="disabled">🍎 Nutrition Tracking</span></li>
-                <li><span class="disabled">⚙️ User Profile</span></li>
-                <li><span class="disabled">📊 Analytics</span></li>
-                
-                <li class="section">Development</li>
-                <li><span class="disabled">🚀 Setup</span></li>
-                <li><span class="disabled">📝 Standards</span></li>
-                <li><span class="disabled">🧪 Testing</span></li>
-                
-                <li class="section">Design</li>
-                <li><span class="disabled">🎨 Design System</span></li>
-                <li><span class="disabled">🔄 User Flows</span></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+                <li><a href="architecture.html">🏗️ Arkitektur</a></li>
+                <li><a href="features.html">✨ Features</a></li>
+                <li><a href="setup.html">⚙️ Opsætning</a></li>
+                <li><a href="api.html">🔌 API Reference</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
             </ul>
         </nav>
 
         <!-- Main Content -->
         <main class="wiki-main">
-            <header class="wiki-header">
-                <h1>Flutter Calories App Dokumentation</h1>
-                <p>Velkommen til den officielle dokumentation for Flutter Calories appen. Her finder du alt du behøver for at forstå, udvikle og bidrage til projektet.</p>
+            <header class="page-header">
+                <h1>🍎 Flutter Calories Wiki</h1>
+                <p class="page-subtitle">Komplet dokumentation til kalorie tracking app</p>
             </header>
 
-            <div class="wiki-content">
-                <div class="info-box warning">
-                    <strong>⚠️ Aktuel Status:</strong> Dette projekt er i tidlig udviklingsfase. På nuværende tidspunkt er kun onboarding-funktionaliteten implementeret. Nutrition tracking og andre features er endnu ikke byggede.
+            <!-- Quick Access Alert for LLM Elimination -->
+            <div class="alert alert-warning">
+                <div class="alert-icon">💰</div>
+                <div class="alert-content">
+                    <h3>LLM Cost Elimination</h3>
+                    <p>Reducer dine månedlige LLM-omkostninger med op til $1,220 ved at erstatte Gemini AI med gratis alternativer.</p>
+                    <a href="llm-elimination.html" class="btn btn-primary">Se Elimination Plan →</a>
                 </div>
+            </div>
 
-                <div class="grid grid-2">
-                    <div class="wiki-card">
-                        <h3>✅ Hvad der Fungerer</h3>
-                        <ul>
-                            <li>Komplet onboarding flow</li>
-                            <li>Bruger data indsamling</li>
-                            <li>Kalorie beregninger (BMR/TDEE)</li>
-                            <li>Data persistering</li>
-                            <li>Clean architecture struktur</li>
-                        </ul>
-                    </div>
-
-                    <div class="wiki-card">
-                        <h3>🚧 Under Udvikling</h3>
-                        <ul>
-                            <li>Nutrition tracking</li>
-                            <li>Fødevare database</li>
-                            <li>Måltid logging</li>
-                            <li>Progress tracking</li>
-                            <li>Analytics dashboard</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <h2>Nuværende Funktionalitet</h2>
+            <!-- Project Overview -->
+            <section class="content-section">
+                <h2>📋 Projekt Oversigt</h2>
+                <p>Flutter Calories er en moderne kalorie tracking app bygget med Flutter og Riverpod. Appen bruger clean architecture principper og er optimeret til dansk marked.</p>
                 
-                <div class="wiki-card">
-                    <h3>📝 Onboarding Flow (Implementeret)</h3>
-                    <p>En komplet onboarding proces der indsamler brugerdata og beregner personlige mål:</p>
-                    <ul>
-                        <li><strong>Velkomst:</strong> Introduktion til appen</li>
-                        <li><strong>Personlige Oplysninger:</strong> Navn, fødselsdag, køn</li>
-                        <li><strong>Fysiske Mål:</strong> Højde, nuværende vægt, målvægt</li>
-                        <li><strong>Aktivitetsniveau:</strong> Fra stillesiddende til meget aktiv</li>
-                        <li><strong>Mål:</strong> Vægttab, vægtøgning, muskelopbygning, vedligeholdelse</li>
-                        <li><strong>Opsummering:</strong> Gennemgang, kalorie beregning og bekræftelse</li>
-                    </ul>
-                    <a href="onboarding.html" class="btn-secondary">Se Onboarding Dokumentation</a>
-                </div>
-
-                <div class="info-box info">
-                    <strong>🔢 Kalorie Beregninger:</strong> Appen beregner automatisk brugerens daglige kaloriemål baseret på BMR (grundstofskifte), aktivitetsniveau og måltype. Makronæringsstoffer (protein, fedt, kulhydrater) beregnes også.
-                </div>
-
-                <div class="grid grid-2">
-                    <div class="wiki-card">
-                        <h3>🚀 Kom i Gang</h3>
-                        <p>Lær hvordan du opsætter udviklingsmiljøet og får appen til at køre lokalt.</p>
-                        <a href="setup.html" class="btn">Opsætningsvejledning</a>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-icon">🎯</div>
+                        <h3>Mål</h3>
+                        <p>Enkel og intuitiv kalorie tracking med fokus på danske fødevarer og brugervenlig oplevelse.</p>
                     </div>
-
-                    <div class="wiki-card">
-                        <h3>🏗️ Arkitektur</h3>
-                        <p>Forstå den underliggende arkitektur og designprincipper bag appen.</p>
-                        <a href="architecture.html" class="btn">Se Arkitektur</a>
+                    
+                    <div class="info-card">
+                        <div class="info-icon">🏗️</div>
+                        <h3>Arkitektur</h3>
+                        <p>Clean Architecture med domain-driven design, state management via Riverpod, og modulær struktur.</p>
                     </div>
-
-                    <div class="wiki-card">
-                        <h3>🎨 Design System</h3>
-                        <p>Udforsk vores designsprog, komponenter og UI-retningslinjer.</p>
-                        <a href="design-system.html" class="btn">Design Guide</a>
-                    </div>
-
-                    <div class="wiki-card">
-                        <h3>⚙️ State Management</h3>
-                        <p>Lær hvordan vi håndterer state med Riverpod og organiserer data flow.</p>
-                        <a href="state-management.html" class="btn">State Management</a>
+                    
+                    <div class="info-card">
+                        <div class="info-icon">🔧</div>
+                        <h3>Teknologi</h3>
+                        <p>Flutter 3.24+, Riverpod state management, SQLite database, og integration med fødevare APIs.</p>
                     </div>
                 </div>
+            </section>
 
-                <h2>Projektets Struktur</h2>
-                <p>Projektet følger Clean Architecture principper med en klar adskillelse mellem lag:</p>
+            <!-- Key Features -->
+            <section class="content-section">
+                <h2>🚀 Hovedfunktioner</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">📸</div>
+                        <h3>Foto Analyse</h3>
+                        <p>Tag billeder af mad og få AI-assisteret analyse af næringsindhold</p>
+                        <span class="feature-status status-active">Aktiv (LLM)</span>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🔍</div>
+                        <h3>Mad Database</h3>
+                        <p>Søg i omfattende database med danske fødevarer og næringsoplysninger</p>
+                        <span class="feature-status status-active">Aktiv (LLM)</span>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">⭐</div>
+                        <h3>Favoritter</h3>
+                        <p>Gem ofte brugte måltider og aktiviteter for hurtig registrering</p>
+                        <span class="feature-status status-stable">Stabil</span>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🏃‍♂️</div>
+                        <h3>Aktivitet Tracking</h3>
+                        <p>Log motion og aktiviteter med automatisk kalorie beregning</p>
+                        <span class="feature-status status-stable">Stabil</span>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Progress Tracking</h3>
+                        <p>Følg udvikling i vægt, kalorier og næringsindtag over tid</p>
+                        <span class="feature-status status-stable">Stabil</span>
+                    </div>
+                    
+                    <div class="feature-card">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Personlige Mål</h3>
+                        <p>Sæt og track personlige sundhedsmål baseret på BMR og aktivitetsniveau</p>
+                        <span class="feature-status status-stable">Stabil</span>
+                    </div>
+                </div>
+            </section>
 
-                <div class="grid grid-3">
-                    <div class="wiki-card">
-                        <h3>🎯 Domain Layer</h3>
-                        <p>Indeholder business logic, entities og use cases. Uafhængig af eksterne dependencies.</p>
+            <!-- Current Architecture -->
+            <section class="content-section">
+                <h2>🏗️ Aktuel Arkitektur</h2>
+                <div class="architecture-overview">
+                    <div class="layer">
+                        <h3>🎨 Presentation Layer</h3>
+                        <p>Flutter widgets, pages, og UI components med Riverpod state management</p>
                         <ul>
-                            <li>Models</li>
-                            <li>Interfaces</li>
-                            <li>Business Rules</li>
-                        </ul>
-                    </div>
-
-                    <div class="wiki-card">
-                        <h3>💼 Application Layer</h3>
-                        <p>State management og koordination mellem UI og domain layer.</p>
-                        <ul>
-                            <li>Riverpod Providers</li>
-                            <li>State Classes</li>
-                            <li>Use Case Orchestration</li>
-                        </ul>
-                    </div>
-
-                    <div class="wiki-card">
-                        <h3>🖥️ Presentation Layer</h3>
-                        <p>UI komponenter og brugerinteraktion.</p>
-                        <ul>
-                            <li>Widgets</li>
-                            <li>Pages</li>
-                            <li>UI Logic</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <h2>Vigtige Features</h2>
-                
-                <div class="wiki-card">
-                    <h3>📝 Onboarding Flow</h3>
-                    <p>En omfattende onboarding proces der indsamler brugerdata og opsætter personlige mål:</p>
-                    <ul>
-                        <li><strong>Personlige Oplysninger:</strong> Navn, fødselsdag, køn</li>
-                        <li><strong>Fysiske Mål:</strong> Højde, nuværende vægt, målvægt</li>
-                        <li><strong>Aktivitetsniveau:</strong> Fra stillesiddende til meget aktiv</li>
-                        <li><strong>Mål:</strong> Vægttab, vægtøgning, vedligeholdelse</li>
-                        <li><strong>Opsummering:</strong> Gennemgang og bekræftelse</li>
-                    </ul>
-                    <a href="onboarding.html" class="btn-secondary">Se Onboarding Dokumentation</a>
-                </div>
-
-                <h2>Teknologi Stack</h2>
-                
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Kategori</th>
-                            <th>Teknologi</th>
-                            <th>Formål</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Framework</td>
-                            <td>Flutter</td>
-                            <td>Cross-platform app udvikling</td>
-                        </tr>
-                        <tr>
-                            <td>State Management</td>
-                            <td>Riverpod</td>
-                            <td>Reaktiv state management</td>
-                        </tr>
-                        <tr>
-                            <td>Code Generation</td>
-                            <td>Freezed</td>
-                            <td>Immutable data classes</td>
-                        </tr>
-                        <tr>
-                            <td>JSON Serialization</td>
-                            <td>json_annotation</td>
-                            <td>Automatisk JSON serialization</td>
-                        </tr>
-                        <tr>
-                            <td>Routing</td>
-                            <td>Go Router</td>
-                            <td>Declarative routing</td>
-                        </tr>
-                        <tr>
-                            <td>Local Storage</td>
-                            <td>Shared Preferences</td>
-                            <td>Lokal datalagring</td>
-                        </tr>
-                        <tr>
-                            <td>Icons</td>
-                            <td>Material Design Icons</td>
-                            <td>Ikon bibliotek</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <h2>Hurtig Navigation</h2>
-                
-                <div class="info-box success">
-                    <strong>💡 Tip:</strong> Brug søgefunktionen i sidebaren til hurtigt at finde specifik dokumentation. Du kan også bruge Ctrl+F til at søge på den nuværende side.
-                </div>
-
-                <div class="grid grid-2">
-                    <div>
-                        <h4>🔧 For Udviklere</h4>
-                        <ul>
-                            <li><a href="setup.html">Opsætning af udviklingsmiljø</a></li>
-                            <li><a href="coding-standards.html">Kodestandard og retningslinjer</a></li>
-                            <li><a href="state-management.html">State management guide</a></li>
-                            <li><a href="testing.html">Test strategi og vejledning</a></li>
+                            <li>Dashboard med dagligt kalorie overview</li>
+                            <li>Food search og logging interfaces</li>
+                            <li>Activity tracking og favoritter</li>
+                            <li>Profile og progress tracking</li>
                         </ul>
                     </div>
                     
-                    <div>
-                        <h4>🎨 For Designere</h4>
+                    <div class="layer">
+                        <h3>📱 Application Layer</h3>
+                        <p>Business logic, cubits/notifiers, og state management</p>
                         <ul>
-                            <li><a href="design-system.html">Design system og komponenter</a></li>
-                            <li><a href="user-flows.html">Brugerflows og UX mønstre</a></li>
-                            <li><a href="wireframes.html">Wireframes og mockups</a></li>
+                            <li>Food logging og search logic</li>
+                            <li>Activity tracking beregninger</li>
+                            <li>User profile og goal management</li>
+                            <li>Progress tracking og analytics</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="layer">
+                        <h3>🌐 Infrastructure Layer</h3>
+                        <p>Eksterne services, APIs, og data persistence</p>
+                        <ul>
+                            <li><strong>LLMFoodService</strong> - Gemini AI til mad søgning ($$$)</li>
+                            <li><strong>GeminiService</strong> - AI foto analyse ($$$)</li>
+                            <li>SQLite database til lokal data</li>
+                            <li>Camera service til billede håndtering</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="layer">
+                        <h3>🎯 Domain Layer</h3>
+                        <p>Core business entities, models, og interfaces</p>
+                        <ul>
+                            <li>Food, Activity, og User models</li>
+                            <li>Nutrition beregnings logic</li>
+                            <li>Service interfaces (abstractions)</li>
+                            <li>Domain events og errors</li>
                         </ul>
                     </div>
                 </div>
+            </section>
 
-                <div class="info-box warning">
-                    <strong>⚠️ Bemærk:</strong> Denne dokumentation opdateres løbende i takt med projektets udvikling. Hvis du finder fejl eller manglende information, er du velkommen til at bidrage med forbedringer.
+            <!-- Cost Analysis -->
+            <section class="content-section">
+                <h2>💰 Omkostnings Analyse</h2>
+                <div class="cost-analysis">
+                    <div class="cost-breakdown">
+                        <h3>🔴 Aktuelle LLM Omkostninger</h3>
+                        <div class="cost-item">
+                            <span class="cost-label">Food Search (LLMFoodService)</span>
+                            <span class="cost-value">$0.60-1.20 per søgning</span>
+                        </div>
+                        <div class="cost-item">
+                            <span class="cost-label">Image Analysis (GeminiService)</span>
+                            <span class="cost-value">$0.38-0.90 per billede</span>
+                        </div>
+                        <div class="cost-total">
+                            <span class="cost-label">Estimeret månedlig omkostning</span>
+                            <span class="cost-value high">$790-1,220</span>
+                        </div>
+                    </div>
+                    
+                    <div class="cost-solution">
+                        <h3>🟢 Gratis Alternativer</h3>
+                        <div class="cost-item">
+                            <span class="cost-label">Open Food Facts API</span>
+                            <span class="cost-value">$0 (gratis)</span>
+                        </div>
+                        <div class="cost-item">
+                            <span class="cost-label">Enhanced Manual Entry</span>
+                            <span class="cost-value">$0 (lokalt)</span>
+                        </div>
+                        <div class="cost-total">
+                            <span class="cost-label">Ny månedlig omkostning</span>
+                            <span class="cost-value low">$0</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
+                
+                <div class="savings-highlight">
+                    <h3>💡 Potentiel Besparelse</h3>
+                    <p class="savings-amount">$14,640 årligt</p>
+                    <p>Med elimination af LLM services</p>
+                </div>
+            </section>
+
+            <!-- Quick Actions -->
+            <section class="content-section">
+                <h2>⚡ Hurtige Handlinger</h2>
+                <div class="action-grid">
+                    <a href="llm-elimination.html" class="action-card primary">
+                        <div class="action-icon">💰</div>
+                        <h3>Eliminer LLM Omkostninger</h3>
+                        <p>Få detaljeret plan til at erstatte Gemini AI med gratis alternativer</p>
+                    </a>
+                    
+                    <a href="architecture.html" class="action-card">
+                        <div class="action-icon">🏗️</div>
+                        <h3>Udforsk Arkitektur</h3>
+                        <p>Forstå projektets struktur og design patterns</p>
+                    </a>
+                    
+                    <a href="features.html" class="action-card">
+                        <div class="action-icon">✨</div>
+                        <h3>Se Alle Features</h3>
+                        <p>Komplet oversigt over app funktionalitet</p>
+                    </a>
+                    
+                    <a href="testing.html" class="action-card">
+                        <div class="action-icon">🧪</div>
+                        <h3>Testing Guide</h3>
+                        <p>Lær hvordan du tester appens funktionalitet</p>
+                    </a>
+                </div>
+            </section>
+
+            <!-- Development Status -->
+            <section class="content-section">
+                <h2>📈 Udviklings Status</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-indicator status-complete"></div>
+                        <span>Core architecture implementeret</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator status-complete"></div>
+                        <span>Food logging med AI integration</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator status-complete"></div>
+                        <span>Activity tracking system</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator status-complete"></div>
+                        <span>User profile og onboarding</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator status-warning"></div>
+                        <span>LLM cost optimization (høj prioritet)</span>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-indicator status-pending"></div>
+                        <span>Enhanced offline capabilities</span>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 

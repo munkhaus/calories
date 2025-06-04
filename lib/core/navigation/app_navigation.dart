@@ -255,72 +255,165 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
             Text('Hvad vil du registrere?'),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Hurtig Billeder - DIRECT on first level
-            _buildMainCategoryOption(
-              context: context,
-              icon: MdiIcons.cameraPlus,
-              title: 'Hurtig Billeder',
-              subtitle: 'Tag flere billeder af samme måltid',
-              color: AppColors.warning,
-              onTap: () {
-                Navigator.of(context).pop();
-                _startMultiPhotoWithCapture(context);
-              },
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            // Food category
-            _buildMainCategoryOption(
-              context: context,
-              icon: MdiIcons.foodApple,
-              title: 'Mad & Drikke',
-              subtitle: 'Registrer måltider og snacks',
-              color: AppColors.success,
-              onTap: () {
-                Navigator.of(context).pop();
-                _showFoodSubmenu(context);
-              },
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            // Activity category
-            _buildMainCategoryOption(
-              context: context,
-              icon: MdiIcons.runFast,
-              title: 'Aktivitet & Motion',
-              subtitle: 'Log træning og aktiviteter',
-              color: AppColors.secondary,
-              onTap: () {
-                Navigator.of(context).pop();
-                _showActivitySubmenu(context);
-              },
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            // Weight registration - ADDED BACK!
-            _buildMainCategoryOption(
-              context: context,
-              icon: MdiIcons.scaleBalance,
-              title: 'Vægt Registrering',
-              subtitle: 'Registrer din nuværende vægt',
-              color: AppColors.primary,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToWeightRegistration(context);
-              },
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 🚀 SECTION 1: QUICK LOG (Most common actions)
+              _buildSectionHeader('🚀 Hurtig Log', 'De mest brugte funktioner'),
+              SizedBox(height: KSizes.margin2x),
+              
+              // Quick Photos - most used feature
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.cameraPlus,
+                title: 'Hurtig Billeder',
+                subtitle: 'Tag flere billeder af samme måltid',
+                color: AppColors.warning,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _startMultiPhotoWithCapture(context);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin2x),
+              
+              // Weight registration
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.scaleBalance,
+                title: 'Vægt Registrering',
+                subtitle: 'Registrer din nuværende vægt',
+                color: AppColors.info,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToWeightRegistration(context);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin4x),
+              
+              // 💫 SECTION 2: FROM FAVORITES (Selection from existing)
+              _buildSectionHeader('💫 Fra Favoritter', 'Vælg fra dine gemte favoritter'),
+              SizedBox(height: KSizes.margin2x),
+              
+              // Food favorites - meals
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.silverwareForkKnife,
+                title: 'Retter',
+                subtitle: 'Vælg fra dine gemte retter',
+                color: AppColors.success,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToFoodFavoritesWithFilter(context, FoodType.meal);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin2x),
+              
+              // Food favorites - ingredients
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.carrot,
+                title: 'Fødevarer',
+                subtitle: 'Vælg fra dine gemte fødevarer',
+                color: AppColors.success,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToFoodFavoritesWithFilter(context, FoodType.ingredient);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin2x),
+              
+              // Activity favorites
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.runFast,
+                title: 'Aktiviteter',
+                subtitle: 'Vælg fra dine gemte aktiviteter',
+                color: AppColors.secondary,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToActivityFavorites(context);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin4x),
+              
+              // 🔧 SECTION 3: ADVANCED (Detailed/Manual registration)
+              _buildSectionHeader('🔧 Avanceret', 'Detaljeret registrering og tilpasning'),
+              SizedBox(height: KSizes.margin2x),
+              
+              // Manual food entry
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.foodApple,
+                title: 'Manuel Mad',
+                subtitle: 'Detaljeret madregistrering',
+                color: AppColors.primary,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToDetailedRegistration(context);
+                },
+              ),
+              
+              SizedBox(height: KSizes.margin2x),
+              
+              // Manual activity entry
+              _buildMainCategoryOption(
+                context: context,
+                icon: MdiIcons.run,
+                title: 'Manuel Aktivitet',
+                subtitle: 'Detaljeret aktivitetsregistrering',
+                color: AppColors.primary,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _navigateToDetailedActivity(context);
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: Text('Annuller'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, String subtitle) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: KSizes.margin1x),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeL,
+              fontWeight: KSizes.fontWeightBold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          SizedBox(height: KSizes.margin1x),
+          Text(
+            subtitle,
+            style: TextStyle(
+              fontSize: KSizes.fontSizeS,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          SizedBox(height: KSizes.margin2x),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: AppColors.textSecondary.withOpacity(0.2),
           ),
         ],
       ),
@@ -335,69 +428,62 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
     required Color iconColor,
     required VoidCallback onTap,
   }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusL),
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(KSizes.margin4x),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: AppColors.border.withOpacity(0.2),
-              width: 1,
-            ),
-            borderRadius: BorderRadius.circular(KSizes.radiusL),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(KSizes.radiusM),
+      child: Container(
+        padding: EdgeInsets.all(KSizes.margin4x),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: AppColors.textSecondary.withOpacity(0.2),
+            width: 1,
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(KSizes.margin3x),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusM),
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: KSizes.iconL,
-                ),
+          borderRadius: BorderRadius.circular(KSizes.radiusM),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(KSizes.margin2x),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(KSizes.radiusS),
               ),
-              
-              SizedBox(width: KSizes.margin4x),
-              
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeL,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: KSizes.margin1x),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              Icon(
-                MdiIcons.chevronRight,
-                color: AppColors.textSecondary,
+              child: Icon(
+                icon,
+                color: iconColor,
                 size: KSizes.iconM,
               ),
-            ],
-          ),
+            ),
+            SizedBox(width: KSizes.margin3x),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeL,
+                      fontWeight: KSizes.fontWeightMedium,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  SizedBox(height: KSizes.margin1x),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: KSizes.fontSizeM,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              MdiIcons.chevronRight,
+              color: AppColors.textSecondary,
+              size: KSizes.iconM,
+            ),
+          ],
         ),
       ),
     );
@@ -679,199 +765,6 @@ class _AppNavigationState extends ConsumerState<AppNavigation> {
                 MdiIcons.chevronRight,
                 color: color,
                 size: KSizes.iconM,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showFoodSubmenu(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusL),
-        ),
-        title: Row(
-          children: [
-            Icon(MdiIcons.foodApple, color: AppColors.warning),
-            SizedBox(width: KSizes.margin2x),
-            Text('Mad & Drikke'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Ret (Meals)
-            _buildSubmenuOption(
-              context: context,
-              icon: MdiIcons.silverwareForkKnife,
-              title: 'Ret',
-              subtitle: 'Komplekse retter og måltider',
-              color: AppColors.primary,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToFoodFavoritesWithFilter(context, FoodType.meal);
-              },
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            // Fødevare (Ingredients)
-            _buildSubmenuOption(
-              context: context,
-              icon: MdiIcons.carrot,
-              title: 'Fødevare',
-              subtitle: 'Enkle fødevarer og ingredienser',
-              color: AppColors.secondary,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToFoodFavoritesWithFilter(context, FoodType.ingredient);
-              },
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            // Detalje (Detailed registration)
-            _buildSubmenuOption(
-              context: context,
-              icon: MdiIcons.formTextbox,
-              title: 'Detalje',
-              subtitle: 'Søg og log mad med alle detaljer',
-              color: AppColors.info,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToDetailedRegistration(context);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuller'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showActivitySubmenu(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(KSizes.radiusL),
-        ),
-        title: Row(
-          children: [
-            Icon(MdiIcons.runFast, color: AppColors.secondary),
-            SizedBox(width: KSizes.margin2x),
-            Text('Aktivitet & Motion'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Favorites option - FIRST
-            _buildSubmenuOption(
-              context: context,
-              icon: MdiIcons.star,
-              title: 'Fra Favoritter',
-              subtitle: 'Vælg fra gemte aktiviteter',
-              color: AppColors.primary,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToActivityFavorites(context);
-              },
-            ),
-            
-            SizedBox(height: KSizes.margin3x),
-            
-            // Detailed registration - SECOND
-            _buildSubmenuOption(
-              context: context,
-              icon: MdiIcons.formTextbox,
-              title: 'Detaljeret Registrering',
-              subtitle: 'Søg og log aktiviteter med alle detaljer',
-              color: AppColors.info,
-              onTap: () {
-                Navigator.of(context).pop();
-                _navigateToDetailedActivity(context);
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Annuller'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubmenuOption({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(KSizes.radiusM),
-        child: Container(
-          padding: EdgeInsets.all(KSizes.margin3x),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(KSizes.radiusM),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(KSizes.margin2x),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(KSizes.radiusS),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: KSizes.iconM,
-                ),
-              ),
-              
-              SizedBox(width: KSizes.margin3x),
-              
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeM,
-                        fontWeight: KSizes.fontWeightBold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: KSizes.margin1x),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: KSizes.fontSizeS,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

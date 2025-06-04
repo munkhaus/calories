@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Elimination Plan - Flutter Calories</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                
+                <li class="section">Implementerede Features</li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                
+                <li class="section">Udvikling</li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+                <li><a href="llm-elimination.html" class="active">💰 LLM Elimination</a></li>
+                
+                <li class="section">Planlagte Features</li>
+                <li><span class="disabled">🍎 Nutrition Tracking</span></li>
+                <li><span class="disabled">⚙️ User Profile</span></li>
+                <li><span class="disabled">📊 Analytics</span></li>
+                
+                <li class="section">Development</li>
+                <li><span class="disabled">🚀 Setup</span></li>
+                <li><span class="disabled">📝 Standards</span></li>
+                <li><span class="disabled">🧪 Testing</span></li>
+                
+                <li class="section">Design</li>
+                <li><span class="disabled">🎨 Design System</span></li>
+                <li><span class="disabled">🔄 User Flows</span></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>💰 LLM Elimination Plan</h1>
+                <p>Strategisk plan for at fjerne LLM afhængighed og reducere API omkostninger til $0/måned</p>
+            </header>
+
+            <div class="wiki-content">
+                <div class="info-box warning">
+                    <strong>💸 Nuværende Omkostninger:</strong> Appens LLM forbrug kan koste $790-1050/måned ved moderat brug (1000 søgninger + 500 billeder)
+                </div>
+
+                <h2>🎯 Nuværende LLM Forbrug</h2>
+                
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>🔍 LLMFoodService</h3>
+                        <p><strong>Placering:</strong> <code>lib/features/food_database/infrastructure/llm_food_service.dart</code></p>
+                        <ul>
+                            <li><strong>Formål:</strong> Søgning i fødevaredatabase</li>
+                            <li><strong>Omkostning:</strong> ~$0.60-1.20 per søgning</li>
+                            <li><strong>API:</strong> Google Gemini 1.5 Flash</li>
+                            <li><strong>Rate Limit:</strong> 30 requests/minut</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>📸 GeminiService</h3>
+                        <p><strong>Placering:</strong> <code>lib/features/food_logging/infrastructure/gemini_service.dart</code></p>
+                        <ul>
+                            <li><strong>Formål:</strong> Analyse af fødevarebilleder</li>
+                            <li><strong>Omkostning:</strong> ~$0.38-0.90 per billede</li>
+                            <li><strong>Features:</strong> Enkelt/multi-billede analyse</li>
+                            <li><strong>Sprog:</strong> Dansk output</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h2>📋 Elimination Strategi</h2>
+
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">1</div>
+                        <div class="timeline-content">
+                            <h3>Uge 1: Erstat Food Search</h3>
+                            <p>Skift fra LLMFoodService til gratis Open Food Facts API</p>
+                            <ul>
+                                <li>Implementer OpenFoodFactsService</li>
+                                <li>Opdater provider registrering</li>
+                                <li>Test søgefunktionalitet</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker">2</div>
+                        <div class="timeline-content">
+                            <h3>Uge 2: Fjern Billede Analyse</h3>
+                            <p>Erstat GeminiService med forbedret manuel indtastning</p>
+                            <ul>
+                                <li>Tilføj stemme-til-tekst input</li>
+                                <li>Implementer smarte portionsvalg</li>
+                                <li>Opret autocomplete søgning</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker">3</div>
+                        <div class="timeline-content">
+                            <h3>Uge 3: Ryd Op</h3>
+                            <p>Fjern alle LLM afhængigheder</p>
+                            <ul>
+                                <li>Slet LLM service filer</li>
+                                <li>Fjern google_generative_ai dependency</li>
+                                <li>Opdater imports og test grundigt</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-marker">4</div>
+                        <div class="timeline-content">
+                            <h3>Uge 4: Forbedrede Features</h3>
+                            <p>Tilføj smart lokal funktionalitet</p>
+                            <ul>
+                                <li>Kontekst-aware forslag</li>
+                                <li>Lokal dansk fødevaredatabase</li>
+                                <li>Offline backup funktionalitet</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <h2>🔄 Erstatninger</h2>
+
+                <div class="wiki-card">
+                    <h3>📊 Open Food Facts API</h3>
+                    <p>Gratis erstatning for LLMFoodService med omfattende fødevaredatabase:</p>
+                    <ul>
+                        <li>✅ <strong>Gratis:</strong> Ingen API omkostninger</li>
+                        <li>✅ <strong>Omfattende:</strong> 2.7M+ produkter</li>
+                        <li>✅ <strong>Dansk support:</strong> Multi-sprog database</li>
+                        <li>✅ <strong>Høj rate limit:</strong> 100+ requests/minut</li>
+                        <li>✅ <strong>Struktureret data:</strong> Ingen LLM parsing nødvendig</li>
+                    </ul>
+                    
+                    <div class="code-block">
+                        <h4>Implementering:</h4>
+                        <pre><code>class OpenFoodFactsService implements IOnlineFoodService {
+  static const String _baseUrl = 'https://world.openfoodfacts.org/api/v2';
+  
+  @override
+  Future&lt;Result&lt;List&lt;OnlineFoodResult&gt;, OnlineFoodError&gt;&gt; searchFoods(String query) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/search?search_terms=$query&page_size=20&json=true'),
+      headers: {'User-Agent': 'CaloriesApp-Flutter/1.0'},
+    );
+    // Struktureret parsing - ingen LLM nødvendig
+  }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="wiki-card">
+                    <h3>🎤 Forbedret Manuel Indtastning</h3>
+                    <p>Erstatning for billede analyse med moderne UX funktioner:</p>
+                    <ul>
+                        <li>🎤 <strong>Stemme input:</strong> Dansk tale-til-tekst</li>
+                        <li>🔍 <strong>Smart autocomplete:</strong> Intelligent søgning</li>
+                        <li>⚡ <strong>Hurtige portioner:</strong> Forudefinerede størrelser</li>
+                        <li>🧠 <strong>Kontekst forslag:</strong> Tid-baserede anbefalinger</li>
+                    </ul>
+                    
+                    <div class="code-block">
+                        <h4>Portionsvalg eksempel:</h4>
+                        <pre><code>static const Map&lt;String, List&lt;PortionPreset&gt;&gt; foodPortions = {
+  'pasta': [
+    PortionPreset('Lille portion', 75, 280),
+    PortionPreset('Normal portion', 100, 375),
+    PortionPreset('Stor portion', 150, 560),
+  ],
+  'kylling': [
+    PortionPreset('Lille stykke', 100, 165),
+    PortionPreset('Mellem stykke', 150, 248),
+    PortionPreset('Stort stykke', 200, 330),
+  ],
+};</code></pre>
+                    </div>
+                </div>
+
+                <h2>📈 Forventede Resultater</h2>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>💰 Omkostningsbesparelser</h3>
+                        <table>
+                            <tr>
+                                <td><strong>Før:</strong></td>
+                                <td>$790-1050/måned</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Efter:</strong></td>
+                                <td>$0/måned</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Besparelse:</strong></td>
+                                <td class="success">100% reduktion</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>⚡ Performance Forbedringer</h3>
+                        <ul>
+                            <li>✅ Hurtigere API respons</li>
+                            <li>✅ Offline backup muligheder</li>
+                            <li>✅ Bedre pålidelighed</li>
+                            <li>✅ Ingen rate limit problemer</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="info-box success">
+                    <strong>🎯 Resultat:</strong> 100% omkostnings-elimination med forbedret brugeroplevelse og performance
+                </div>
+
+                <h2>🚀 Næste Skridt</h2>
+
+                <div class="wiki-card">
+                    <h3>📝 Implementerings Checklist</h3>
+                    <ul class="checklist">
+                        <li>☐ Opret OpenFoodFactsService</li>
+                        <li>☐ Tilføj http dependency</li>
+                        <li>☐ Opdater provider registrering</li>
+                        <li>☐ Test fødevare søgning</li>
+                        <li>☐ Implementer manuel food entry service</li>
+                        <li>☐ Tilføj speech_to_text dependency</li>
+                        <li>☐ Opret forbedret food logging UI</li>
+                        <li>☐ Slet LLM service filer</li>
+                        <li>☐ Fjern google_generative_ai dependency</li>
+                        <li>☐ Opdater alle imports</li>
+                        <li>☐ Tilføj smart suggestions service</li>
+                        <li>☐ Opret lokal dansk fødevaredatabase</li>
+                        <li>☐ Implementer offline fallback</li>
+                        <li>☐ Test alle funktioner grundigt</li>
+                    </ul>
+                </div>
+
+                <div class="info-box info">
+                    <strong>⏰ Tidsramme:</strong> Estimeret 20-30 timer over 4 uger. Besparelser starter i uge 2 når billede analyse fjernes.
+                </div>
+
+                <h2>📋 Risiko Håndtering</h2>
+
+                <div class="grid grid-2">
+                    <div class="wiki-card">
+                        <h3>⚠️ Potentielle Risici</h3>
+                        <ul>
+                            <li>Lavere præcision end LLM</li>
+                            <li>Brugere forventer naturligt sprog søgning</li>
+                            <li>Betydelig refactoring krævet</li>
+                        </ul>
+                    </div>
+
+                    <div class="wiki-card">
+                        <h3>🛡️ Afbødning</h3>
+                        <ul>
+                            <li>Bruger feedback system</li>
+                            <li>Forbedret autocomplete og stemme input</li>
+                            <li>Trinvis implementering med backup plan</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <a href="../FOCUSED_LLM_ELIMINATION_PLAN.md" class="btn">📄 Se Detaljeret Plan</a>
+                    <a href="architecture.html" class="btn-secondary">🏗️ Arkitektur</a>
+                </div>
+
+            </div>
+        </main>
+    </div>
+</body>
+</html> 
