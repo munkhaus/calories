@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Flutter Calories Wiki</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+
+                <li class="section">Features</li>
+                <li><a href="features.html">✨ Features</a></li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Opsætning</a></li>
+                <li><a href="coding-standards.html">📝 Kodestandard</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                <li><a href="api.html" class="active">🔌 API Reference</a></li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>🔌 API Reference & Eksterne Services</h1>
+                <p>Oversigt over eksterne API'er og services brugt i Flutter Calories appen.</p>
+            </header>
+
+            <div class="wiki-content">
+                <section id="google-gemini">
+                    <h2>🤖 Google Gemini AI</h2>
+                    <div class="info-box warning">
+                        <strong>Status:</strong> Aktuelt brugt, men planlagt til udfasning.
+                        <br>Se <a href="llm-elimination.html">LLM Elimination Plan</a> for detaljer.
+                    </div>
+                    <p>Google Gemini AI bruges til avancerede funktioner som fødevaregenkendelse via billeder og intelligent søgning i fødevaredatabasen.</p>
+                    <ul>
+                        <li><strong>Officiel Dokumentation:</strong> <a href="https://ai.google.dev/docs" target="_blank">Google AI for Developers</a></li>
+                        <li><strong>SDK brugt:</strong> <code>google_generative_ai</code> Dart pakke.</li>
+                    </ul>
+
+                    <article class="api-service">
+                        <h3>1. LLMFoodService (Fødevaresøgning)</h3>
+                        <p><strong>Formål:</strong> Leverer søgefunktionalitet i appens fødevaredatabase ved hjælp af naturlig sprogbehandling.</p>
+                        <p><strong>Implementering:</strong> <code>lib/features/food_database/infrastructure/llm_food_service.dart</code></p>
+                        <p><strong>Status:</strong> Aktiv, men skal erstattes af Open Food Facts API.</p>
+                        <p><strong>API Endpoints (Konceptuelt via SDK):</strong> Bruger Gemini 1.5 Flash model til tekst-til-tekst generering baseret på søgeforespørgsler.</p>
+                        <p><strong>Autentificering:</strong> Kræver API nøgle konfigureret i projektet (håndteres typisk via environment variabler eller en sikker konfigurationsmekanisme - ikke specificeret yderligere her).</p>
+                        <p><strong>Data Modeller:</strong>
+                            Input er en tekststreng (søgeforespørgsel). Output er en liste af fødevareobjekter (f.eks. <code>OnlineFoodResult</code> DTO) parset fra Gemini's svar.
+                        </p>
+                    </article>
+
+                    <article class="api-service">
+                        <h3>2. GeminiService (Billedanalyse)</h3>
+                        <p><strong>Formål:</strong> Analyserer billeder af mad for at identificere fødevarer og estimere næringsindhold.</p>
+                        <p><strong>Implementering:</strong> <code>lib/features/food_logging/infrastructure/gemini_service.dart</code></p>
+                        <p><strong>Status:</strong> Aktiv, men skal erstattes af forbedret manuel indtastning og potentielt andre non-LLM billedanalyseværktøjer i fremtiden.</p>
+                        <p><strong>API Endpoints (Konceptuelt via SDK):</strong> Bruger Gemini modeller (f.eks. Gemini 1.5 Flash eller Pro Vision) til multimodal analyse (tekst og billede input).</p>
+                        <p><strong>Autentificering:</strong> Kræver API nøgle, ligesom LLMFoodService.</p>
+                        <p><strong>Data Modeller:</strong>
+                            Input er et eller flere billeder (og evt. tekst prompts). Output er struktureret data om de genkendte fødevarer (f.eks. <code>FoodAnalysisResult</code> DTO).
+                        </p>
+                    </article>
+                </section>
+
+                <section id="open-food-facts">
+                    <h2>🥦 Open Food Facts API</h2>
+                    <div class="info-box success">
+                        <strong>Status:</strong> Foreslået erstatning for LLMFoodService.
+                        <br>Se <a href="llm-elimination.html#erstatninger">Detaljer i LLM Elimination Plan</a>.
+                    </div>
+                    <p>Open Food Facts er en åben og crowdsourced database med information om fødevarer fra hele verden. Det er et gratis alternativ til LLM-baseret fødevaresøgning.</p>
+                    <ul>
+                        <li><strong>Officiel Dokumentation:</strong> <a href="https://openfoodfacts.github.io/openfoodfacts-server/api/" target="_blank">Open Food Facts API Docs</a></li>
+                        <li><strong>SDK/Pakke:</strong> Kan bruges direkte via HTTP requests (f.eks. med <code>http</code> pakken) eller via en community-vedligeholdt Dart pakke, hvis en passende findes. <code>llm-elimination.html</code> foreslår direkte HTTP.</li>
+                    </ul>
+
+                    <article class="api-service">
+                        <h3>OpenFoodFactsService (Fødevaresøgning)</h3>
+                        <p><strong>Formål:</strong> Søge efter fødevarer i Open Food Facts databasen.</p>
+                        <p><strong>Implementering (Foreslået):</strong> <code>lib/features/food_database/infrastructure/open_food_facts_service.dart</code> (skal oprettes).</p>
+                        <p><strong>API Endpoints:</strong>
+                            <ul>
+                                <li>Søgning: <code>https://world.openfoodfacts.org/api/v2/search?search_terms=QUERY&page_size=20&json=true</code></li>
+                                <!-- Andre relevante endpoints kan tilføjes her -->
+                            </ul>
+                        </p>
+                        <p><strong>Autentificering:</strong> Ingen påkrævet for de fleste læse-operationer, men en User-Agent header anbefales.</p>
+                        <p><strong>Data Modeller:</strong>
+                            Input er en søgeforespørgsel. Output er et JSON objekt indeholdende en liste af produkter. Se Open Food Facts API dokumentationen for den præcise struktur. DTOs (Data Transfer Objects) bør oprettes i appen for at mappe disse svar.
+                        </p>
+                        <p><strong>Eksempel på respons (forkortet):</strong></p>
+                        <div class="code-block"><pre><code>{
+  "count": 12345,
+  "page": 1,
+  "products": [
+    {
+      "product_name": "Eksempel Produkt",
+      "nutriments": {
+        "energy-kcal_100g": 250,
+        "proteins_100g": 10,
+        "fat_100g": 5,
+        "carbohydrates_100g": 40
+      },
+      // ... mange flere felter
+    }
+  ]
+}</code></pre></div>
+                    </article>
+                </section>
+
+                <section id="other-services">
+                    <h2>🛠️ Andre Potentielle Services</h2>
+                    <p>Denne sektion kan udvides hvis projektet integrerer med andre eksterne services i fremtiden (f.eks. betalingsgateways, fitness trackers, etc.).</p>
+                    <p><em>Aktuelt ingen yderligere eksterne services dokumenteret.</em></p>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html>

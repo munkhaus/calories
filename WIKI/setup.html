@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opsætning - Flutter Calories Wiki</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+
+                <li class="section">Features</li>
+                <li><a href="features.html">✨ Features</a></li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+
+                <li class="section">Development</li>
+                <li><a href="setup.html" class="active">🚀 Opsætning</a></li>
+                <li><a href="coding-standards.html">📝 Kodestandard</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                <li><a href="api.html">🔌 API Reference</a></li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>🚀 Projekt Opsætning</h1>
+                <p>Følg disse trin for at få Flutter Calories appen kørende på din lokale maskine.</p>
+            </header>
+
+            <div class="wiki-content">
+                <section id="prerequisites">
+                    <h2>📋 Forudsætninger</h2>
+                    <p>Før du begynder, sørg for at du har følgende installeret:</p>
+                    <ul>
+                        <li>
+                            <strong>Flutter SDK:</strong> Version 3.22 eller nyere. Projektet bruger Dart SDK 3.8.0+.
+                            <a href="https://flutter.dev/docs/get-started/install" target="_blank" class="btn btn-secondary">Installer Flutter</a>
+                        </li>
+                        <li>
+                            <strong>Git:</strong> For at klone repository'et.
+                            <a href="https://git-scm.com/book/en/v2/Getting-Started-Installing-Git" target="_blank" class="btn btn-secondary">Installer Git</a>
+                        </li>
+                        <li>
+                            <strong>IDE (Anbefalet):</strong>
+                            <ul>
+                                <li>Visual Studio Code med Flutter extension.</li>
+                                <li>Android Studio med Flutter og Dart plugins.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+
+                <section id="cloning">
+                    <h2>📂 Klon Repository</h2>
+                    <p>Klon projektet fra GitHub (eller din versionskontrol platform):</p>
+                    <div class="code-block">
+                        <pre><code>git clone https://github.com/your-repo/calories-app.git
+cd calories-app</code></pre>
+                    </div>
+                    <div class="info-box info">
+                        <strong>Bemærk:</strong> Erstat <code>https://github.com/your-repo/calories-app.git</code> med den faktiske URL til repository'et.
+                    </div>
+                </section>
+
+                <section id="dependencies">
+                    <h2>📦 Installer Dependencies</h2>
+                    <p>Når du har klonet repository'et, naviger til projektmappen og kør følgende kommando for at hente alle nødvendige pakker:</p>
+                    <div class="code-block">
+                        <pre><code>flutter pub get</code></pre>
+                    </div>
+                    <p>Dette vil downloade alle dependencies specificeret i <code>pubspec.yaml</code> filen.</p>
+                </section>
+
+                <section id="build-runner">
+                    <h2>🛠️ Kør Build Runner (Hvis Nødvendigt)</h2>
+                    <p>Projektet bruger kodegenerering (f.eks. for Freezed). Hvis du støder på fejl relateret til genererede filer, eller efter at have trukket ændringer der involverer modeller, skal du køre build_runner:</p>
+                    <div class="code-block">
+                        <pre><code>flutter pub run build_runner build --delete-conflicting-outputs</code></pre>
+                    </div>
+                    <p>Dette kan tage et par minutter første gang, eller hvis der er mange filer at generere.</p>
+                </section>
+
+                <section id="running-app">
+                    <h2>▶️ Kør Appen</h2>
+                    <p>Sørg for at du har en emulator kørende, eller en fysisk enhed tilsluttet.</p>
+                    <ol>
+                        <li>
+                            <strong>Vælg enhed:</strong> Brug enhedslisten i din IDE (VS Code eller Android Studio) for at vælge din mål-enhed/emulator.
+                        </li>
+                        <li>
+                            <strong>Kør appen:</strong>
+                            <div class="code-block">
+                                <pre><code>flutter run</code></pre>
+                            </div>
+                        </li>
+                    </ol>
+                    <p>Appen skulle nu bygge og starte på din valgte enhed/emulator.</p>
+                    <div class="info-box info">
+                        <strong>Tip:</strong> Hvis du har flere enheder tilsluttet, kan du specificere en enhed med <code>flutter run -d &lt;device_id&gt;</code>. Kør <code>flutter devices</code> for at se en liste over tilgængelige enheder.
+                    </div>
+                </section>
+
+                <section id="ide-setup">
+                    <h2>💡 IDE Specifik Opsætning</h2>
+
+                    <h3>Visual Studio Code</h3>
+                    <ul>
+                        <li>Installer <a href="https://marketplace.visualstudio.com/items?itemName=Dart-Code.flutter" target="_blank">Flutter</a> og <a href="https://marketplace.visualstudio.com/items?itemName=Dart-Code.dart-code" target="_blank">Dart</a> extensions.</li>
+                        <li>Åbn projektmappen i VS Code.</li>
+                        <li>Brug F5 tasten eller "Run > Start Debugging" for at starte appen.</li>
+                        <li>VS Code vil automatisk bruge <code>launch.json</code> hvis den findes, for specifikke startkonfigurationer.</li>
+                    </ul>
+
+                    <h3>Android Studio</h3>
+                    <ul>
+                        <li>Installer Flutter og Dart plugins (File > Settings > Plugins).</li>
+                        <li>Åbn projektet ved at vælge "Open an Existing Project" og naviger til projektmappen.</li>
+                        <li>Vælg en enhed fra enheds-dropdown menuen.</li>
+                        <li>Klik på "Run" knappen (den grønne trekant).</li>
+                    </ul>
+                </section>
+
+                <section id="common-issues">
+                    <h2>🔧 Almindelige Opsætningsproblemer</h2>
+                    <ul>
+                        <li>
+                            <strong>Flutter version ikke opfyldt:</strong>
+                            <p>Hvis du ser en fejl om at din Flutter version er for gammel, kør:</p>
+                            <div class="code-block">
+                                <pre><code>flutter upgrade</code></pre>
+                            </div>
+                        </li>
+                        <li>
+                            <strong>Manglende Android SDK/Command-line tools:</strong>
+                            <p>Kør <code>flutter doctor</code> for at diagnosticere problemer med din Flutter installation, Android toolchain, Xcode, etc. Følg anbefalingerne fra <code>flutter doctor</code>.</p>
+                        </li>
+                        <li>
+                            <strong>Problemer med genererede filer (Freezed, etc.):</strong>
+                            <p>Sørg for at køre <code>flutter pub run build_runner build --delete-conflicting-outputs</code> efter at have opdateret pakker eller trukket ændringer der påvirker modeller.</p>
+                        </li>
+                        <li>
+                            <strong>Platform-specifikke fejl (iOS/Android):</strong>
+                            <ul>
+                                <li>For iOS: Naviger til <code>ios/</code> mappen og kør <code>pod install</code> eller <code>pod update</code>.</li>
+                                <li>For Android: Tjek at du har den korrekte version af JDK, og at dine Android SDK build tools er opdaterede. Prøv at køre "Invalidate Caches / Restart" i Android Studio.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                    <div class="info-box warning">
+                        <strong>Tip:</strong> Se <a href="troubleshooting.html">Troubleshooting</a> siden for flere specifikke løsninger på problemer, der er opstået under udviklingen.
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html>

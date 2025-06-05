@@ -181,6 +181,43 @@ class _PersonalInfoStepWidgetState extends ConsumerState&lt;PersonalInfoStepWidg
 }</code></pre>
                 </div>
 
+                <h3>👂 Lyt til Providers i Widgets: <code>watch</code>, <code>read</code>, og <code>listen</code></h3>
+                <p>Når du interagerer med providers i dine widgets (typisk inden i <code>build</code> metoden af en <code>ConsumerWidget</code> eller via <code>Consumer</code> widget'en), giver <code>ref</code> objektet dig flere måder at tilgå providerens state eller notifier:</p>
+                <ul>
+                    <li>
+                        <strong><code>ref.watch(myProvider)</code>:</strong>
+                        Abonnerer på provideren. Widget'en vil lytte efter ændringer i providerens state, og <strong>vil rebuild</strong> hver gang state ændres. Bruges typisk til at vise state i UI.
+                        <div class="code-block"><pre><code>final count = ref.watch(counterProvider); // Rebuilds when count changes
+Text('Count: $count');</code></pre></div>
+                    </li>
+                    <li>
+                        <strong><code>ref.read(myProvider)</code>:</strong>
+                        Henter den aktuelle state fra provideren én gang. Widget'en <strong>vil ikke rebuild</strong> hvis state ændres. Bruges typisk i callbacks (f.eks. <code>onPressed</code>) for at udføre en handling baseret på den nuværende state eller for at kalde metoder på en Notifier.
+                        <div class="code-block"><pre><code>ElevatedButton(
+  onPressed: () {
+    // Læs notifier og kald en metode
+    ref.read(myProvider.notifier).increment();
+    // Læs state én gang uden at lytte
+    final currentValue = ref.read(myProvider);
+    print('Current value: $currentValue');
+  },
+  child: Text('Increment'),
+)</code></pre></div>
+                    </li>
+                    <li>
+                        <strong><code>ref.listen(myProvider, (previousState, newState) { ... })</code>:</strong>
+                        Abonnerer på provideren for at udføre en side-effekt når state ændres (f.eks. vise en SnackBar, navigere). Trigger <strong>ikke</strong> en rebuild af widget'en. Callback-funktionen modtager både den forrige og den nye state.
+                        <div class="code-block"><pre><code>ref.listen&lt;MyState&gt;(myStateProvider, (previous, next) {
+  if (next.hasError && !(previous?.hasError ?? false)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(next.errorMessage ?? 'En fejl opstod')),
+    );
+  }
+});</code></pre></div>
+                    </li>
+                </ul>
+                <p>Korrekt brug af <code>watch</code>, <code>read</code>, og <code>listen</code> er afgørende for både funktionalitet og performance.</p>
+
                 <h3>🎯 Selective Rebuilds</h3>
                 <p>Optimer performance med selective rebuilds:</p>
 
@@ -334,11 +371,27 @@ if (state.hasError) {
                         <li><strong>Use .select():</strong> Kun rebuild når specifikke felter ændres</li>
                         <li><strong>Avoid watchers in build():</strong> Flyt providers uden for build metoden</li>
                         <li><strong>Dispose properly:</strong> Cancel timers og subscriptions</li>
-                        <li><strong>Use autoDispose:</strong> For providers der ikke skal bevares</li>
+                        <li><strong>Use <code>.autoDispose</code>:</strong> For providers der ikke skal bevares globalt i appens levetid. <code>.autoDispose</code> sørger for, at providerens state nulstilles og resources frigives, når der ikke længere er nogen aktive lyttere. Dette er især nyttigt for state, der er tæt knyttet til en specifik widget eller et sub-flow, og som ikke behøver at overleve, når brugeren navigerer væk.</li>
                     </ul>
                 </div>
 
                 <h2>Common Patterns</h2>
+
+                <h3>🤔 Hvornår skal man bruge hvilken Provider?</h3>
+                <p>Valget af provider afhænger af den specifikke situation. Her er nogle tommelfingerregler udover tabellen nedenfor:</p>
+                <ul>
+                    <li><strong><code>Provider</code>:</strong> Bruges primært til dependency injection af uforanderlige værdier eller services (f.eks. en repository implementering, en konfigurationsværdi). Giver ikke mulighed for at state ændres over tid og trigger UI rebuilds direkte.</li>
+                    <li><strong><code>StateProvider</code>:</strong> God til meget simpel state (f.eks. en boolean, enum, eller et tal) der skal kunne ændres udefra og få UI til at rebuild. For mere kompleks state, overvej <code>StateNotifierProvider</code>.</li>
+                    <li><strong><code>StateNotifierProvider</code>:</strong> Ideel til at håndtere mere kompleks, uforanderlig state (typisk en Freezed-klasse) hvor logikken til at ændre state er indeholdt i en <code>StateNotifier</code> subklasse. Dette er det mest almindelige valg til feature state.</li>
+                    <li><strong><code>FutureProvider</code>:</strong> Bruges når du skal håndtere state der kommer fra en engangs asynkron operation (f.eks. hente data fra et API ved opstart). Håndterer automatisk loading/data/error tilstande.</li>
+                    <li><strong><code>StreamProvider</code>:</strong> Ligesom <code>FutureProvider</code>, men for data der kommer fra en strøm (f.eks. Firebase Firestore streams, WebSockets).</li>
+                    <li><strong>Modifiers (<code>.family</code>, <code>.autoDispose</code>):</strong>
+                        <ul>
+                            <li><code>.family</code>: Bruges når din provider har brug for eksterne parametre for at opbygge sin state (f.eks. <code>userProvider.family&lt;User, String&gt;((ref, userId) => ...)</code>).</li>
+                            <li><code>.autoDispose</code>: Sørger for at providerens state automatisk ryddes op (disposed) når den ikke længere lyttes på. Dette er nyttigt for state der kun er relevant mens en bestemt widget er i træet, for at undgå memory leaks.</li>
+                        </ul>
+                    </li>
+                </ul>
 
                 <table>
                     <thead>

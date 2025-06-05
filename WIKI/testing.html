@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Guide - Flutter Calories Wiki</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+
+                <li class="section">Features</li>
+                <li><a href="features.html">✨ Features</a></li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Opsætning</a></li>
+                <li><a href="coding-standards.html">📝 Kodestandard</a></li>
+                <li><a href="testing.html" class="active">🧪 Testing</a></li>
+                <li><a href="api.html">🔌 API Reference</a></li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>🧪 Testing Guide</h1>
+                <p>Retningslinjer for skrivning og kørsel af tests i Flutter Calories projektet.</p>
+            </header>
+
+            <div class="wiki-content">
+                <section id="overview">
+                    <h2>🎯 Oversigt over Testning</h2>
+                    <p>Testning er en kritisk del af udviklingsprocessen. Det sikrer kodens kvalitet, reducerer regressionsfejl og gør refaktorering mere sikker. Vi anvender primært tre typer tests:</p>
+                    <ul>
+                        <li><strong>Unit Tests:</strong> Tester individuelle funktioner, metoder eller klasser.</li>
+                        <li><strong>Widget Tests:</strong> Tester Flutter widgets isoleret (UI-komponenter).</li>
+                        <li><strong>Integration Tests:</strong> Tester komplette app flows eller større dele af appen.</li>
+                    </ul>
+                    <p>Den generelle teststrategi er også beskrevet i <a href="architecture.html#testing-strategi">Arkitektur Dokumentationen</a>.</p>
+                </section>
+
+                <section id="running-tests">
+                    <h2>🏃 Kørsel af Tests</h2>
+                    <p>Tests kan køres fra terminalen i rodmappen af projektet.</p>
+                    <ul>
+                        <li>
+                            <strong>Kør alle Unit og Widget Tests:</strong>
+                            <div class="code-block"><pre><code>flutter test</code></pre></div>
+                            <p>Dette kommando vil køre alle filer der ender med <code>_test.dart</code> i <code>test/</code> mappen.</p>
+                        </li>
+                        <li>
+                            <strong>Kør en specifik fil:</strong>
+                            <div class="code-block"><pre><code>flutter test test/features/onboarding/application/onboarding_notifier_test.dart</code></pre></div>
+                        </li>
+                        <li>
+                            <strong>Kør Integration Tests:</strong>
+                            <p>Integration tests ligger typisk i mappen <code>integration_test/</code>. For at køre dem:</p>
+                            <div class="code-block"><pre><code>flutter test integration_test</code></pre></div>
+                            <p>Dette kræver en tilsluttet enhed eller emulator. Sørg for at <code>integration_test</code> pakken er tilføjet til <code>dev_dependencies</code> i <code>pubspec.yaml</code> hvis du vil skrive dem.</p>
+                        </li>
+                    </ul>
+                </section>
+
+                <section id="writing-tests">
+                    <h2>✍️ Skrivning af Tests</h2>
+                    <p>Følg disse retningslinjer når du skriver tests.</p>
+
+                    <h3>Generelle Principper</h3>
+                    <ul>
+                        <li><strong>Placering:</strong> Testfiler skal placeres i <code>test/</code> mappen og spejle mappestrukturen i <code>lib/</code>. For eksempel, en test for <code>lib/features/auth/auth_service.dart</code> skal være i <code>test/features/auth/auth_service_test.dart</code>.</li>
+                        <li><strong>Navngivning:</strong> Testfiler skal ende med <code>_test.dart</code>. Testbeskrivelser (i <code>test()</code> eller <code>group()</code>) skal være klare og beskrive hvad der testes.</li>
+                        <li><strong>AAA Pattern:</strong> Strukturer dine tests med Arrange, Act, Assert.
+                            <ul>
+                                <li><strong>Arrange:</strong> Sæt testdata og mocks op.</li>
+                                <li><strong>Act:</strong> Udfør den handling eller metode der skal testes.</li>
+                                <li><strong>Assert:</strong> Verificer at resultatet er som forventet.</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <h3>Unit Tests</h3>
+                    <p>Tester logik i services, notifiers (state management), modeller, og utility funktioner.</p>
+                    <ul>
+                        <li><strong>Afhængigheder:</strong> Brug mocking (f.eks. med <a href="https://pub.dev/packages/mockito" target="_blank">Mockito</a> pakken) for at isolere den enhed der testes. Hvis Mockito ikke er i `pubspec.yaml`, overvej at tilføje den: `flutter pub add dev:mockito dev:build_runner`.</li>
+                        <li><strong>Eksempel (konceptuelt):</strong>
+                            <div class="code-block"><pre><code>// test/services/user_service_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+// import 'package:calories/services/user_service.dart'; // Din service
+// import 'package:calories/repositories/user_repository.dart'; // Din repository
+
+// Skab en mock klasse for repository (hvis ikke allerede genereret af build_runner)
+// class MockUserRepository extends Mock implements UserRepository {}
+
+void main() {
+  group('UserService', () {
+    // MockUserRepository mockUserRepository;
+    // UserService userService;
+
+    setUp(() {
+      // mockUserRepository = MockUserRepository();
+      // userService = UserService(mockUserRepository);
+    });
+
+    test('getUser returns user for valid id', () async {
+      // Arrange
+      // when(mockUserRepository.fetchUser('123'))
+      //     .thenAnswer((_) async => User(id: '123', name: 'Test User'));
+
+      // Act
+      // final user = await userService.getUser('123');
+
+      // Assert
+      // expect(user.name, 'Test User');
+    });
+  });
+}</code></pre></div>
+                        </li>
+                    </ul>
+
+                    <h3>Widget Tests</h3>
+                    <p>Tester UI komponenter (widgets). Sikrer at UI'en reagerer korrekt på interaktioner og state ændringer.</p>
+                    <ul>
+                        <li>Brug <code>flutter_test</code> pakken og <code>WidgetTester</code>.</li>
+                        <li>Test for tilstedeværelse af UI elementer, tekst, og at interaktioner (tryk, input) udløser de forventede ændringer.</li>
+                        <li>For widgets der afhænger af Riverpod providers, wrap dem i en <code>ProviderScope</code> og brug overrides til at mocke providers. Se <a href="state-management.html#testing-state-management">State Management Testing</a>.</li>
+                        <li><strong>Eksempel (konceptuelt):</strong>
+                            <div class="code-block"><pre><code>// test/widgets/custom_button_test.dart
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+// import 'package:calories/widgets/custom_button.dart'; // Din widget
+
+void main() {
+  testWidgets('CustomButton displays text and handles tap', (WidgetTester tester) async {
+    // Arrange
+    String buttonText = 'Tryk her';
+    bool tapped = false;
+    await tester.pumpWidget(
+      MaterialApp( // Nødvendig for at give widget'en context (Material theming)
+        home: Scaffold(
+          body: CustomButton(
+            text: buttonText,
+            onPressed: () {
+              tapped = true;
+            },
+          ),
+        ),
+      ),
+    );
+
+    // Act
+    expect(find.text(buttonText), findsOneWidget);
+    await tester.tap(find.byType(CustomButton));
+    await tester.pump(); // Rebuild widget efter interaktion
+
+    // Assert
+    expect(tapped, isTrue);
+  });
+}</code></pre></div>
+                        </li>
+                    </ul>
+
+                    <h3>Golden Tests (Visuel Regression)</h3>
+                    <p>Golden tests sammenligner dine widgets med et "gyldent" referencebillede for at fange utilsigtede visuelle ændringer. Pakken <a href="https://pub.dev/packages/golden_toolkit" target="_blank">golden_toolkit</a> kan bruges til dette.</p>
+                    <ul>
+                        <li>Nyttigt for at sikre UI konsistens over tid.</li>
+                        <li>Kræver at man genererer og vedligeholder referencebilleder.</li>
+                        <li>Kørsel: <code>flutter test --update-goldens</code> for at opdatere referencebilleder.</li>
+                    </ul>
+
+                    <h3>Integration Tests</h3>
+                    <p>Tester hele features eller brugerflows. Kører på en enhed eller emulator.</p>
+                    <ul>
+                        <li>Brug <code>integration_test</code> pakken. Tilføj den til <code>dev_dependencies</code>: <code>flutter pub add dev:integration_test</code>. Opret testfiler i <code>integration_test/</code> mappen (f.eks. <code>integration_test/app_test.dart</code>).</li>
+                        <li>Simuler brugerinteraktioner (tryk, scroll, input) og verificer UI tilstande og dataflow.</li>
+                        <li><strong>Eksempel (struktur):</strong>
+                            <div class="code-block"><pre><code>// integration_test/onboarding_flow_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+// import 'package:calories/main.dart' as app; // Din main app entry point
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  group('Onboarding Flow', () {
+    testWidgets('Full onboarding flow completes successfully', (WidgetTester tester) async {
+      // app.main(); // Start appen
+      await tester.pumpAndSettle();
+
+      // Eksempel: Find velkomstknap og tryk
+      // expect(find.text('Kom i gang'), findsOneWidget);
+      // await tester.tap(find.text('Kom i gang'));
+      // await tester.pumpAndSettle();
+
+      // ... fortsæt med at teste flowet trin for trin ...
+
+      // expect(find.text('Dashboard'), findsOneWidget); // Verificer slutningen af flowet
+    });
+  });
+}</code></pre></div>
+                        </li>
+                    </ul>
+                </section>
+
+                <section id="code-coverage">
+                    <h2>📊 Kode Dækning (Code Coverage)</h2>
+                    <p>Kode dækning måler hvor stor en procentdel af din kode der er dækket af tests.</p>
+                    <ul>
+                        <li>
+                            <strong>Generer Rapport:</strong>
+                            <div class="code-block"><pre><code>flutter test --coverage</code></pre></div>
+                        </li>
+                        <li>Rapporten genereres i <code>coverage/lcov.info</code>.</li>
+                        <li>For at se en HTML rapport, kan du bruge <code>genhtml</code> (en del af lcov værktøjet) eller en IDE extension (f.eks. "Coverage Gutters" i VS Code).
+                            <div class="code-block"><pre><code># Eksempel på generering af HTML rapport (kræver lcov installeret)
+genhtml coverage/lcov.info -o coverage/html</code></pre></div>
+                        </li>
+                        <li><strong>Mål:</strong> Stræb efter høj kode dækning, især for kritisk forretningslogik (domain og application lag). Der er ikke et fastsat %-mål for projektet endnu, men god dækning er opfordret.</li>
+                    </ul>
+                </section>
+
+                <section id="best-practices">
+                    <h2>⭐ Bedste Praksis for Testning</h2>
+                    <ul>
+                        <li>Skriv tests samtidig med, eller lige efter, du skriver ny kode.</li>
+                        <li>Test for både succes-scenarier og fejl-scenarier.</li>
+                        <li>Hold tests små og fokuserede på én ting.</li>
+                        <li>Gør tests uafhængige af hinanden. En tests resultat må ikke påvirke en anden.</li>
+                        <li>Brug beskrivende navne for testgrupper og individuelle tests.</li>
+                        <li>Refaktorer tests ligesom du refaktorerer produktionskode for at holde dem rene og vedligeholdelsesvenlige.</li>
+                        <li>Kør tests ofte, især før du committer kode.</li>
+                    </ul>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html>

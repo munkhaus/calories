@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Struktur Guide - Flutter Calories Wiki</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+
+                <li class="section">Features</li>
+                <li><a href="features.html" class="active">✨ Features</a></li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Opsætning</a></li>
+                <li><a href="coding-standards.html">📝 Kodestandard</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                <li><a href="api.html">🔌 API Reference</a></li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>✨ Feature Struktur Guide</h1>
+                <p>Retningslinjer for organisering og udvikling af features i Flutter Calories appen.</p>
+            </header>
+
+            <div class="wiki-content">
+                <section id="introduction">
+                    <h2>🎯 Introduktion</h2>
+                    <p>Dette dokument beskriver den anbefalede struktur for feature-moduler i projektet. Formålet er at sikre konsistens, vedligeholdbarhed og skalerbarhed i overensstemmelse med <a href="architecture.html">Clean Architecture principperne</a>.</p>
+                    <p>Alle features er organiseret som separate moduler under mappen <code>lib/features/</code>.</p>
+                </section>
+
+                <section id="layer-structure">
+                    <h2>🏛️ Feature Modul Struktur (Lag)</h2>
+                    <p>Hver feature-modul (f.eks. <code>lib/features/user_profile/</code>) bør indeholde følgende undermapper, der repræsenterer de forskellige lag i Clean Architecture:</p>
+
+                    <div class="code-block">
+                        <pre><code>lib/
+└── features/
+    └── [feature_name]/
+        ├── domain/         # Forretningslogik og -regler (kerne-modeller, interfaces)
+        ├── application/    # Applikationsspecifik logik (state management, use case koordination)
+        ├── infrastructure/ # Implementering af eksterne afhængigheder (repositories, services)
+        └── presentation/   # UI-komponenter (sider, widgets)</code></pre>
+                    </div>
+
+                    <article class="feature-layer">
+                        <h3>🔵 Domain Layer (<code>domain/</code>)</h3>
+                        <p>Kernen i din feature. Indeholder ren forretningslogik og er uafhængig af UI og eksterne services.</p>
+                        <ul>
+                            <li><strong>Entities/Models:</strong> Data-strukturer der repræsenterer kernekoncepter for featuren (f.eks. <code>UserProfileModel.dart</code>). Disse er typisk simple Dart-klasser eller Freezed-modeller.</li>
+                            <li><strong>Use Cases (Abstrakte):</strong> Definerer operationer som featuren kan udføre (f.eks. <code>abstract class GetUserProfileUseCase {...}</code>). Ofte unødvendigt for simple features, hvor Application-laget direkte bruger repositories.</li>
+                            <li><strong>Repository Interfaces (Abstrakte):</strong> Kontrakter for hvordan data hentes og gemmes (f.eks. <code>abstract class UserProfileRepository { Future&lt;UserProfile&gt; getUserProfile(); }</code>).</li>
+                            <li><strong>Værdiobjekter (Value Objects):</strong> Små, simple objekter hvis lighed ikke er baseret på identitet (f.eks. EmailAddress, Password).</li>
+                        </ul>
+                        <div class="info-box info"><strong>Vigtigt:</strong> Domain-laget må ikke have afhængigheder til Flutter SDK (UI) eller andre lag (application, infrastructure, presentation). Det skal være ren Dart.</div>
+                    </article>
+
+                    <article class="feature-layer">
+                        <h3>🟢 Application Layer (<code>application/</code>)</h3>
+                        <p>Orkestrerer dataflow og håndterer state for featuren. Forbinder Presentation-laget med Domain- og Infrastructure-lagene.</p>
+                        <ul>
+                            <li><strong>State Management (Notifiers/Providers):</strong> Logik for at håndtere og opdatere UI-state (f.eks. Riverpod <code>StateNotifier</code> klasser som <code>UserProfileNotifier.dart</code>).</li>
+                            <li><strong>State klasser:</strong> Definerer strukturen af den state, som UI'en observerer (f.eks. <code>UserProfileState.dart</code>, ofte Freezed-klasser).</li>
+                            <li><strong>Use Case Implementeringer (hvis abstrakte use cases bruges):</strong> Konkrete implementeringer af use cases defineret i domain-laget. For simplere features kan Notifiers direkte kalde repository-metoder.</li>
+                            <li><strong>Event Handlers/Logik:</strong> Håndterer brugerinput og andre events fra UI.</li>
+                        </ul>
+                    </article>
+
+                    <article class="feature-layer">
+                        <h3>🟠 Infrastructure Layer (<code>infrastructure/</code>)</h3>
+                        <p>Implementerer de interfaces (kontrakter) der er defineret i Domain-laget. Håndterer kommunikation med eksterne kilder som databaser, netværks-API'er, og platformsservices.</p>
+                        <ul>
+                            <li><strong>Repository Implementeringer:</strong> Konkrete implementeringer af repository interfaces (f.eks. <code>UserProfileRepositoryImpl.dart</code> der bruger SharedPreferences eller en API-service).</li>
+                            <li><strong>Data Transfer Objects (DTOs):</strong> Modeller der bruges til at serialisere/deserialisere data fra/til eksterne kilder (f.eks. JSON fra en API). Disse mappes typisk til/fra Domain-modeller. Placeres ofte i en <code>dtos/</code> undermappe.</li>
+                            <li><strong>Service Wrappers:</strong> Klasser der interagerer direkte med eksterne services (f.eks. <code>FirebaseAuthService.dart</code>, <code>OpenFoodFactsApiService.dart</code>).</li>
+                            <li><strong>Platform-specifik kode:</strong> Hvis featuren kræver adgang til native funktionalitet.</li>
+                        </ul>
+                    </article>
+
+                    <article class="feature-layer">
+                        <h3>🟣 Presentation Layer (<code>presentation/</code>)</h3>
+                        <p>Alt relateret til brugergrænsefladen (UI).</p>
+                        <ul>
+                            <li><strong>Pages/Screens:</strong> Top-level widgets der repræsenterer en hel skærm i appen (f.eks. <code>UserProfilePage.dart</code>).</li>
+                            <li><strong>Widgets:</strong> Genbrugelige UI-komponenter specifikke for featuren (f.eks. <code>profile_avatar_widget.dart</code>). Disse placeres ofte i en <code>widgets/</code> undermappe.</li>
+                            <li><strong>Navigation:</strong> Håndtering af navigation til og fra featurens skærme.</li>
+                            <li><strong>UI State Observation:</strong> Lytter til state ændringer fra Application-laget (f.eks. via Riverpod <code>ConsumerWidget</code>) og opdaterer UI'en derefter.</li>
+                        </ul>
+                    </article>
+                </section>
+
+                <section id="creating-new-feature">
+                    <h2>🛠️ Sådan Oprettes et Nyt Feature Modul</h2>
+                    <ol>
+                        <li>
+                            <strong>Opret Hovedmappe:</strong>
+                            <p>Under <code>lib/features/</code>, opret en ny mappe med et beskrivende, <code>snake_case</code> navn for din feature (f.eks. <code>lib/features/meal_planner/</code>).</p>
+                        </li>
+                        <li>
+                            <strong>Opret Lag-Undermapper:</strong>
+                            <p>Indeni din nye feature-mappe, opret undermapperne: <code>domain</code>, <code>application</code>, <code>infrastructure</code>, og <code>presentation</code>.</p>
+                        </li>
+                        <li>
+                            <strong>Definer Domain Lag:</strong>
+                            <ul>
+                                <li>Opret dine core entities/modeller i <code>domain/</code>.</li>
+                                <li>Definer repository interfaces (abstrakte klasser) for datahåndtering.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Implementer Application Lag:</strong>
+                            <ul>
+                                <li>Opret Riverpod Notifiers (eller anden state management logik) i <code>application/</code>.</li>
+                                <li>Definer de tilhørende state-klasser (ofte med Freezed).</li>
+                                <li>Implementer logik der bruger domain repository interfaces til at hente/manipulere data.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Implementer Infrastructure Lag:</strong>
+                            <ul>
+                                <li>Opret konkrete repository implementeringer i <code>infrastructure/</code>. Disse klasser vil implementere interfaces fra domain-laget og interagere med databaser, API'er osv.</li>
+                                <li>Opret DTOs hvis nødvendigt for at mappe eksterne dataformater.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Byg Presentation Lag:</strong>
+                            <ul>
+                                <li>Opret sider/skærme og specifikke widgets i <code>presentation/</code>.</li>
+                                <li>Brug Riverpod til at forbinde UI med state fra application-laget.</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Registrer Providers:</strong>
+                            <p>Sørg for at dine Riverpod providers er korrekt registreret og tilgængelige. Dette kan gøres globalt eller mere lokalt afhængigt af providerens scope.</p>
+                        </li>
+                        <li>
+                            <strong>Test Hvert Lag:</strong>
+                            <p>Skriv unit tests for domain og application logik, og widget tests for presentation-laget. Se <a href="testing.html">Testing Guiden</a>.</p>
+                        </li>
+                    </ol>
+                </section>
+
+                <section id="shared-code">
+                    <h2>🌐 Delt Kode</h2>
+                    <p>Ikke al kode hører til en specifik feature. Projektet har også følgende mapper for delt kode:</p>
+                    <ul>
+                        <li><strong><code>lib/core/</code>:</strong> Indeholder app-brede utilities, konstanter, tema, navigation, og core infrastructure services (f.eks. generisk storage service) der ikke er specifikke for en enkelt feature.</li>
+                        <li><strong><code>lib/shared/</code>:</strong> Indeholder delte widgets eller utility funktioner der kan genbruges på tværs af flere features, men som ikke er fundamentale nok til at ligge i <code>core/</code>.</li>
+                    </ul>
+                    <p>Overvej nøje om ny kode er feature-specifik eller om den bør placeres i <code>core/</code> eller <code>shared/</code>.</p>
+                </section>
+
+                <section id="example">
+                    <h2>⭐ Eksempel: Onboarding Feature</h2>
+                    <p>For et konkret eksempel på denne struktur i praksis, se <code>lib/features/onboarding/</code> mappen og dens tilhørende dokumentation på <a href="onboarding.html">Onboarding Feature Siden</a>. Denne feature følger den beskrevne lagdeling.</p>
+                </section>
+            </div>
+        </main>
+    </div>
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kodestandard - Flutter Calories Wiki</title>
+    <link rel="stylesheet" href="assets/css/wiki-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="wiki-container">
+        <!-- Sidebar Navigation -->
+        <nav class="wiki-sidebar">
+            <div class="sidebar-header">
+                <h2>📚 Flutter Calories</h2>
+            </div>
+            <ul class="sidebar-nav">
+                <li><a href="index.html">🏠 Oversigt</a></li>
+                <li><a href="llm-elimination.html">💰 LLM Elimination</a></li>
+
+                <li class="section">Arkitektur</li>
+                <li><a href="architecture.html">📋 Overordnet</a></li>
+                <li><a href="state-management.html">🔄 State Management</a></li>
+                <li><a href="data-storage.html">💾 Data Storage</a></li>
+
+                <li class="section">Features</li>
+                <li><a href="features.html">✨ Features</a></li>
+                <li><a href="onboarding.html">👤 Onboarding</a></li>
+                <li><a href="user-flows.html">🔄 User Flows</a></li>
+
+                <li class="section">Development</li>
+                <li><a href="setup.html">🚀 Opsætning</a></li>
+                <li><a href="coding-standards.html" class="active">📝 Kodestandard</a></li>
+                <li><a href="testing.html">🧪 Testing</a></li>
+                <li><a href="api.html">🔌 API Reference</a></li>
+                <li><a href="troubleshooting.html">🔧 Troubleshooting</a></li>
+
+                <li class="section">Design</li>
+                <li><a href="design-system.html">🎨 Design System</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="wiki-main">
+            <header class="wiki-header">
+                <h1>📝 Kodestandard og Retningslinjer</h1>
+                <p>For at sikre konsistens og høj kvalitet i koden, følg venligst disse standarder.</p>
+            </header>
+
+            <div class="wiki-content">
+                <section id="formatting">
+                    <h2>📏 Kodeformatering</h2>
+                    <p>Al Dart kode <strong>skal</strong> formateres med den indbyggede Dart formattering.</p>
+                    <ul>
+                        <li>
+                            <strong>Automatisk Formatering:</strong>
+                            <p>De fleste IDE'er (VS Code, Android Studio) kan sættes op til at formatere koden automatisk ved gemning. Dette anbefales kraftigt.</p>
+                            <p>I VS Code kan du tilføje følgende til dine `settings.json`:</p>
+                            <div class="code-block">
+                                <pre><code>"[dart]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnType": true,
+    "editor.rulers": [80], // Anbefalet linjelængde
+    "editor.selectionHighlight": false,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    "editor.suggestSelection": "first",
+    "editor.tabCompletion": "onlySnippets",
+    "editor.wordBasedSuggestions": false
+}</code></pre>
+                            </div>
+                        </li>
+                        <li>
+                            <strong>Manuel Formatering:</strong>
+                            <p>Kør følgende kommando i terminalen fra projektets rodmappe:</p>
+                            <div class="code-block">
+                                <pre><code>dart format .</code></pre>
+                            </div>
+                        </li>
+                        <li><strong>Linjelængde:</strong> Stræb efter en maksimal linjelængde på 80 tegn for at forbedre læsbarheden. IDE'er kan konfigureres til at vise en guide-linje.</li>
+                    </ul>
+                </section>
+
+                <section id="naming-conventions">
+                    <h2>🏷️ Navngivningskonventioner</h2>
+                    <p>Følg de officielle <a href="https://dart.dev/effective-dart/style#identifiers" target="_blank">Dart Naming Conventions</a>.</p>
+                    <ul>
+                        <li><strong>Klasser, Enums, Typedefs, Extensions:</strong> <code>UpperCamelCase</code> (f.eks. <code>UserProfile</code>, <code>AuthStatus</code>).</li>
+                        <li><strong>Metoder, Funktioner, Variabler, Parametre:</strong> <code>lowerCamelCase</code> (f.eks. <code>getUserProfile</code>, <code>userName</code>).</li>
+                        <li><strong>Konstanter (compile-time constants):</strong> <code>lowerCamelCase</code> eller <code>SCREAMING_SNAKE_CASE</code> hvis de er globale/static og repræsenterer en dyb, uforanderlig værdi (f.eks. <code>kDefaultTimeout</code>, <code>MAX_RETRIES</code>). Foretræk <code>lowerCamelCase</code> for de fleste konstanter.</li>
+                        <li><strong>Filer og Mapper:</strong> <code>snake_case</code> (f.eks. <code>user_profile_page.dart</code>, <code>auth_service.dart</code>). Undtagelser er filer der kun indeholder én klasse, hvor filnavnet kan være klassens navn i snake_case (f.eks. hvis klassen er `UserProfile`, kan filen hedde `user_profile.dart`).</li>
+                        <li><strong>Private medlemmer:</strong> Start navnet med et underscore (<code>_</code>) (f.eks. <code>_privateMethod</code>, <code>_internalCounter</code>).</li>
+                        <li><strong>Booleans:</strong> Præfiks ofte med `is`, `has`, `should`, `can` (f.eks. `isLoading`, `hasConnection`).</li>
+                    </ul>
+                </section>
+
+                <section id="linting">
+                    <h2>🔍 Linting</h2>
+                    <p>Projektet bruger <code>package:flutter_lints/flutter.yaml</code> som grundlag for statisk analyse. Dette sæt af lints hjælper med at identificere potentielle fejl, stilproblemer og anti-patterns.</p>
+                    <ul>
+                        <li><strong>Konfiguration:</strong> Lint reglerne er defineret i <code>analysis_options.yaml</code> filen.</li>
+                        <li>
+                            <strong>Kør Linter:</strong>
+                            <p>Du kan analysere koden ved at køre følgende kommando:</p>
+                            <div class="code-block">
+                                <pre><code>flutter analyze</code></pre>
+                            </div>
+                            <p>Eller blot <code>dart analyze</code>.</p>
+                        </li>
+                        <li><strong>IDE Integration:</strong> VS Code og Android Studio viser linting advarsler og fejl direkte i editoren. Sørg for at løse disse, før du committer kode.</li>
+                        <li><strong>Undgå <code>// ignore: lint_rule</code>:</strong> Brug kun ignore kommentarer når det er absolut nødvendigt og efter diskussion med teamet. Inkluder altid en forklaring på hvorfor reglen ignoreres.</li>
+                    </ul>
+                </section>
+
+                <section id="general-guidelines">
+                    <h2>💡 Generelle Retningslinjer</h2>
+                    <ul>
+                        <li><strong>Følg Clean Architecture:</strong> Respekter lagdelingen (Domain, Application, Infrastructure, Presentation) som beskrevet i <a href="architecture.html">Arkitektur Dokumentationen</a>. Placer filer og logik i de korrekte lag.</li>
+                        <li><strong>Immutability:</strong> Foretræk uforanderlige (immutable) datastrukturer, især for state klasser (f.eks. ved brug af Freezed).</li>
+                        <li><strong>Single Responsibility Principle (SRP):</strong> Klasser og metoder bør have ét specifikt ansvar.</li>
+                        <li><strong>DRY (Don't Repeat Yourself):</strong> Undgå kodegentagelse ved at genbruge logik og widgets hvor det er muligt.</li>
+                        <li><strong>Kommentarer:</strong>
+                            <ul>
+                                <li>Skriv kommentarer for kompleks logik, eller hvor koden ikke er selvforklarende.</li>
+                                <li>Brug <code>///</code> for dokumentationskommentarer til offentlige API'er (klasser, metoder).</li>
+                                <li>Undgå overflødige kommentarer der blot gentager hvad koden gør.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Widgets:</strong>
+                            <ul>
+                                <li>Opdel store widgets i mindre, genbrugelige komponenter.</li>
+                                <li>Brug <code>const</code> constructors for widgets hvor det er muligt for at forbedre performance.</li>
+                                <li>Placer build-metoder så tæt på deres brug som muligt for at undgå unødvendige rebuilds.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Asynkron Kode:</strong>
+                            <ul>
+                                <li>Brug <code>async/await</code> for læsbar asynkron kode.</li>
+                                <li>Håndter fejl i Futures og Streams korrekt (f.eks. med <code>try-catch</code> eller <code>.catchError()</code>).</li>
+                                <li>Overvej brugen af <code>Result</code> type for at håndtere succes/fejl tilstande eksplicit.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Error Handling:</strong> Implementer robust fejlhåndtering. Vis brugervenlige fejlmeddelelser i stedet for at lade appen crashe.</li>
+                        <li><strong>Testning:</strong> Skriv tests for din kode som beskrevet i <a href="testing.html">Testing Guiden</a>.</li>
+                        <li><strong>Dependencies:</strong> Vær forsigtig med at tilføje nye dependencies. Overvej om funktionaliteten kan opnås med eksisterende pakker eller Dart/Flutter SDK'en.</li>
+                    </ul>
+                </section>
+
+                <section id="commit-messages">
+                    <h2>📦 Commit Beskeder</h2>
+                    <p>Følg <a href="https://www.conventionalcommits.org/" target="_blank">Conventional Commits</a> standarden for commit beskeder. Dette hjælper med at gøre historikken mere læsbar og muliggør automatisk generering af changelogs.</p>
+                    <p>Format: <code>type(scope): subject</code></p>
+                    <ul>
+                        <li><strong>Types:</strong> <code>feat</code> (ny feature), <code>fix</code> (bug fix), <code>docs</code> (dokumentation), <code>style</code> (formatering), <code>refactor</code>, <code>test</code>, <code>chore</code> (build-relateret, etc.).</li>
+                        <li><strong>Scope (valgfri):</strong> Modul eller del af appen der er påvirket (f.eks. <code>onboarding</code>, <code>food_logging</code>).</li>
+                        <li><strong>Subject:</strong> Kortfattet beskrivelse af ændringen, start med lille bogstav, ingen punktum til sidst.</li>
+                    </ul>
+                    <p>Eksempel:</p>
+                    <div class="code-block">
+                        <pre><code>feat(onboarding): add physical info step to user setup
+fix(food_logging): correct calorie calculation for custom portions
+docs(wiki): update setup instructions
+style: format all dart files
+refactor(auth): simplify token refresh logic</code></pre>
+                    </div>
+                    <p>For større ændringer, inkluder en krop i commit beskeden med mere detaljeret information.</p>
+                </section>
+
+            </div>
+        </main>
+    </div>
+    <script src="assets/js/wiki.js"></script>
+</body>
+</html>
