@@ -128,6 +128,8 @@ Implementation notes:
 - Migrations: versioned adapters; provide lightweight migration function per box
 - Backups/Export: JSON export in Settings (post-MVP nice-to-have)
 
+Status: Hive is initialized and used for an `onboardingCompleted` flag to support routing. Full boxes and repositories for profile/goal/entries remain planned for Step 5.
+
 ## State management
 - Services: `ProfileService`, `GoalService`, `LogService` (food), `TrendsService`
 - Presentation: lightweight `ChangeNotifier` view models per screen
@@ -209,6 +211,8 @@ Step 5 — Persistence scaffolding (Hive)
 - Verify:
   - Save/load a dummy profile and a food entry; survives app restart.
   - Analyzer/tests; commit.
+
+Note: Minimal Hive init was introduced earlier to persist onboarding completion. This step still delivers the full schema (boxes, adapters, services).
 
 Step 6 — Onboarding flow (data + routing)
 - Implement:
