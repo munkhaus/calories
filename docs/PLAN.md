@@ -137,10 +137,25 @@ Status: Hive is initialized and used for an `onboardingCompleted` flag to suppor
 - DI: register services as lazy singletons in `service_locator.dart`
 
 ## Testing & CI
-- Unit: calorie calculator (Mifflin–St Jeor → TDEE), services logic
-- Widget: Today totals update, Onboarding stepper navigation, Add flow validations
-- Golden: key components (calories ring, macro bars) stable visuals
-- CI: run analyze + tests on PR via `.github/workflows/ci.yml`; require green to merge
+- Test framework (project-wide)
+  - Unit tests: pure logic (calculator, utils)
+  - Widget tests: screens/components with fakes and DI via `get_it`
+  - Integration tests: end-to-end flows on simulator/emulator using `integration_test`
+  - Goldens: visual regressions for key widgets (post-MVP)
+  - Env flags: `FORCE_ONBOARDING=true` to force onboarding in tests
+- Structure & naming
+  - `test/unit/**_test.dart`: pure Dart logic
+  - `test/widget/**_test.dart`: UI/widget tests using `pumpWidget`
+  - `test/support/**`: test utilities (DI helpers, pumpers, fakes)
+  - `integration_test/**_test.dart`: device/simulator tests
+- What runs when
+  - Local dev: `flutter analyze && flutter test`
+  - E2E (optional): `FORCE_ONBOARDING=true flutter test integration_test/... -d <device>`
+- Current coverage (MVP scope)
+  - Unit: calorie calculator
+  - Widget: Today totals and list render with fake services
+  - Integration: onboarding completes and routes to Today
+- CI: run analyze + unit/widget tests on PR; integrate integration tests later
 
 ## Platform targets & defaults
 - Platforms: iOS 15+, Android 8+; Web best-effort for demos
