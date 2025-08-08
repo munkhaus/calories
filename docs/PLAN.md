@@ -140,3 +140,101 @@ Implementation notes:
 - Barcode (post-MVP): `mobile_scanner` or ML Kit
 - Date utils: `intl`
 
+## Step-by-step implementation & verification
+
+Follow these steps in order. After each step, the app should build and the verification checks should pass before moving on.
+
+Per-step verify commands:
+- Run: `flutter analyze` (no issues), `flutter test` (all pass), and launch on one device (`flutter run -d chrome` or mobile)
+
+Step 0 — Baseline (already done)
+- Implement: Ensure template builds from clean clone.
+- Verify: App runs; analyzer/tests green.
+
+Step 1 — Routing skeleton and tabs
+- Implement:
+  - Create feature directories: `lib/{onboarding,today,log,trends,goals,settings}/presentation`.
+  - Add placeholder pages for: Today, Log, Trends, Goals, Settings.
+  - Replace `MyHomePage` with a `ShellRoute` tab scaffold (GoRouter) and start destination `/today`.
+  - Redirect `/` to onboarding if not completed (temporary in-memory flag), else `/today`.
+- Verify:
+  - App launches to Today; bottom tabs switch screens; back button behavior correct.
+  - Run analyzer/tests; commit.
+
+Step 2 — Global Add FAB and add flow stub
+- Implement:
+  - Place a centered FAB in tab scaffold.
+  - On tap, open bottom sheet with actions: Food, Water, Weight, Note (stub routes).
+  - Add route `/log/add` and a simple add page.
+- Verify:
+  - FAB opens sheet; navigating to `/log/add` works via deep link and UI.
+  - Analyzer/tests; commit.
+
+Step 3 — Theme and design tokens
+- Implement:
+  - Configure Material 3 with teal seed; light/dark themes.
+  - Ensure all paddings/radii/font sizes use `KSizes` (no magic numbers).
+  - Create shared components: `AppScaffold`, `AppCard` (with consistent padding, radius).
+- Verify:
+  - Visual consistency across all pages; analyzer clean; commit.
+
+Step 4 — Models: Profile, Goal, Entries (freezed)
+- Implement:
+  - Define `UserProfile`, `Goal`, `FoodEntry`, `DailyTotals`, `WeightEntry`, `WaterEntry` with `freezed` and `json_serializable`.
+  - Add calorie calculator (Mifflin–St Jeor → TDEE) utility.
+- Verify:
+  - Unit tests for calculator and model JSON roundtrip.
+  - Analyzer/tests; commit.
+
+Step 5 — Persistence scaffolding (Hive)
+- Implement:
+  - Add `hive`, `hive_flutter`; initialize in `main()`.
+  - Create adapters/boxes and simple repository interfaces: `ProfileService`, `GoalService`, `LogService`.
+  - Register services in `service_locator.dart`.
+- Verify:
+  - Save/load a dummy profile and a food entry; survives app restart.
+  - Analyzer/tests; commit.
+
+Step 6 — Onboarding flow (data + routing)
+- Implement:
+  - Wizard pages for: units → demographics → activity → goal/pace → review.
+  - On finish: compute targetCalories, default macros; persist profile/goal; set onboarding complete.
+  - Start-up redirect logic using persisted flag.
+- Verify:
+  - Complete onboarding; relaunch app lands on Today.
+  - Unit tests for calculator inputs; analyzer/tests; commit.
+
+Step 7 — Today summary and meals (manual logging)
+- Implement:
+  - Calories remaining ring and macro bars bound to today’s totals.
+  - Meal sections (Breakfast/Lunch/Dinner/Snack) with empty states.
+  - Manual add/edit/delete entry screen; optimistic updates via `LogService`.
+- Verify:
+  - Adding/editing/deleting updates totals instantly; day rollover keeps history.
+  - Widget tests for totals; analyzer/tests; commit.
+
+Step 8 — Recents and quick add
+- Implement:
+  - Track recents/favorites in `LogService`.
+  - Quick-add chips in add screen; duplicate last item.
+- Verify:
+  - Recent items appear after first day; quick add updates totals.
+  - Analyzer/tests; commit.
+
+Step 9 — Trends basics
+- Implement:
+  - Weekly/monthly kcal vs target line/area chart using `fl_chart`.
+  - Adherence %, streak indicator; weight chart bound to `WeightEntry` data.
+- Verify:
+  - Charts reflect logged data; 7/30d filters; analyzer/tests; commit.
+
+Step 10 — Polish and release prep (MVP)
+- Implement:
+  - Accessibility labels, dynamic type, contrast; error/empty states; haptics.
+  - App icon/splash; versioning; privacy text in Settings.
+- Verify:
+  - Manual QA on iOS/Android; CI green; archive builds succeed.
+  - Commit and tag `v0.1.0`.
+
+Per-step commit message format: `feat(step-x): <summary>` or `chore(step-x): <summary>`.
+
