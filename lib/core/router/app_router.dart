@@ -1,4 +1,6 @@
+import 'package:calories/core/di/service_locator.dart';
 import 'package:calories/core/shell/root_shell.dart';
+import 'package:calories/core/storage/local_storage.dart';
 import 'package:calories/goals/presentation/goals_page.dart';
 import 'package:calories/log/presentation/log_page.dart';
 import 'package:calories/log/presentation/log_add_page.dart';
@@ -12,7 +14,13 @@ import 'package:go_router/go_router.dart';
 /// Application-wide router configuration.
 class AppRouter {
   /// Temporary in-memory onboarding flag (replace with persisted setting later).
-  static bool _onboardingCompleted = true;
+  static bool get _onboardingCompleted {
+    // In tests or early app startup, storage may not be registered yet.
+    if (!getIt.isRegistered<LocalStorage>()) {
+      return true; // default to completed to allow app to render
+    }
+    return getIt<LocalStorage>().getOnboardingCompleted();
+  }
 
   /// Global [GoRouter] instance.
   static final GoRouter router = GoRouter(
