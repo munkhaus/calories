@@ -3,8 +3,8 @@ import 'package:calories/core/domain/calorie_calculator.dart';
 import 'package:calories/core/domain/models/enums.dart';
 import 'package:calories/core/domain/models/goal.dart';
 import 'package:calories/core/domain/models/user_profile.dart';
-import 'package:calories/core/domain/services/goal_service.dart';
-import 'package:calories/core/domain/services/profile_service.dart';
+import 'package:calories/goals/domain/i_goal_service.dart';
+import 'package:calories/profile/domain/i_profile_service.dart';
 import 'package:calories/core/storage/local_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -87,8 +87,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
       paceKcalPerDay: pace,
     );
 
-    await getIt<ProfileService>().saveProfile(profile);
-    await getIt<GoalService>().saveGoal(goal);
+    await getIt<IProfileService>().saveProfile(profile);
+    await getIt<IGoalService>().saveGoal(goal);
     await getIt<LocalStorage>().setOnboardingCompleted(true);
     if (mounted) context.go('/today');
   }
