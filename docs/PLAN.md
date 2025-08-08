@@ -253,6 +253,12 @@ Step 10 — Polish and release prep (MVP)
 
 Per-step commit message format: `feat(step-x): <summary>` or `chore(step-x): <summary>`.
 
+### Steps index
+- Step 01 — Routing skeleton and tabs: `docs/steps/step-01-routing-and-tabs.md`
+- Template for future steps: `docs/steps/_template.md`
+
+Progress log lives in: `docs/PROGRESS.md`
+
 ## Extensibility and architecture notes
 - Routing: new features mount under their own route roots (e.g., `/barcode`, `/recipes`) without breaking tabs.
 - Services: feature services behind interfaces (e.g., `IFoodLookupService`) so we can swap implementations (local/manual → Open Food Facts).
