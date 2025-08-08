@@ -1,22 +1,27 @@
-# Step 06 — Onboarding flow (data + routing)
+# Step 06 — Onboarding flow (mobile-first wizard)
 
 ## Context & scope
 Build the real onboarding wizard to collect units, demographics, activity, and goal/pace. Compute target calories using the calculator and persist profile/goal. Ensure startup redirects based on completion flag (already wired).
 
 ## Implement
-- Screens (wizard pages)
+- Replace `Stepper` with `PageView` + `PageController` wizard.
+- Screens (one primary task per screen)
   - Units (metric/imperial)
-  - Demographics (age, sex, height, weight)
+  - Profile (age, sex)
+  - Height
+  - Weight
   - Activity level
   - Goal mode (lose/maintain/gain) + pace (kcal/day)
   - Review & confirm
+- UI/UX
+  - Top: linear progress bar or dots indicator; concise title/description.
+  - Bottom: persistent Back/Next (Continue) bar; Skip where safe; disabled Next until valid.
+  - Inputs: numeric keypad for numbers; inline validation; sensible defaults.
+  - Save-as-you-go: store interim state in `LocalStorage` to survive relaunch.
 - Logic
   - Use `CalorieCalculator` to compute target calories at review.
-  - Persist `UserProfile` and `Goal` via `ProfileService` and `GoalService`.
-  - Set onboardingCompleted in `LocalStorage` and redirect to `/today`.
-- UX
-  - Progress indicator, back/next, validation, save-as-you-go.
-  - Ask permissions at moment-of-value (notifications optional, later).
+  - Persist `UserProfile` and `Goal` via `IProfileService` and `IGoalService`.
+  - Set `onboardingCompleted` in `LocalStorage` and redirect to `/today`.
 
 ## Verify
 - Commands: `flutter analyze`, `flutter test`

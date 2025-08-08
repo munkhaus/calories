@@ -25,11 +25,12 @@ See also: `docs/DESIGN.md` for concrete UI/UX spec.
 - Placeholder screens wired via router
 - DoD: builds on iOS/Android/Web; lints/tests/CI green
 
-### Week 2 — Onboarding + Calorie Target
-- Steps: units → demographics → activity → goal (lose/maintain/gain, pace)
-- Compute BMR (Mifflin–St Jeor) → TDEE → daily target; default macro split
-- Persist profile/goal locally
-- DoD: app lands on Today after completion; editing profile recalculates target; unit tests for calc
+### Week 2 — Onboarding + Calorie Target (mobile-first wizard)
+- Full-screen wizard with 5–7 concise pages (Units, Profile, Height, Weight, Activity, Goal/Pace, Review).
+- Progress indicator and persistent Back/Next controls; allow Skip for optional steps.
+- Compute BMR (Mifflin–St Jeor) → TDEE → daily target; default macro split.
+- Save-as-you-go to prevent data loss; persist profile/goal locally on finish; set onboardingComplete.
+- DoD: app lands on Today after completion; relaunch restores state mid-flow; editing profile recalculates target; unit tests for calc.
 
 ### Week 3 — Today Screen + Meals + Quick Add
 - Calories remaining ring, macro bars, goal delta
@@ -214,13 +215,14 @@ Step 5 — Persistence scaffolding (Hive)
 
 Note: Minimal Hive init was introduced earlier to persist onboarding completion. This step still delivers the full schema (boxes, adapters, services).
 
-Step 6 — Onboarding flow (data + routing)
+Step 6 — Onboarding flow (mobile-first wizard)
 - Implement:
-  - Wizard pages for: units → demographics → activity → goal/pace → review.
-  - On finish: compute targetCalories, default macros; persist profile/goal; set onboarding complete.
-  - Start-up redirect logic using persisted flag.
+  - Replace `Stepper` with `PageView`-based wizard: Units → Profile (age/sex) → Height → Weight → Activity → Goal/Pace → Review.
+  - Top progress bar or dots; bottom Back/Next; Skip where safe; inline validation and numeric keyboards.
+  - Save-as-you-go to `LocalStorage`; on Finish compute targetCalories/macros; persist profile/goal; set onboarding complete.
+  - Start-up redirect logic using persisted flag remains.
 - Verify:
-  - Complete onboarding; relaunch app lands on Today.
+  - Complete onboarding; relaunch app lands on Today; mid-flow relaunch restores progress.
   - Unit tests for calculator inputs; analyzer/tests; commit.
 
 Step 7 — Today summary and meals (manual logging)

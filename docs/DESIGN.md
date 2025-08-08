@@ -10,10 +10,14 @@
 - Center FAB: opens bottom sheet (Food, Water, Weight, Note).
 - Deep links: `/log/add`, `/today`; preserve tab state.
 
-### Onboarding (frictionless)
-- 5–7 steps: units → profile → activity → goal → reminders → review.
-- Progress indicator; back/skip; save-as-you-go.
-- Request permissions at moment-of-value.
+### Onboarding (mobile-first wizard)
+- 5–7 full-screen pages: Units → Profile (age/sex) → Height → Weight → Activity → Goal/Pace → Review.
+- Navigation: persistent bottom bar with Back and Next/Continue; optional Skip where safe.
+- Progress: top linear progress or dots indicator; page title with brief value framing.
+- Inputs: one primary task per screen; numeric keypad for numbers; inline validation; sensible defaults.
+- Persistence: save-as-you-go to `LocalStorage` to avoid losing progress; restore partially completed flows.
+- Finish: compute target calories/macros; persist profile/goal; set onboardingComplete; CTA “Start tracking”.
+- Permissions: requested at moment-of-value only (e.g., reminders later in Goals/Settings).
 
 ### Today
 - Hero: calories remaining ring + macro bars; primary “Add” CTA.
@@ -38,6 +42,7 @@
 
 ### Flutter components
 - `NavigationBar` + `Scaffold` with center `FloatingActionButton`.
+- Onboarding wizard: `PageView` (or `PageController`) + `LinearProgressIndicator`/dots indicator; bottom CTA bar.
 - `showModalBottomSheet` for Add actions; `Card`-based layout via shared components.
 - Charts via `fl_chart` with accessible labels.
 
