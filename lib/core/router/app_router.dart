@@ -13,8 +13,14 @@ import 'package:go_router/go_router.dart';
 
 /// Application-wide router configuration.
 class AppRouter {
+  static const bool _forceOnboarding = bool.fromEnvironment(
+    'FORCE_ONBOARDING',
+    defaultValue: false,
+  );
+
   /// Temporary in-memory onboarding flag (replace with persisted setting later).
   static bool get _onboardingCompleted {
+    if (_forceOnboarding) return false;
     // In tests or early app startup, storage may not be registered yet.
     if (!getIt.isRegistered<LocalStorage>()) {
       return true; // default to completed to allow app to render
