@@ -1,6 +1,7 @@
 import 'package:calories/core/di/service_locator.dart';
 import 'package:calories/core/storage/local_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class OnboardingPage extends StatelessWidget {
   const OnboardingPage({super.key});
@@ -17,7 +18,7 @@ class OnboardingPage extends StatelessWidget {
             onPressed: () async {
               await getIt<LocalStorage>().setOnboardingCompleted(true);
               if (context.mounted) {
-                Navigator.of(context).pushReplacementNamed('/today');
+                context.go('/today');
               }
             },
             child: const Text('Complete onboarding'),
