@@ -2,12 +2,16 @@ import 'dart:convert';
 
 import 'package:calories/core/domain/models/food_entry.dart';
 import 'package:calories/core/storage/hive_boxes.dart';
+import 'package:calories/log/domain/quick_item.dart';
 import 'package:calories/log/domain/i_log_service.dart';
 
 class LogService implements ILogService {
   LogService(this._boxes);
 
   final HiveBoxes _boxes;
+
+  static const String _recentsKey = 'recents';
+  static const String _favoritesKey = 'favorites';
 
   @override
   Future<void> addEntry(FoodEntry entry) async {
@@ -19,6 +23,14 @@ class LogService implements ILogService {
       current.add(entry.id);
       await _boxes.foodEntries.put(indexKey, current);
     }
+
+    // Update recents (simple LRU by name)
+    final List<dynamic> recentsRaw =
+        (_boxes.foodEntries.get(_recentsKey) as List<dynamic>?) ?? <dynamic>[];
+    recentsRaw.removeWhere((e) => (e as Map)['name'] == entry.name);
+    recentsRaw.insert(0, {'name': entry.name, 'calories': entry.calories});
+    while (recentsRaw.length > 10) recentsRaw.removeLast();
+    await _boxes.foodEntries.put(_recentsKey, recentsRaw);
   }
 
   @override
@@ -51,5 +63,48 @@ class LogService implements ILogService {
       await _boxes.foodEntries.put(indexKey, ids);
     }
     await _boxes.foodEntries.delete(id);
+  }
+
+  List<QuickItem> getRecents() {
+    final List<dynamic> recentsRaw =
+        (_boxes.foodEntries.get(_recentsKey) as List<dynamic>?) ?? <dynamic>[];
+    return recentsRaw
+        .whereType<Map>()
+        .map(
+          (m) => QuickItem(
+            name: (m['name'] as String?) ?? 'Item',
+            calories: (m['calories'] as int?) ?? 0,
+          ),
+        )
+        .toList();
+  }
+
+  List<QuickItem> getFavorites() {
+    final List<dynamic> favsRaw =
+        (_boxes.foodEntries.get(_favoritesKey) as List<dynamic>?) ??
+        <dynamic>[];
+    return favsRaw
+        .whereType<Map>()
+        .map(
+          (m) => QuickItem(
+            name: (m['name'] as String?) ?? 'Item',
+            calories: (m['calories'] as int?) ?? 0,
+            pinned: true,
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> toggleFavorite(QuickItem item) async {
+    final List<dynamic> favsRaw =
+        (_boxes.foodEntries.get(_favoritesKey) as List<dynamic>?) ??
+        <dynamic>[];
+    final int idx = favsRaw.indexWhere((e) => (e as Map)['name'] == item.name);
+    if (idx >= 0) {
+      favsRaw.removeAt(idx);
+    } else {
+      favsRaw.insert(0, {'name': item.name, 'calories': item.calories});
+    }
+    await _boxes.foodEntries.put(_favoritesKey, favsRaw);
   }
 }
