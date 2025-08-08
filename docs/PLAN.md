@@ -1,6 +1,19 @@
 ## MVP Objective
 Ship a calorie counter MVP with onboarding, daily logging, and trends, ready for internal testing.
 
+## Core MVP scope (focus)
+- In scope:
+  - Onboarding (units, demographics, activity, goal) with target kcal/macros
+  - Today dashboard (calories ring, macro bars), meal logging (manual), water quick add
+  - Trends basics (weekly/monthly kcal vs target, adherence), weight entries
+  - Local persistence (Hive), offline-first, English, iOS/Android
+  - Navigation (tabs + add flow), theme (Material 3), DI, tests, CI
+- Out of scope (post-MVP):
+  - Barcode scanning and public food DB search
+  - Wearables/HealthKit/Google Fit
+  - Home screen widgets, voice/Siri/Shortcuts
+  - AI/vision food logging, social features, cloud sync
+
 ## Milestones (6 Weeks)
 
 ### Week 1 — Foundation: Routing, Design System, Placeholders
@@ -237,4 +250,54 @@ Step 10 — Polish and release prep (MVP)
   - Commit and tag `v0.1.0`.
 
 Per-step commit message format: `feat(step-x): <summary>` or `chore(step-x): <summary>`.
+
+## Extensibility and architecture notes
+- Routing: new features mount under their own route roots (e.g., `/barcode`, `/recipes`) without breaking tabs.
+- Services: feature services behind interfaces (e.g., `IFoodLookupService`) so we can swap implementations (local/manual → Open Food Facts).
+- Data: Hive boxes versioned; new boxes use separate adapters to avoid breaking existing data.
+- UI: shared components (`AppScaffold`, `AppCard`, tokens in `KSizes`) ensure consistent look when adding new screens.
+- Permissions: request at time-of-value (e.g., prompt for camera only when opening barcode scan).
+
+## Post-MVP feature backlog (implementable later)
+- Barcode scanning + Open Food Facts (Effort: M)
+  - How: `mobile_scanner` → scan EAN → fetch `https://world.openfoodfacts.org/api/v2/product/{barcode}.json` with `dio` → map to `FoodEntry` → cache by barcode in Hive.
+  - Prereqs: none; integrates with Log add flow.
+
+- Food text search (Open Food Facts) (Effort: M)
+  - How: `/cgi/search.pl` query with pagination; debounce; recents cache; offline last results.
+  - Prereqs: shared DTOs and mapping; integrates with same add screen.
+
+- Recipe builder & templates (Effort: M)
+  - How: `Recipe` model (list of `FoodEntry` with grams/units) → totals per serving → save & quick-add.
+  - Prereqs: Today/log storage; adds new `recipes` box.
+
+- Water tracking enhancements (Effort: S)
+  - How: configurable increment, daily goal, reminders via `flutter_local_notifications`.
+  - Prereqs: existing `WaterEntry`.
+
+- Weight tracking trends (Effort: S)
+  - How: `fl_chart` line chart with smoothing; rate vs plan; edit history.
+  - Prereqs: `WeightEntry` data.
+
+- Smart reminders (Effort: M)
+  - How: schedule meal/water notifications; snooze; timezone-aware.
+  - Prereqs: local notifications setup.
+
+- Wearables (HealthKit/Google Fit) (Effort: M-L)
+  - How: `health` plugin to read/write weight/energy; surface source attribution; graceful fallback.
+  - Prereqs: permissions UX; settings toggles.
+
+- Home/lock screen widgets (Effort: M)
+  - How: `home_widget` to show remaining kcal and quick-add actions; periodic updates.
+  - Prereqs: Today totals service.
+
+- Export/Import JSON (Effort: S)
+  - How: serialize Hive contents per box; `share_plus` for export; import with duplicate checks.
+  - Prereqs: stable model JSON.
+
+- AI photo logging (Effort: L, R&D)
+  - How: capture photo → client-side segmentation/count (optional) → server/Lite model for classification → manual confirm → log.
+  - Prereqs: out of MVP; gated behind experiments.
+
+Backlog integration rule: ship one feature per minor release without regressing MVP flows; analyzer/tests must remain green; add feature flags when risky.
 
