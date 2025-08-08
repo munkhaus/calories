@@ -262,6 +262,7 @@ Per-step commit message format: `feat(step-x): <summary>` or `chore(step-x): <su
 - Step 02 — Global Add FAB and add flow stub: `docs/steps/step-02-add-flow.md`
 - Step 03 — Theme, tokens, and shared components: `docs/steps/step-03-theme-and-components.md`
 - Step 04 — Domain models and calorie calculator: `docs/steps/step-04-models-and-calculator.md`
+- Step 05 — Persistence scaffolding (Hive): `docs/steps/step-05-persistence-hive.md`
 - Template for future steps: `docs/steps/_template.md`
 
 Progress log lives in: `docs/PROGRESS.md`
