@@ -43,67 +43,70 @@ class _TodayPageState extends State<TodayPage> {
   Widget build(BuildContext context) {
     final int? target = _goalService.getGoal()?.targetCalories;
     final int remaining = target != null ? (target - _totalKcal) : 0;
-    return ListView(
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      children: <Widget>[
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text('Today: $_today'),
-              const SizedBox(height: 8),
-              Text('Total kcal: $_totalKcal'),
-              if (target != null)
-                Text('Target: $target  Remaining: $remaining'),
-            ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80),
+      child: ListView(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        children: <Widget>[
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text('Today: $_today'),
+                const SizedBox(height: 8),
+                Text('Total kcal: $_totalKcal'),
+                if (target != null)
+                  Text('Target: $target  Remaining: $remaining'),
+              ],
+            ),
           ),
-        ),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              const Text('Meals'),
-              const SizedBox(height: 8),
-              if (_entries.isEmpty) const Text('No entries yet'),
-              for (final FoodEntry e in _entries)
-                ListTile(
-                  title: Text(e.name),
-                  subtitle: Text('${e.mealType.name} • ${e.calories} kcal'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                const Text('Meals'),
+                const SizedBox(height: 8),
+                if (_entries.isEmpty) const Text('No entries yet'),
+                for (final FoodEntry e in _entries)
+                  ListTile(
+                    title: Text(e.name),
+                    subtitle: Text('${e.mealType.name} • ${e.calories} kcal'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: () async {
+                        await _logService.deleteEntry(e.id);
+                        _refresh();
+                      },
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 44,
+                  child: OutlinedButton.icon(
                     onPressed: () async {
-                      await _logService.deleteEntry(e.id);
+                      // Quick add demo entry
+                      final DateTime now = DateTime.now();
+                      final FoodEntry entry = FoodEntry(
+                        id: 'quick_${now.microsecondsSinceEpoch}',
+                        date: _today,
+                        dateTime: now,
+                        mealType: MealType.snack,
+                        name: 'Quick snack',
+                        calories: 150,
+                      );
+                      await _logService.addEntry(entry);
                       _refresh();
                     },
+                    icon: const Icon(Icons.add),
+                    label: const Text('Quick add 150 kcal snack'),
                   ),
                 ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    // Quick add demo entry
-                    final DateTime now = DateTime.now();
-                    final FoodEntry entry = FoodEntry(
-                      id: 'quick_${now.microsecondsSinceEpoch}',
-                      date: _today,
-                      dateTime: now,
-                      mealType: MealType.snack,
-                      name: 'Quick snack',
-                      calories: 150,
-                    );
-                    await _logService.addEntry(entry);
-                    _refresh();
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Quick add 150 kcal snack'),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

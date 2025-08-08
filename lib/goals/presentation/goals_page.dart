@@ -7,12 +7,15 @@ class GoalsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      children: const <Widget>[
-        AppCard(child: Text('Goal summary (placeholder)')),
-        AppCard(child: Text('Macro presets (placeholder)')),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80),
+      child: ListView(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        children: const <Widget>[
+          AppCard(child: Text('Goal summary (placeholder)')),
+          AppCard(child: Text('Macro presets (placeholder)')),
+        ],
+      ),
     );
   }
 }

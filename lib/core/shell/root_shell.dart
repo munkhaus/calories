@@ -35,7 +35,7 @@ class _RootShellState extends State<RootShell> {
 
     return Scaffold(
       body: SafeArea(child: widget.child),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await showModalBottomSheet<void>(
@@ -102,17 +102,21 @@ class _RootShellState extends State<RootShell> {
         },
         child: const Icon(Icons.add),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: currentIndex,
-        onDestinationSelected: (int index) => context.go(_tabs[index].location),
-        destinations: _tabs
-            .map(
-              (t) => NavigationDestination(
-                icon: Icon(t.icon),
-                label: t.label,
-              ),
-            )
-            .toList(),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (int index) =>
+              context.go(_tabs[index].location),
+          destinations: _tabs
+              .map(
+                (t) => NavigationDestination(
+                  icon: Icon(t.icon),
+                  label: t.label,
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }

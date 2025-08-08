@@ -7,13 +7,16 @@ class TrendsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(KSizes.margin4x),
-      children: const <Widget>[
-        AppCard(child: Text('Kcal vs target chart (placeholder)')),
-        AppCard(child: Text('Adherence & insights (placeholder)')),
-        AppCard(child: Text('Weight trend (placeholder)')),
-      ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80),
+      child: ListView(
+        padding: const EdgeInsets.all(KSizes.margin4x),
+        children: const <Widget>[
+          AppCard(child: Text('Kcal vs target chart (placeholder)')),
+          AppCard(child: Text('Adherence & insights (placeholder)')),
+          AppCard(child: Text('Weight trend (placeholder)')),
+        ],
+      ),
     );
   }
 }
