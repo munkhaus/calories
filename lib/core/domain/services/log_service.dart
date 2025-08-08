@@ -2,12 +2,14 @@ import 'dart:convert';
 
 import 'package:calories/core/domain/models/food_entry.dart';
 import 'package:calories/core/storage/hive_boxes.dart';
+import 'package:calories/log/domain/i_log_service.dart';
 
-class LogService {
+class LogService implements ILogService {
   LogService(this._boxes);
 
   final HiveBoxes _boxes;
 
+  @override
   Future<void> addEntry(FoodEntry entry) async {
     await _boxes.foodEntries.put(entry.id, jsonEncode(entry.toJson()));
     final String indexKey = 'date_index_${entry.date}';
@@ -19,6 +21,7 @@ class LogService {
     }
   }
 
+  @override
   List<FoodEntry> getEntriesByDate(String yyyyMmDd) {
     final String indexKey = 'date_index_$yyyyMmDd';
     final List<dynamic> ids =
@@ -33,6 +36,7 @@ class LogService {
         .toList();
   }
 
+  @override
   Future<void> deleteEntry(String id) async {
     // Remove from entries and all date indices containing it
     final dynamic raw = _boxes.foodEntries.get(id);

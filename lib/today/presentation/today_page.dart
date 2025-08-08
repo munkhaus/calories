@@ -1,6 +1,7 @@
 import 'package:calories/core/constants/ksizes.dart';
 import 'package:calories/core/di/service_locator.dart';
 import 'package:calories/core/domain/models/food_entry.dart';
+import 'package:calories/core/domain/models/enums.dart';
 import 'package:calories/core/domain/services/goal_service.dart';
 import 'package:calories/core/domain/services/log_service.dart';
 import 'package:calories/core/ui/app_card.dart';
