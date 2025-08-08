@@ -1,6 +1,7 @@
 import 'package:calories/core/shell/root_shell.dart';
 import 'package:calories/goals/presentation/goals_page.dart';
 import 'package:calories/log/presentation/log_page.dart';
+import 'package:calories/log/presentation/log_add_page.dart';
 import 'package:calories/onboarding/presentation/onboarding_page.dart';
 import 'package:calories/settings/presentation/settings_page.dart';
 import 'package:calories/today/presentation/today_page.dart';
@@ -50,6 +51,11 @@ class AppRouter {
             path: '/log',
             builder: (BuildContext context, GoRouterState state) =>
                 const LogPage(),
+          ),
+          GoRoute(
+            path: '/log/add',
+            builder: (BuildContext context, GoRouterState state) =>
+                const LogAddPage(),
           ),
           GoRoute(
             path: '/trends',

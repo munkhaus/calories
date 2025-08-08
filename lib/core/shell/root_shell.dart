@@ -37,7 +37,69 @@ class _RootShellState extends State<RootShell> {
       body: SafeArea(child: widget.child),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/log'),
+        onPressed: () async {
+          await showModalBottomSheet<void>(
+            context: context,
+            showDragHandle: true,
+            isScrollControlled: false,
+            builder: (BuildContext bottomSheetContext) {
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      ListTile(
+                        leading: const Icon(Icons.restaurant),
+                        title: const Text('Food'),
+                        onTap: () {
+                          Navigator.of(bottomSheetContext).pop();
+                          context.go('/log/add');
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.local_drink_outlined),
+                        title: const Text('Water'),
+                        onTap: () {
+                          Navigator.of(bottomSheetContext).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Water: not implemented yet'),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.monitor_weight_outlined),
+                        title: const Text('Weight'),
+                        onTap: () {
+                          Navigator.of(bottomSheetContext).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Weight: not implemented yet'),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.note_add_outlined),
+                        title: const Text('Note'),
+                        onTap: () {
+                          Navigator.of(bottomSheetContext).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Note: not implemented yet'),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(
