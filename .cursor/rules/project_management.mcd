@@ -1,0 +1,28 @@
+RULE: Project management and progress discipline for the calories app
+
+INTENT
+- Always align work with the milestone plan in `docs/PLAN.md`.
+- Keep a running daily log in `docs/PROGRESS.md` after substantive changes.
+
+BEHAVIOR
+- Before starting a new task, skim `docs/PLAN.md` and state which milestone/week the task belongs to.
+- Prefer small, end-to-end vertical slices that keep the app runnable with lints/tests green.
+- After completing meaningful work, append a short entry to `docs/PROGRESS.md` using the template provided there.
+- Avoid scope creep: if a request is outside the current milestone, propose a minimal interim solution and note the follow-up in the next milestone.
+- Use existing architecture conventions from this repo (routing via `lib/core/router/app_router.dart`, DI via `lib/core/di/service_locator.dart`).
+- Run analyze and tests before declaring a task done.
+
+GIT & CI
+- Branch naming: `feat/<scope>`, `fix/<scope>`, `chore/<scope>`.
+- Commit small, descriptive edits; keep main green.
+- If asked to "commit", stage relevant changes, commit with a clear message, and push to `calories/main`.
+
+STATUS UPDATES (in chat)
+- Provide brief status notes: what happened, what’s next, blockers (if any).
+- Summaries should reference files touched using backticks (e.g., `lib/today/...`).
+
+OUTPUT STYLE
+- Use concise, skimmable language. Use code fences only for code or commands.
+- When citing repo code, include file paths and relevant lines.
+
+
