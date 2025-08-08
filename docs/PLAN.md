@@ -67,4 +67,76 @@ Ship a calorie counter MVP with onboarding, daily logging, and trends, ready for
 - Retention proxy (sessions), days logged/week, items logged/day
 - Add-flow completion rate, adherence %, crash-free sessions
 
+## Tech stack & conventions (align with template)
+- Routing: `go_router` via `lib/core/router/app_router.dart` (named routes)
+- DI: `get_it` via `lib/core/di/service_locator.dart`
+- Models: `freezed` + `json_serializable` with immutable DTOs
+- UI: Material 3, tokens in `KSizes` for spacing/typography/radii; no magic numbers
+- State: `ChangeNotifier` services injected via `get_it` (upgrade path to Riverpod later)
+- Linting: `flutter_lints` + `very_good_analysis`
+
+## Navigation map (routes & tabs)
+- Tabs: Today (`/today`), Log (`/log`), Trends (`/trends`), Goals (`/goals`), Settings (`/settings`)
+- Global Add FAB: opens bottom sheet; deep link `/log/add`
+- Onboarding: `/onboarding/*` with substeps: units, profile, activity, goal, reminders
+- Edit flows: `/log/edit/:id`, `/goals/edit`, `/settings/profile`
+- Start-up: redirect `/` → onboarding if incomplete else `/today`
+
+## Design system specifics
+- Color: seed color teal (adjustable), light/dark themes, high-contrast check
+- Type: system font; sizes from `KSizes.fontSize{S|M|L|XL}`
+- Spacing: base-4 scale from `KSizes.margin{1x..8x}`; components use `KSizes.buttonHeight`, `radiusDefault`
+- Components: calories ring (3 states), macro bars with target ticks, add bottom sheet, cards with consistent padding/radius
+- Haptics: subtle on add/delete/success
+
+## Data model details (MVP)
+- UserProfile
+  - id (uuid), units (metric/imperial), age, sex, heightCm, weightKg, activityLevel
+- Goal
+  - id, startDate, mode (lose/maintain/gain), pace (kcal/day), targetCalories, macroRatio (carb/protein/fat)
+- FoodEntry
+  - id, date (yyyy-mm-dd), dateTime, mealType, name, calories, macros {c,p,f}, portion {value, unit}, source {manual,db,barcode}
+- DailyTotals
+  - date, calorieTotal, macrosTotal, deltaFromGoal
+- WeightEntry
+  - date, weightKg, note?
+- WaterEntry
+  - date, milliliters
+
+Implementation notes:
+- Use `freezed` models with `toJson/fromJson`; store dates as ISO strings, enums as strings.
+- Provide `copyWith` for edits; validate value ranges in constructors.
+
+## Persistence & storage
+- Local DB: Hive (offline-first) with boxes: `profiles`, `goals`, `food_entries`, `weights`, `water`
+- Keys: `id` as key for entries; composite index for date queries (via secondary maps)
+- Migrations: versioned adapters; provide lightweight migration function per box
+- Backups/Export: JSON export in Settings (post-MVP nice-to-have)
+
+## State management
+- Services: `ProfileService`, `GoalService`, `LogService` (food), `TrendsService`
+- Presentation: lightweight `ChangeNotifier` view models per screen
+- DI: register services as lazy singletons in `service_locator.dart`
+
+## Testing & CI
+- Unit: calorie calculator (Mifflin–St Jeor → TDEE), services logic
+- Widget: Today totals update, Onboarding stepper navigation, Add flow validations
+- Golden: key components (calories ring, macro bars) stable visuals
+- CI: run analyze + tests on PR via `.github/workflows/ci.yml`; require green to merge
+
+## Platform targets & defaults
+- Platforms: iOS 15+, Android 8+; Web best-effort for demos
+- Localization: English only MVP; prepare for i18n (string centralization)
+- Analytics: none in MVP; add later if needed
+
+## Defaults & calculations
+- Calorie math: Mifflin–St Jeor for BMR; TDEE via activity multiplier; adjust with pace (e.g., -500 kcal/day)
+- Macro default: 40/30/30 (carb/protein/fat) with presets; allow manual override in Goals
+- Meals: Breakfast, Lunch, Dinner, Snack
+
+## Package backlog (to add when implementing)
+- Hive: `hive`, `hive_flutter`, build adapters via `build_runner`
+- Charts: `fl_chart` (trends)
+- Barcode (post-MVP): `mobile_scanner` or ML Kit
+- Date utils: `intl`
 
