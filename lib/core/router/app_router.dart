@@ -41,44 +41,72 @@ class AppRouter {
         builder: (BuildContext context, GoRouterState state) =>
             const OnboardingPage(),
       ),
-      ShellRoute(
-        builder: (BuildContext context, GoRouterState state, Widget child) {
-          return RootShell(child: child);
-        },
-        routes: <RouteBase>[
-          GoRoute(
-            path: '/',
-            redirect: (BuildContext context, GoRouterState state) => '/today',
+      StatefulShellRoute.indexedStack(
+        builder:
+            (
+              BuildContext context,
+              GoRouterState state,
+              StatefulNavigationShell navigationShell,
+            ) {
+              return RootShell(navigationShell: navigationShell);
+            },
+        branches: <StatefulShellBranch>[
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/',
+                redirect: (BuildContext context, GoRouterState state) =>
+                    '/today',
+              ),
+              GoRoute(
+                path: '/today',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const TodayPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/today',
-            builder: (BuildContext context, GoRouterState state) =>
-                const TodayPage(),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/log',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const LogPage(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: 'add',
+                    builder: (BuildContext context, GoRouterState state) =>
+                        const LogAddPage(),
+                  ),
+                ],
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/log',
-            builder: (BuildContext context, GoRouterState state) =>
-                const LogPage(),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/trends',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const TrendsPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/log/add',
-            builder: (BuildContext context, GoRouterState state) =>
-                const LogAddPage(),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/goals',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const GoalsPage(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/trends',
-            builder: (BuildContext context, GoRouterState state) =>
-                const TrendsPage(),
-          ),
-          GoRoute(
-            path: '/goals',
-            builder: (BuildContext context, GoRouterState state) =>
-                const GoalsPage(),
-          ),
-          GoRoute(
-            path: '/settings',
-            builder: (BuildContext context, GoRouterState state) =>
-                const SettingsPage(),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/settings',
+                builder: (BuildContext context, GoRouterState state) =>
+                    const SettingsPage(),
+              ),
+            ],
           ),
         ],
       ),

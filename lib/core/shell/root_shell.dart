@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class RootShell extends StatefulWidget {
-  const RootShell({required this.child, super.key});
+  const RootShell({required this.navigationShell, super.key});
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<RootShell> createState() => _RootShellState();
@@ -30,11 +30,12 @@ class _RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
-    final String currentLocation = GoRouterState.of(context).uri.toString();
-    final int currentIndex = _currentIndexFromLocation(currentLocation);
+    final int currentIndex = _currentIndexFromLocation(
+      widget.navigationShell.location,
+    );
 
     return Scaffold(
-      body: SafeArea(child: widget.child),
+      body: SafeArea(child: widget.navigationShell),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -106,8 +107,10 @@ class _RootShellState extends State<RootShell> {
         top: false,
         child: NavigationBar(
           selectedIndex: currentIndex,
-          onDestinationSelected: (int index) =>
-              context.go(_tabs[index].location),
+          onDestinationSelected: (int index) => widget.navigationShell.goBranch(
+            index,
+            initialLocation: index != currentIndex,
+          ),
           destinations: _tabs
               .map(
                 (t) => NavigationDestination(
