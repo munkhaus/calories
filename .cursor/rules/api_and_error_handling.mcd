@@ -1,0 +1,83 @@
+# API and Error Handling Guidelines
+---
+description: HTTP client, error modeling and mapping, retries and cancellation
+globs: ["lib/**", "test/**"]
+alwaysApply: true
+---
+
+## Goals
+
+- Consistent HTTP client configuration and usage
+- Predictable error mapping across layers
+- Retries, timeouts, and cancellation handled uniformly
+
+## HTTP Client
+
+- Use `dio` as the HTTP client
+- Configure timeouts and interceptors in one place (core networking module)
+- Add a logging interceptor for debug builds only
+
+```dart
+// lib/core/network/dio_client.dart
+import 'package:dio/dio.dart';
+
+Dio createDio() {
+  final dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 10),
+    receiveTimeout: const Duration(seconds: 20),
+    sendTimeout: const Duration(seconds: 20),
+    contentType: 'application/json',
+  ));
+  // Add interceptors in debug only
+  return dio;
+}
+```
+
+## Error Model
+
+- Domain layer defines sealed error types per feature (e.g., `FeatureError`)
+- Infrastructure maps network/serialization errors to domain errors
+- UI shows friendly messages; no raw exceptions
+
+```dart
+// lib/feature_name/domain/errors.dart
+sealed class FeatureError {
+  const FeatureError();
+}
+class NotFound extends FeatureError {}
+class Validation extends FeatureError {}
+class Network extends FeatureError {}
+class Unknown extends FeatureError {}
+```
+
+## Error Mapping
+
+```dart
+FeatureError mapDioError(Object error) {
+  if (error is DioException) {
+    final code = error.response?.statusCode;
+    if (code == 404) return NotFound();
+    if (code == 400) return Validation();
+    return Network();
+  }
+  return Unknown();
+}
+```
+
+## Retries and Cancellation
+
+- Use exponential backoff for idempotent GETs
+- Do not retry POST/PUT by default
+- Expose `CancelToken` from infrastructure for long-running requests
+
+## Result Type
+
+- Use a `Result<T, E>` type or `Either<L, R>` consistently across infrastructure and domain
+- Domain should never expose raw `DioException`
+
+## Testing
+
+- Mock `Dio` responses and verify error mapping
+- Unit test each mapping branch (404, 400, timeouts, unknown)
+
+

@@ -1,0 +1,96 @@
+# Dependency Injection Guidelines
+
+## Goals
+
+- Centralize service registrations and lifecycle management
+- Make testing easy with swap-able fakes/mocks
+- Avoid global state; access dependencies through a single locator
+
+## Directory Structure
+
+```
+lib/
+  └── core/
+      └── di/
+          ├── service_locator.dart
+          └── registrations.dart
+```
+
+## Technology Choices
+
+- Use `get_it` as the service locator
+- Use factory methods for runtime parameters when necessary
+- Keep registration small, composable, and layered (core, per-feature)
+
+## Registration Rules
+
+1. All environment-agnostic registrations go to `core/di/registrations.dart`
+2. Feature-specific registrations live under `lib/feature_name/di/registrations.dart`
+3. Expose a single public API: `Future<void> configureDependencies({AppEnvironment env})`
+4. Prefer `registerLazySingleton` for stateless services; use `registerFactory` for short-lived objects (e.g., cubits)
+5. Never perform I/O during registration; do it on first use if needed
+
+## Access Rules
+
+- Access dependencies through the top-level `getIt<T>()`
+- Do not pass `GetIt` instance around; import `service_locator.dart`
+- UI should receive dependencies through constructors where feasible; use `getIt` sparingly in UI
+
+## Example
+
+```dart
+// lib/core/di/service_locator.dart
+import 'package:get_it/get_it.dart';
+
+final GetIt getIt = GetIt.instance;
+
+Future<void> configureDependencies() async {
+  // Keep empty here; actual registrations in registrations.dart
+}
+```
+
+```dart
+// lib/core/di/registrations.dart
+import 'package:dio/dio.dart';
+import 'package:get_it/get_it.dart';
+import '../../feature_name/domain/i_feature_service.dart';
+import '../../feature_name/infrastructure/feature_service.dart';
+
+void registerCore(GetIt getIt) {
+  getIt.registerLazySingleton<Dio>(() => Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 20),
+      )));
+}
+
+void registerFeatureName(GetIt getIt) {
+  getIt.registerLazySingleton<IFeatureService>(() => FeatureService(getIt()));
+}
+```
+
+```dart
+// lib/feature_name/di/registrations.dart
+import 'package:get_it/get_it.dart';
+
+void registerFeatureName(GetIt getIt) {
+  // feature-specific registrations
+}
+```
+
+```dart
+// Usage in a cubit
+import '../../core/di/service_locator.dart';
+import '../domain/i_feature_service.dart';
+
+class FeatureCubit extends Cubit<FeatureState> {
+  final IFeatureService _service = getIt<IFeatureService>();
+  FeatureCubit() : super(FeatureState.initial());
+}
+```
+
+## Testing
+
+- Override dependencies per test via `getIt.registerSingleton<T>(fake)` and `getIt.reset(dispose: true)` in `tearDown`
+- Use separate registration helper for tests to keep setup clear
+
+

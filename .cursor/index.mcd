@@ -1,0 +1,25 @@
+# Cursor Rules Index
+
+This project uses a feature-first, layered architecture with consistent rules across domain, application, infrastructure, and presentation.
+
+## Rule Files
+
+- architecture.mcd: High-level principles and dependency directions
+- feature_structure_and_naming_conventions.mcd: File structure and naming
+- domain_layer.mcd: Domain models and interfaces
+- state_management.mcd: Cubits/States and DataState usage
+- infrastructure_layer.mcd: DTOs, services, and mapping rules
+- repository_and_caching.mcd: Repository pattern and cache policies
+- api_and_error_handling.mcd: HTTP client config and error mapping
+- dependency_injection.mcd: get_it registration and access patterns
+- performance_and_accessibility.mcd: Perf, a11y, and i18n
+- routing.mcd: go_router navigation, deep links, and web-friendly URLs
+
+## Global Conventions
+
+- Use `KSizes` for layout constants; avoid hard-coded numbers
+- Use `getIt<T>()` for dependency access, with constructor injection preferred
+- Prefer Result/Either for fallible workflows; never throw raw exceptions to UI
+- Keep domain pure (no Flutter imports)
+
+

@@ -1,0 +1,45 @@
+# Architecture Principles
+# Architecture Principles
+---
+description: Layering and dependency directions for the entire app
+globs: ["lib/**", "test/**"]
+alwaysApply: true
+---
+
+## Overview
+
+- Follow feature-first modular structure: `lib/feature_name/{domain,application,infrastructure,presentation}`
+- Keep business logic in domain/application; avoid logic in UI
+- Strict dependency direction:
+  - presentation -> application -> domain
+  - infrastructure -> domain
+  - domain depends on nothing
+
+## Boundaries
+
+- Domain contains pure models and interfaces; no Flutter imports
+- Application contains use-cases or cubits consuming domain interfaces
+- Infrastructure implements domain interfaces and handles I/O
+- Presentation uses only application and domain models (no infrastructure)
+
+## Cross-cutting Concerns
+
+- Logging and analytics behind interfaces in `core/`
+- Theming and constants in `core/`
+- Networking config in `core/network`
+
+## Module Rules
+
+- Each feature is independent. Do not import another feature's `presentation`/`application`. Share via domain interfaces in `core` when needed.
+
+## Example Imports
+
+```dart
+// Good: presentation -> application
+import '../application/feature_cubit.dart';
+
+// Bad: presentation -> infrastructure
+// import '../infrastructure/feature_service.dart';
+```
+
+

@@ -1,0 +1,35 @@
+# Build artifacts
+build/
+**/build/
+
+# Dart/Flutter tool dirs
+.dart_tool/
+.packages
+.pub-cache/
+
+# IDE and VCS
+.idea/
+.vscode/
+.git/
+.gitignore
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/
+ios/Runner.xcworkspace/
+
+# Android
+android/.gradle/
+android/.idea/
+android/build/
+
+# Web
+web/.dart_tool/
+
+# Coverage
+coverage/
+
+# Generated
+**/*.g.dart
+**/*.freezed.dart

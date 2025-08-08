@@ -1,0 +1,16 @@
+# Global Workspace Rules
+# Global Workspace Rules
+---
+description: Global rules that apply to all edits in this workspace
+globs: ["**/*"]
+alwaysApply: true
+---
+
+- These rules apply to ALL edits made by the agent in this workspace.
+- Before creating or changing code, follow the architecture, naming, state management, DI, repository, API/error handling, testing, performance, and accessibility rules.
+- If a requested change conflicts with these rules, surface the conflict and propose a compliant alternative.
+- Keep domain pure (no Flutter imports), preserve layer boundaries, and prefer Result/Either over thrown exceptions.
+- Use `KSizes` for layout values and `getIt` for DI (constructor injection preferred in UI).
+
+See the index for detailed rule files.
+

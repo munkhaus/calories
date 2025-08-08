@@ -1,0 +1,47 @@
+# Routing Guidelines
+---
+description: Standardize navigation using go_router with typed params and deep links
+globs: ["lib/**", "test/**"]
+alwaysApply: true
+---
+
+## Technology
+
+- Use `go_router` for all navigation
+- Centralize routes in `core/router/app_router.dart`
+
+## Conventions
+
+- Define routes with `GoRoute` under a single `GoRouter` instance
+- Use typed path parameters and query params (decode/validate at boundary)
+- No direct `Navigator` calls in features; use context extensions (`context.go`, `context.push`)
+- Extract screen widgets under `feature_name/presentation/` and reference them from routes
+
+## Deep Links & Web
+
+- Routes must be shareable URLs (web-friendly paths)
+- Keep path segments lowercase with hyphens (e.g., `/user-profile/:id`)
+
+## Example
+
+```dart
+class AppRouter {
+  static final GoRouter router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, _) => const HomePage(),
+      ),
+      GoRoute(
+        path: '/details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return DetailsPage(id: id);
+        },
+      ),
+    ],
+  );
+}
+```
+
+

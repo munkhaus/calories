@@ -1,0 +1,33 @@
+# Performance and Accessibility Guidelines
+---
+description: Performance, memory, a11y, and internationalization rules
+globs: ["lib/**", "test/**"]
+alwaysApply: true
+---
+
+## Performance
+
+- Prefer `const` constructors where possible
+- Avoid rebuilding large subtrees; use `BlocSelector`/`Selector` when appropriate
+- Defer heavy work to `compute` or isolates
+- Use `ListView.builder` over `ListView` with many children
+- Avoid synchronous I/O on UI thread
+
+## Memory
+
+- Dispose controllers and focus nodes in `dispose`
+- Use `AutomaticKeepAliveClientMixin` intentionally
+
+## Accessibility
+
+- Provide `Semantics` labels for icons and custom widgets
+- Ensure tap targets are at least 48x48
+- Respect text scale factor; use responsive text with `MediaQuery.textScaler`
+- Maintain sufficient contrast and support dark mode
+
+## Internationalization
+
+- No hard-coded user-facing strings; use `l10n`
+- Support pluralization and gender where needed
+
+

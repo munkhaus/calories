@@ -1,0 +1,55 @@
+# Testing, Quality, and Tooling Guidelines
+---
+description: Lints, coverage, test types, mocks, and CI script guidance
+globs: ["lib/**", "test/**", "analysis_options.yaml", "pubspec.yaml"]
+alwaysApply: true
+---
+
+## Minimum Coverage
+
+- Target 80% line coverage on `lib/**`
+- Block merges if coverage drops by >2% from main
+
+## Test Types
+
+- Unit tests for domain and infrastructure mapping
+- Widget tests for presentation
+- Golden tests for critical widgets
+
+## Directory Structure
+
+```
+test/
+  └── feature_name/
+      ├── domain/
+      ├── infrastructure/
+      ├── application/
+      └── presentation/
+```
+
+## Conventions
+
+- Test filenames end with `_test.dart`
+- Use `setUp`/`tearDown` and avoid shared mutable state
+- Use descriptive `group` names; one behavior per `test`
+
+## Lints and Format
+
+- Enforce `flutter_lints` and `very_good_analysis`
+- CI should run `dart format --output=none --set-exit-if-changed .` and `dart analyze`
+
+## Mocks
+
+- Prefer `mocktail` over `mockito`
+- Create simple fakes for value types
+
+## Example CI Script
+
+```bash
+dart format --output=none --set-exit-if-changed .
+dart analyze
+flutter test --coverage
+genhtml coverage/lcov.info -o coverage/html
+```
+
+

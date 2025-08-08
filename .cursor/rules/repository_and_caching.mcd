@@ -1,0 +1,62 @@
+# Repository and Caching Guidelines
+---
+description: Repository pattern, data sources, and cache policies (TTL, strategies)
+globs: ["lib/**", "test/**"]
+alwaysApply: true
+---
+
+## Goals
+
+- Decouple data sources and provide unified access via repositories
+- Enable offline-first strategies where applicable
+
+## Structure
+
+```
+lib/feature_name/
+  ├── domain/
+  │   ├── i_feature_repository.dart
+  │   └── models.dart
+  └── infrastructure/
+      ├── data_sources/
+      │   ├── feature_remote_data_source.dart
+      │   └── feature_local_data_source.dart
+      └── feature_repository.dart
+```
+
+## Rules
+
+1. Repositories implement domain interfaces only
+2. Data sources are internal to infrastructure
+3. Cache policy must be explicit: `networkOnly`, `cacheFirst`, `networkFirst`
+4. Use TTL for cached entries and provide `invalidate()` APIs
+
+## Example
+
+```dart
+abstract class IFeatureRepository {
+  Future<Result<FeatureModel, FeatureError>> getById(String id);
+}
+
+class FeatureRepository implements IFeatureRepository {
+  final FeatureRemoteDataSource _remote;
+  final FeatureLocalDataSource _local;
+  FeatureRepository(this._remote, this._local);
+
+  @override
+  Future<Result<FeatureModel, FeatureError>> getById(String id) async {
+    final cached = await _local.read(id);
+    if (cached != null && !cached.isExpired) return Success(cached.value);
+    final res = await _remote.getById(id);
+    return res.when(
+      success: (model) async {
+        await _local.write(id, model, ttl: const Duration(minutes: 10));
+        return Success(model);
+      },
+      failure: (e) => Failure(e),
+    );
+  }
+}
+```
+
+

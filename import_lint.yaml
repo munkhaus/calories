@@ -1,0 +1,29 @@
+imports:
+  - paths:
+      - lib/**/presentation/**
+    forbid:
+      - lib/**/infrastructure/**
+    message: Presentation must not import infrastructure. Depend on application/domain only.
+
+  - paths:
+      - lib/**/application/**
+    forbid:
+      - lib/**/infrastructure/**
+    message: Application must not import infrastructure directly. Use domain interfaces.
+
+  - paths:
+      - lib/**/domain/**
+    forbid:
+      - flutter/**
+      - package:flutter/**
+      - lib/**/presentation/**
+      - lib/**/infrastructure/**
+      - lib/**/application/**
+    message: Domain must stay pure (no Flutter, no other layers).
+
+  - paths:
+      - lib/**/infrastructure/**
+    forbid:
+      - lib/**/presentation/**
+    message: Infrastructure must not depend on presentation.
+
