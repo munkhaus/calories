@@ -8,5 +8,3 @@ class TrendsPage extends StatelessWidget {
     return const Center(child: Text('Trends'));
   }
 }
- 
-

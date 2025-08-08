@@ -16,7 +16,11 @@ class _RootShellState extends State<RootShell> {
     _TabSpec(location: '/log', icon: Icons.add_chart_outlined, label: 'Log'),
     _TabSpec(location: '/trends', icon: Icons.show_chart, label: 'Trends'),
     _TabSpec(location: '/goals', icon: Icons.flag_outlined, label: 'Goals'),
-    _TabSpec(location: '/settings', icon: Icons.settings_outlined, label: 'Settings'),
+    _TabSpec(
+      location: '/settings',
+      icon: Icons.settings_outlined,
+      label: 'Settings',
+    ),
   ];
 
   int _currentIndexFromLocation(String location) {
@@ -53,11 +57,13 @@ class _RootShellState extends State<RootShell> {
 }
 
 class _TabSpec {
-  const _TabSpec({required this.location, required this.icon, required this.label});
+  const _TabSpec({
+    required this.location,
+    required this.icon,
+    required this.label,
+  });
 
   final String location;
   final IconData icon;
   final String label;
 }
- 
-

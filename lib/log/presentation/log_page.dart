@@ -8,5 +8,3 @@ class LogPage extends StatelessWidget {
     return const Center(child: Text('Log'));
   }
 }
- 
-

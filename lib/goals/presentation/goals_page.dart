@@ -8,5 +8,3 @@ class GoalsPage extends StatelessWidget {
     return const Center(child: Text('Goals'));
   }
 }
- 
-

@@ -8,5 +8,3 @@ class SettingsPage extends StatelessWidget {
     return const Center(child: Text('Settings'));
   }
 }
- 
-

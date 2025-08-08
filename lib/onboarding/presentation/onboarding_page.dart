@@ -10,5 +10,3 @@ class OnboardingPage extends StatelessWidget {
     );
   }
 }
- 
-

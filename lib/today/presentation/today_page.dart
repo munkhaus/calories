@@ -8,5 +8,3 @@ class TodayPage extends StatelessWidget {
     return const Center(child: Text('Today'));
   }
 }
- 
-

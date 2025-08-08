@@ -255,6 +255,7 @@ Per-step commit message format: `feat(step-x): <summary>` or `chore(step-x): <su
 
 ### Steps index
 - Step 01 — Routing skeleton and tabs: `docs/steps/step-01-routing-and-tabs.md`
+- Step 02 — Global Add FAB and add flow stub: `docs/steps/step-02-add-flow.md`
 - Template for future steps: `docs/steps/_template.md`
 
 Progress log lives in: `docs/PROGRESS.md`
