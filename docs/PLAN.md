@@ -265,6 +265,9 @@ Per-step commit message format: `feat(step-x): <summary>` or `chore(step-x): <su
 - Step 03 — Theme, tokens, and shared components: `docs/steps/step-03-theme-and-components.md`
 - Step 04 — Domain models and calorie calculator: `docs/steps/step-04-models-and-calculator.md`
 - Step 05 — Persistence scaffolding (Hive): `docs/steps/step-05-persistence-hive.md`
+- Step 06 — Onboarding flow (data + routing): `docs/steps/step-06-onboarding-flow.md`
+- Step 07 — Today summary and meals (manual logging): `docs/steps/step-07-today-and-meals.md`
+- Step 08 — Recents & Favorites and quick add: `docs/steps/step-08-recents-and-favorites.md`
 - Template for future steps: `docs/steps/_template.md`
 
 Progress log lives in: `docs/PROGRESS.md`
