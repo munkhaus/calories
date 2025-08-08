@@ -1,12 +1,12 @@
 # Step 04 — Domain models and calorie calculator
 
 ## Context & scope
-Introduce core domain models using `freezed`/`json_serializable` and add a Mifflin–St Jeor based calorie calculator utility. This enables persistence (Step 5) and onboarding goal computation (Step 6).
+Introduce core domain models using `json_serializable` and add a Mifflin–St Jeor based calorie calculator utility. This enables persistence (Step 5) and onboarding goal computation (Step 6).
 
 ## Implement
 - Enums
   - `Sex`, `ActivityLevel`, `GoalMode`, `MealType` in `lib/core/domain/models/enums.dart`.
-- Models (freezed + json)
+- Models (json)
   - `UserProfile`: id, metricUnits, ageYears, sex, heightCm, weightKg, activityLevel.
   - `Goal`: id, startDate, mode, targetCalories, macro percents, paceKcalPerDay.
   - `FoodEntry`: id, date (yyyy-mm-dd), dateTime, mealType, name, calories, macros, portion, source.

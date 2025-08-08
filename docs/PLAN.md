@@ -195,9 +195,9 @@ Step 3 — Theme and design tokens
 - Verify:
   - Visual consistency across all pages; analyzer clean; commit.
 
-Step 4 — Models: Profile, Goal, Entries (freezed)
+Step 4 — Models: Profile, Goal, Entries (json_serializable)
 - Implement:
-  - Define `UserProfile`, `Goal`, `FoodEntry`, `DailyTotals`, `WeightEntry`, `WaterEntry` with `freezed` and `json_serializable`.
+  - Define `UserProfile`, `Goal`, `FoodEntry`, `DailyTotals`, `WeightEntry`, `WaterEntry` with `json_serializable`.
   - Add calorie calculator (Mifflin–St Jeor → TDEE) utility.
 - Verify:
   - Unit tests for calculator and model JSON roundtrip.
