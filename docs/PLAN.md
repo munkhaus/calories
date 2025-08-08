@@ -1,6 +1,8 @@
 ## MVP Objective
 Ship a calorie counter MVP with onboarding, daily logging, and trends, ready for internal testing.
 
+See also: `docs/DESIGN.md` for concrete UI/UX spec.
+
 ## Core MVP scope (focus)
 - In scope:
   - Onboarding (units, demographics, activity, goal) with target kcal/macros
