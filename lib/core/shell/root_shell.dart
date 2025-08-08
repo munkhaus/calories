@@ -30,9 +30,7 @@ class _RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
-    final int currentIndex = _currentIndexFromLocation(
-      widget.navigationShell.location,
-    );
+    final int currentIndex = widget.navigationShell.currentIndex;
 
     return Scaffold(
       body: SafeArea(child: widget.navigationShell),
