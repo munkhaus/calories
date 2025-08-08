@@ -232,13 +232,15 @@ Step 7 — Today summary and meals (manual logging)
   - Adding/editing/deleting updates totals instantly; day rollover keeps history.
   - Widget tests for totals; analyzer/tests; commit.
 
-Step 8 — Recents and quick add
+Step 8 — Recents & Favorites and quick add
 - Implement:
-  - Track recents/favorites in `LogService`.
-  - Quick-add chips in add screen; duplicate last item.
+  - Track recents in `LogService` from log history (per-day LRU list, capped).
+  - Add `favorites` box in Hive; store FavoriteItem {id, name, default portion, macros, timesUsed, lastUsedAt, pinned}.
+  - On addEntry: increment usage; update lastUsedAt; auto-promote to favorites by threshold; allow manual pin/unpin.
+  - Quick-add chips on Log/Add screens: Recents (horizontal) and Favorites (pinned first); long-press to pin/unpin.
 - Verify:
-  - Recent items appear after first day; quick add updates totals.
-  - Analyzer/tests; commit.
+  - Logging the same item surfaces it in Recents/Favorites; pin/unpin persists across relaunch.
+  - Quick add updates totals immediately; analyzer/tests green.
 
 Step 9 — Trends basics
 - Implement:
