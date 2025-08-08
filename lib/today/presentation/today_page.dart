@@ -2,8 +2,8 @@ import 'package:calories/core/constants/ksizes.dart';
 import 'package:calories/core/di/service_locator.dart';
 import 'package:calories/core/domain/models/food_entry.dart';
 import 'package:calories/core/domain/models/enums.dart';
-import 'package:calories/core/domain/services/goal_service.dart';
-import 'package:calories/core/domain/services/log_service.dart';
+import 'package:calories/goals/domain/i_goal_service.dart';
+import 'package:calories/log/domain/i_log_service.dart';
 import 'package:calories/core/ui/app_card.dart';
 import 'package:calories/core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
@@ -16,16 +16,16 @@ class TodayPage extends StatefulWidget {
 }
 
 class _TodayPageState extends State<TodayPage> {
-  late final LogService _logService;
-  late final GoalService _goalService;
+  late final ILogService _logService;
+  late final IGoalService _goalService;
   late String _today;
   List<FoodEntry> _entries = <FoodEntry>[];
 
   @override
   void initState() {
     super.initState();
-    _logService = getIt<LogService>();
-    _goalService = getIt<GoalService>();
+    _logService = getIt<ILogService>();
+    _goalService = getIt<IGoalService>();
     _today = isoDateFromDateTime(DateTime.now());
     _refresh();
   }

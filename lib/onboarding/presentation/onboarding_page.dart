@@ -17,6 +17,8 @@ class OnboardingPage extends StatefulWidget {
 }
 
 class _OnboardingPageState extends State<OnboardingPage> {
+  // New: PageView-based wizard
+  late final PageController _pageController;
   int _step = 0;
 
   // Step 1: units
@@ -40,11 +42,18 @@ class _OnboardingPageState extends State<OnboardingPage> {
   String? _validationError;
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: 0);
+  }
+
+  @override
   void dispose() {
     _ageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
     _paceController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -259,42 +268,73 @@ class _OnboardingPageState extends State<OnboardingPage> {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Onboarding')),
-      body: Stepper(
-        currentStep: _step,
-        onStepTapped: (int i) => setState(() => _step = i),
-        controlsBuilder: (BuildContext context, ControlsDetails details) {
-          return Row(
-            children: <Widget>[
+      appBar: AppBar(
+        title: const Text('Onboarding'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(4),
+          child: LinearProgressIndicator(
+            value: (_step + 1) / steps.length,
+            minHeight: 4,
+          ),
+        ),
+      ),
+      body: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: steps
+            .map(
+              (s) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: s.content,
+              ),
+            )
+            .toList(),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Row(
+            children: [
+              if (_step > 0)
+                OutlinedButton(
+                  onPressed: () {
+                    setState(() => _step -= 1);
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOut,
+                    );
+                  },
+                  child: const Text('Back'),
+                )
+              else
+                TextButton(
+                  onPressed: () {
+                    // Optional skip for first steps
+                    setState(() => _step = steps.length - 1);
+                    _pageController.jumpToPage(steps.length - 1);
+                  },
+                  child: const Text('Skip'),
+                ),
+              const Spacer(),
               FilledButton(
                 onPressed: () async {
                   if (_step < steps.length - 1) {
-                    if (_validateStep()) setState(() => _step += 1);
+                    if (_validateStep()) {
+                      setState(() => _step += 1);
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOut,
+                      );
+                    }
                   } else {
                     if (_validateStep()) await _completeOnboarding(context);
                   }
                 },
                 child: Text(_step < steps.length - 1 ? 'Next' : 'Finish'),
               ),
-              const SizedBox(width: 12),
-              if (_step > 0)
-                TextButton(
-                  onPressed: () => setState(() => _step -= 1),
-                  child: const Text('Back'),
-                ),
-              if (_validationError != null) ...<Widget>[
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    _validationError!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              ],
             ],
-          );
-        },
-        steps: steps,
+          ),
+        ),
       ),
     );
   }
