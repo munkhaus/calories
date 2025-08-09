@@ -25,6 +25,7 @@ class _TrendsPageState extends State<TrendsPage> {
   @override
   Widget build(BuildContext context) {
     final data = _trends.getDailyTotals(days: _days);
+    final bool reduceMotion = MediaQuery.of(context).disableAnimations;
     final List<FlSpot> spots = List<FlSpot>.generate(
       data.length,
       (int idx) => FlSpot(idx.toDouble(), data[idx].calorieTotal.toDouble()),
@@ -64,7 +65,7 @@ class _TrendsPageState extends State<TrendsPage> {
                   lineBarsData: <LineChartBarData>[
                     LineChartBarData(
                       spots: spots,
-                      isCurved: true,
+                      isCurved: !reduceMotion,
                       color: Theme.of(context).colorScheme.primary,
                       barWidth: 3,
                       dotData: const FlDotData(show: false),
