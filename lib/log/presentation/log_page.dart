@@ -4,6 +4,9 @@ import 'package:calories/core/ui/app_card.dart';
 import 'package:calories/log/domain/quick_item.dart';
 import 'package:calories/log/domain/i_log_service.dart';
 import 'package:flutter/material.dart';
+import 'package:calories/core/domain/models/food_entry.dart';
+import 'package:calories/core/domain/models/enums.dart';
+import 'package:calories/core/utils/date_utils.dart';
 
 class LogPage extends StatefulWidget {
   const LogPage({super.key});
@@ -68,17 +71,27 @@ class _LogPageState extends State<LogPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _recents
-                      .map(
+                      .map<Widget>(
                         (q) => ActionChip(
                           label: Text('${q.name} • ${q.calories} kcal'),
-                          onPressed: () {
+                          onPressed: () async {
+                            final DateTime now = DateTime.now();
+                            final FoodEntry entry = FoodEntry(
+                              id: 'qa_${now.microsecondsSinceEpoch}',
+                              date: isoDateFromDateTime(now),
+                              dateTime: now,
+                              mealType: MealType.snack,
+                              name: q.name,
+                              calories: q.calories,
+                            );
+                            await _logService.addEntry(entry);
+                            if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Quick-add ${q.name} (stub)'),
+                                content: Text('Added ${q.name} to today.'),
                               ),
                             );
                           },
-                          onPressedLabel: 'Add',
                         ),
                       )
                       .toList(),
