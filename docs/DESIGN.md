@@ -13,31 +13,36 @@
 ### Onboarding (mobile-first wizard)
 - 5–7 full-screen pages: Units → Profile (age/sex) → Height → Weight → Activity → Goal/Pace → Review.
 - Navigation: persistent bottom bar with Back and Next/Continue; optional Skip where safe.
-- Progress: top linear progress or dots indicator; page title with brief value framing.
-- Inputs: one primary task per screen; numeric keypad for numbers; inline validation; sensible defaults.
-- Persistence: save-as-you-go to `LocalStorage` to avoid losing progress; restore partially completed flows.
-- Finish: compute target calories/macros; persist profile/goal; set onboardingComplete; CTA “Start tracking”.
-- Permissions: requested at moment-of-value only (e.g., reminders later in Goals/Settings).
+- Progress: top linear progress or dots indicator; brief value framing per page.
+- Inputs: single task per screen; numeric keyboards; inline validation; defaults.
+- Live preview: show computed target at Review and update as inputs change.
+- Persistence: save-as-you-go; restore mid-flow.
+- Finish: compute target; persist profile/goal; set onboardingComplete; CTA “Start tracking”.
+- Permissions: moment-of-value only.
 
 ### Today
-- Hero: calories remaining ring + macro bars; primary “Add” CTA.
-- Meals list with empty states; recents/favorites chips.
+- Hero: calories remaining ring + macro bars; delta vs target; primary “Add” CTA.
+- Quick-add row (common snacks/templates); empty states with guidance.
+- Inline coach tip (short, contextual) when helpful.
 - Quick water add; subtle streak indicator.
 
 ### Log
-- Search-first; debounced; recents/favorites on top.
-- Portion controls with unit selector; prepare slot for barcode.
+- Search-first; debounced; recents/favorites chips above results.
+- Portion controls with unit selector; templates for frequent meals.
+- Undo snackbar on add/delete; consistent quick-add affordances.
 
 ### Trends
-- 7/30d kcal vs target line/area; adherence %; weight trend line.
-- Insight cards: avg deficit/surplus, best day.
+- Range toggle (7/30 days); kcal vs target line/area.
+- Adherence % (days within ±10% target); streak badge.
+- Weight trend; insight cards (avg deficit/surplus, best day).
 
 ### Goals & Settings
-- Goal editor with presets (macro ratios); units; reminders; data export (later).
+- Goal editor: mode presets (lose/maintain/gain), pace slider, live impact preview; macro presets.
+- Units; reminders; privacy text; data export (later).
 
 ### Accessibility & Usability
-- Min tap target 44x44; scalable text; semantic labels; focus order.
-- Reduce motion respected; subtle haptics on success.
+- Min tap target 44x44; scalable text; semantic labels for rings/charts; focus order.
+- Reduce motion respected; subtle haptics on success; dark mode supported.
 - Friendly empty/error states.
 
 ### Flutter components

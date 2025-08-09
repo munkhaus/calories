@@ -147,14 +147,16 @@ Status: Hive is initialized and used for an `onboardingCompleted` flag to suppor
   - `test/unit/**_test.dart`: pure Dart logic
   - `test/widget/**_test.dart`: UI/widget tests using `pumpWidget`
   - `test/support/**`: test utilities (DI helpers, pumpers, fakes)
+  - `test/golden/**.dart`: golden tests for visuals
   - `integration_test/**_test.dart`: device/simulator tests
 - What runs when
   - Local dev: `flutter analyze && flutter test`
   - E2E (optional): `FORCE_ONBOARDING=true flutter test integration_test/... -d <device>`
 - Current coverage (MVP scope)
-  - Unit: calorie calculator
-  - Widget: Today totals and list render with fake services
-  - Integration: onboarding completes and routes to Today
+  - Unit: calorie calculator; services; trends aggregation (to add)
+  - Widget: Today totals and list; Log chips; Goals editor (to add)
+  - Golden: Today hero; Trends chart (to add)
+  - Integration: onboarding completes and routes to Today; add/edit flows (to add)
 - CI: run analyze + unit/widget tests on PR; integrate integration tests later
 
 ## Platform targets & defaults
