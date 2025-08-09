@@ -99,11 +99,15 @@ See also: `docs/DESIGN.md` for concrete UI/UX spec.
 - Start-up: redirect `/` → onboarding if incomplete else `/today`
 
 ## Design system specifics
-- Color: seed color teal (adjustable), light/dark themes, high-contrast check
-- Type: system font; sizes from `KSizes.fontSize{S|M|L|XL}`
+- Color: seed color teal (adjustable), light/dark; high-contrast check; clear state colors for under/on/over target
+- Type: system font (SF/Roboto/Inter); sizes from `KSizes.fontSize{S|M|L|XL}` with 600 weight on hero numbers
 - Spacing: base-4 scale from `KSizes.margin{1x..8x}`; components use `KSizes.buttonHeight`, `radiusDefault`
 - Components: calories ring (3 states), macro bars with target ticks, add bottom sheet, cards with consistent padding/radius
 - Haptics: subtle on add/delete/success
+
+## Competitive insights informing scope
+- Ease-of-logging and hydration tracking are table stakes; keep manual entry friction low and surface Recents/Favorites prominently. Barcode scanning is valuable but can be post-MVP to avoid DB accuracy pitfalls. Add mindful-eating nudges later. [Good Housekeeping roundup](https://www.goodhousekeeping.com/health-products/g28246667/best-calorie-counting-apps/)
+- Adopt modern mobile patterns: large hero numbers, pill chips, segmented controls, rounded cards; keep MD3 compliance. [Nutrio UI inspiration](https://dribbble.com/shots/24692953-Nutrio-Calorie-Counter-App-UI-Kit)
 
 ## Data model details (MVP)
 - UserProfile
@@ -256,14 +260,14 @@ Step 8 — Recents & Favorites and quick add
   - Track recents in `LogService` from log history (per-day LRU list, capped).
   - Add `favorites` box in Hive; store FavoriteItem {id, name, default portion, macros, timesUsed, lastUsedAt, pinned}.
   - On addEntry: increment usage; update lastUsedAt; auto-promote to favorites by threshold; allow manual pin/unpin.
-  - Quick-add chips on Log/Add screens: Recents (horizontal) and Favorites (pinned first); long-press to pin/unpin.
+  - Quick-add chips (pill chips) on Log/Add screens: Recents and Favorites (pinned first); long-press to pin/unpin.
 - Verify:
   - Logging the same item surfaces it in Recents/Favorites; pin/unpin persists across relaunch.
   - Quick add updates totals immediately; analyzer/tests green.
 
 Step 9 — Trends basics
 - Implement:
-  - Weekly/monthly kcal vs target line/area chart using `fl_chart`.
+  - Weekly/monthly kcal vs target line/area chart using `fl_chart` with segmented control (7/30d).
   - Adherence %, streak indicator; weight chart bound to `WeightEntry` data.
 - Verify:
   - Charts reflect logged data; 7/30d filters; analyzer/tests; commit.
