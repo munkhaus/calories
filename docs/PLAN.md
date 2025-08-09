@@ -267,6 +267,43 @@ Step 9 — Trends basics
   - Charts reflect logged data; 7/30d filters; analyzer/tests; commit.
 
 Step 10 — Polish and release prep (MVP)
+Step 11 — Recents & Favorites completion (pin, promotion, usage)
+- Implement:
+  - Pin/unpin in UI; sort pinned first
+  - Track `timesUsed`, `lastUsedAt`; auto-promote threshold (≥3 uses in 7d)
+- Verify:
+  - Unit: promotion rule, LRU capping
+  - Widget: pin/unpin persists
+
+Step 12 — Trends bound to real data
+- Implement:
+  - Aggregation service for 7/30d totals, adherence %, streaks
+  - Bind charts to data; add 7/30d segmented control
+- Verify:
+  - Unit: aggregation, adherence, streaks
+  - Widget: range switch updates chart
+
+Step 13 — Goals editor
+- Implement:
+  - Edit goals (mode/pace/target) with recalculation
+- Verify:
+  - Unit: calculator recompute
+  - Widget: save persists and Today reflects new target
+
+Step 14 — Log Add/Edit flows
+- Implement:
+  - Manual add form; edit/delete route; link with Recents usage
+- Verify:
+  - Widget: add/edit/delete updates totals
+  - Integration: add → Today updates
+
+Step 15 — Accessibility & UX refinements
+- Implement semantics, contrast, focus, reduce motion
+- Verify: widget semantics checks
+
+Step 16 — Icons/splash, privacy text, release
+- Implement icons/splash, version, privacy text in Settings
+- Verify: app runs on iOS/Android/Web; tag v0.1.0
 - Implement:
   - Accessibility labels, dynamic type, contrast; error/empty states; haptics.
   - App icon/splash; versioning; privacy text in Settings.
