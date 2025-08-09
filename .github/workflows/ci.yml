@@ -2,40 +2,6 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Flutter version
-        run: flutter --version
-
-      - name: Install dependencies
-        working-directory: calories_app
-        run: flutter pub get
-
-      - name: Analyze
-        working-directory: calories_app
-        run: flutter analyze
-
-      - name: Run tests (unit + widget)
-        working-directory: calories_app
-        run: flutter test
-name: CI
-
-on:
-  push:
   pull_request:
 
 jobs:
@@ -54,20 +20,24 @@ jobs:
         run: flutter --version
 
       - name: Install dependencies
+        working-directory: calories_app
         run: flutter pub get
 
       - name: Format check
+        working-directory: calories_app
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze
+        working-directory: calories_app
         run: flutter analyze
 
       - name: Test with coverage
+        working-directory: calories_app
         run: flutter test --coverage
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: coverage/
+          path: calories_app/coverage/
 
