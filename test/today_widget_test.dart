@@ -1,9 +1,11 @@
 import 'package:calories/core/di/service_locator.dart';
 import 'package:calories/core/domain/models/food_entry.dart';
+import 'package:calories/core/domain/models/enums.dart';
 import 'package:calories/goals/domain/i_goal_service.dart';
 import 'package:calories/log/domain/i_log_service.dart';
 import 'package:calories/today/presentation/today_page.dart';
 import 'package:flutter/material.dart';
+import 'package:calories/log/domain/quick_item.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/test_utils.dart';
@@ -28,11 +30,26 @@ class _FakeLogService implements ILogService {
 
   @override
   List<FoodEntry> getEntriesByDate(String yyyyMmDd) => entries;
+
+  @override
+  FoodEntry? getEntryById(String id) => entries.firstWhere(
+        (e) => e.id == id,
+        orElse: () =>
+            FoodEntry(id: 'none', date: '2000-01-01', dateTime: DateTime(2000), mealType: MealType.snack, name: '', calories: 0),
+      );
+
+  @override
+  List<QuickItem> getRecents() => <QuickItem>[];
+
+  @override
+  List<QuickItem> getFavorites() => <QuickItem>[];
+
+  @override
+  Future<void> toggleFavorite(QuickItem item) async {}
 }
 
 void main() {
   testWidgets('Today renders totals and list', (tester) async {
-    await registerTestLocalStorage(onboardingCompleted: true);
     getIt.registerSingleton<IGoalService>(_FakeGoalService());
     getIt.registerSingleton<ILogService>(
       _FakeLogService([

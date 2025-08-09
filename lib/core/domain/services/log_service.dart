@@ -131,6 +131,15 @@ class LogService implements ILogService {
   }
 
   @override
+  FoodEntry? getEntryById(String id) {
+    final dynamic raw = _boxes.foodEntries.get(id);
+    if (raw is String) {
+      return FoodEntry.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    }
+    return null;
+  }
+
+  @override
   Future<void> deleteEntry(String id) async {
     // Remove from entries and all date indices containing it
     final dynamic raw = _boxes.foodEntries.get(id);

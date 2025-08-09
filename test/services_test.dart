@@ -1,17 +1,29 @@
+import 'dart:io';
+
+import 'package:calories/core/domain/models/enums.dart';
 import 'package:calories/core/domain/models/food_entry.dart';
 import 'package:calories/core/domain/models/goal.dart';
 import 'package:calories/core/domain/models/user_profile.dart';
-import 'package:calories/core/domain/models/enums.dart';
 import 'package:calories/core/domain/services/goal_service.dart';
 import 'package:calories/core/domain/services/log_service.dart';
 import 'package:calories/core/domain/services/profile_service.dart';
 import 'package:calories/core/storage/hive_boxes.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
 void main() {
+  late Directory tempDir;
+
   setUpAll(() async {
-    await Hive.initFlutter();
+    tempDir = await Directory.systemTemp.createTemp('hive_test_');
+    Hive.init(tempDir.path);
+  });
+
+  tearDownAll(() async {
+    await Hive.deleteFromDisk();
+    try {
+      await tempDir.delete(recursive: true);
+    } catch (_) {}
   });
 
   test('ProfileService save/load roundtrip', () async {

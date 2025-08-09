@@ -78,6 +78,10 @@ class _TodayPageState extends State<TodayPage> {
                         _refresh();
                       },
                     ),
+                    onTap: () {
+                      // Navigate to edit screen
+                      Navigator.of(context).pushNamed('/log/edit/${e.id}');
+                    },
                   ),
                 const SizedBox(height: 8),
                 SizedBox(

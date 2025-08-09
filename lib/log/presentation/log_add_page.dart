@@ -1,7 +1,50 @@
+import 'package:calories/core/di/service_locator.dart';
+import 'package:calories/core/domain/models/food_entry.dart';
+import 'package:calories/core/domain/models/enums.dart';
+import 'package:calories/log/domain/i_log_service.dart';
+import 'package:calories/core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 
-class LogAddPage extends StatelessWidget {
+class LogAddPage extends StatefulWidget {
   const LogAddPage({super.key});
+
+  @override
+  State<LogAddPage> createState() => _LogAddPageState();
+}
+
+class _LogAddPageState extends State<LogAddPage> {
+  final TextEditingController _nameCtrl = TextEditingController();
+  final TextEditingController _kcalCtrl = TextEditingController();
+  MealType _meal = MealType.snack;
+  late final ILogService _logService;
+
+  @override
+  void initState() {
+    super.initState();
+    _logService = getIt<ILogService>();
+  }
+
+  Future<void> _save() async {
+    final String name = _nameCtrl.text.trim();
+    final int? kcal = int.tryParse(_kcalCtrl.text.trim());
+    if (name.isEmpty || kcal == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Enter name and kcal')));
+      return;
+    }
+    final DateTime now = DateTime.now();
+    final FoodEntry entry = FoodEntry(
+      id: 'add_${now.microsecondsSinceEpoch}',
+      date: isoDateFromDateTime(now),
+      dateTime: now,
+      mealType: _meal,
+      name: name,
+      calories: kcal,
+    );
+    await _logService.addEntry(entry);
+    if (!mounted) return;
+    Navigator.of(context).maybePop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,9 +54,36 @@ class LogAddPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: <Widget>[
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Search or enter item',
+            TextField(
+              controller: _nameCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Item name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _kcalCtrl,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Calories (kcal)',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<MealType>(
+              value: _meal,
+              items: MealType.values
+                  .map(
+                    (m) => DropdownMenuItem<MealType>(
+                      value: m,
+                      child: Text(m.name),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (m) => setState(() => _meal = m ?? MealType.snack),
+              decoration: const InputDecoration(
+                labelText: 'Meal',
                 border: OutlineInputBorder(),
               ),
             ),
@@ -22,8 +92,8 @@ class LogAddPage extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: FilledButton(
-                onPressed: () => Navigator.of(context).maybePop(),
-                child: const Text('Save (stub)'),
+                onPressed: _save,
+                child: const Text('Save'),
               ),
             ),
           ],
