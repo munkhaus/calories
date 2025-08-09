@@ -6,7 +6,9 @@ import 'package:calories/core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
 
 class LogAddPage extends StatefulWidget {
-  const LogAddPage({super.key});
+  const LogAddPage({super.key, this.entryId});
+
+  final String? entryId;
 
   @override
   State<LogAddPage> createState() => _LogAddPageState();
@@ -22,6 +24,14 @@ class _LogAddPageState extends State<LogAddPage> {
   void initState() {
     super.initState();
     _logService = getIt<ILogService>();
+    if (widget.entryId != null) {
+      final FoodEntry? e = _logService.getEntryById(widget.entryId!);
+      if (e != null) {
+        _nameCtrl.text = e.name;
+        _kcalCtrl.text = e.calories.toString();
+        _meal = e.mealType;
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -34,7 +44,7 @@ class _LogAddPageState extends State<LogAddPage> {
     }
     final DateTime now = DateTime.now();
     final FoodEntry entry = FoodEntry(
-      id: 'add_${now.microsecondsSinceEpoch}',
+      id: widget.entryId ?? 'add_${now.microsecondsSinceEpoch}',
       date: isoDateFromDateTime(now),
       dateTime: now,
       mealType: _meal,
@@ -49,7 +59,7 @@ class _LogAddPageState extends State<LogAddPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Add food')),
+      appBar: AppBar(title: Text(widget.entryId == null ? 'Add food' : 'Edit food')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

@@ -7,6 +7,7 @@ import 'package:calories/log/domain/i_log_service.dart';
 import 'package:calories/core/ui/app_card.dart';
 import 'package:calories/core/utils/date_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class TodayPage extends StatefulWidget {
   const TodayPage({super.key});
@@ -20,6 +21,7 @@ class _TodayPageState extends State<TodayPage> {
   late final IGoalService _goalService;
   late String _today;
   List<FoodEntry> _entries = <FoodEntry>[];
+  FoodEntry? _lastDeleted;
 
   @override
   void initState() {
@@ -52,11 +54,21 @@ class _TodayPageState extends State<TodayPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('Today: $_today'),
+                Semantics(
+                  label: 'Today date $_today',
+                  child: Text('Today: $_today'),
+                ),
                 const SizedBox(height: 8),
-                Text('Total kcal: $_totalKcal'),
+                Semantics(
+                  label: 'Total calories $_totalKcal kilocalories',
+                  child: Text('Total kcal: $_totalKcal'),
+                ),
                 if (target != null)
-                  Text('Target: $target  Remaining: $remaining'),
+                  Semantics(
+                    label:
+                        'Target $target kilocalories. Remaining $remaining kilocalories',
+                    child: Text('Target: $target  Remaining: $remaining'),
+                  ),
               ],
             ),
           ),
@@ -74,13 +86,33 @@ class _TodayPageState extends State<TodayPage> {
                     trailing: IconButton(
                       icon: const Icon(Icons.delete_outline),
                       onPressed: () async {
+                        _lastDeleted = e;
                         await _logService.deleteEntry(e.id);
                         _refresh();
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Deleted ${e.name}'),
+                            action: SnackBarAction(
+                              label: 'Undo',
+                              onPressed: () async {
+                                final FoodEntry? toRestore = _lastDeleted;
+                                _lastDeleted = null;
+                                if (toRestore != null) {
+                                  await _logService.addEntry(toRestore);
+                                  if (!mounted) return;
+                                  _refresh();
+                                }
+                              },
+                            ),
+                          ),
+                        );
                       },
                     ),
                     onTap: () {
-                      // Navigate to edit screen
-                      Navigator.of(context).pushNamed('/log/edit/${e.id}');
+                      // Navigate to edit screen using go_router
+                      // ignore: use_build_context_synchronously
+                      context.go('/log/edit/${e.id}');
                     },
                   ),
                 const SizedBox(height: 8),

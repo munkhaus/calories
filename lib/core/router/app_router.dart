@@ -86,7 +86,7 @@ class AppRouter {
                   GoRoute(
                     path: 'edit/:id',
                     builder: (BuildContext context, GoRouterState state) =>
-                        const LogAddPage(),
+                        LogAddPage(entryId: state.pathParameters['id']),
                   ),
                 ],
               ),
