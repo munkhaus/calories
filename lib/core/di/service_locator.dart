@@ -7,6 +7,8 @@ import 'package:calories/core/domain/services/log_service.dart';
 import 'package:calories/goals/domain/i_goal_service.dart';
 import 'package:calories/log/domain/i_log_service.dart';
 import 'package:calories/profile/domain/i_profile_service.dart';
+import 'package:calories/trends/domain/i_trends_service.dart';
+import 'package:calories/core/domain/services/trends_service.dart';
 
 /// Global service locator instance.
 final GetIt getIt = GetIt.instance;
@@ -22,5 +24,8 @@ Future<void> configureDependencies() async {
   getIt
     ..registerLazySingleton<IProfileService>(() => ProfileService(getIt()))
     ..registerLazySingleton<IGoalService>(() => GoalService(getIt()))
-    ..registerLazySingleton<ILogService>(() => LogService(getIt()));
+    ..registerLazySingleton<ILogService>(() => LogService(getIt()))
+    ..registerLazySingleton<ITrendsService>(
+      () => TrendsService(getIt<HiveBoxes>(), getIt<IGoalService>()),
+    );
 }
