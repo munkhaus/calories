@@ -19,6 +19,7 @@ class _LogPageState extends State<LogPage> {
   late final ILogService _logService;
   List<QuickItem> _recents = <QuickItem>[];
   List<QuickItem> _favorites = <QuickItem>[];
+  Set<String> _favoriteNames = <String>{};
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _LogPageState extends State<LogPage> {
     setState(() {
       _recents = _logService.getRecents();
       _favorites = _logService.getFavorites();
+      _favoriteNames = _favorites.map((e) => e.name).toSet();
     });
   }
 
@@ -71,8 +73,12 @@ class _LogPageState extends State<LogPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: _recents
-                      .map<Widget>(
-                        (q) => ActionChip(
+                      .map<Widget>((q) {
+                        final bool isFavorite = _favoriteNames.contains(q.name);
+                        final Widget chip = ActionChip(
+                          avatar: isFavorite
+                              ? const Icon(Icons.star_rounded, size: 18)
+                              : null,
                           label: Text('${q.name} • ${q.calories} kcal'),
                           onPressed: () async {
                             final DateTime now = DateTime.now();
@@ -87,13 +93,27 @@ class _LogPageState extends State<LogPage> {
                             await _logService.addEntry(entry);
                             if (!mounted) return;
                             ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Added ${q.name} to today.')),
+                            );
+                          },
+                        );
+                        return GestureDetector(
+                          onLongPress: () async {
+                            await _logService.toggleFavorite(q);
+                            if (!mounted) return;
+                            _refresh();
+                            final bool nowFav = !_favoriteNames.contains(q.name);
+                            ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Added ${q.name} to today.'),
+                                content: Text(
+                                  nowFav ? 'Pinned ${q.name} to Favorites' : 'Unpinned ${q.name}',
+                                ),
                               ),
                             );
                           },
-                        ),
-                      )
+                          child: chip,
+                        );
+                      })
                       .toList(),
                 ),
               ],
